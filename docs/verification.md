@@ -119,3 +119,33 @@ Two more checks test assumptions the automated tests cannot confirm:
 | 40 | The installed `.cursor/rules/forgeflow-typescript.mdc` shows in Cursor's rules settings as applying to specific files, with its patterns listed | Cursor |
 
 If check 39 fails, replace `~` in the global entry with the full path and record it in the README. If check 40 fails, compare the file's frontmatter with a rule created in Cursor itself.
+
+## Session memory
+
+Install it in the same scratch repository:
+
+    forgeflow add --memory --target <harness>
+
+On Codex, run `/hooks` and trust the project hooks again: the hook config changed.
+
+| # | Check | Claude Code | Codex | OpenCode | Cursor |
+|---|---|---|---|---|---|
+| 41 | The harness starts with no warning about the hook config, the plugin or `opencode.json` | | | | |
+| 42 | Ask the agent to edit a file. Afterwards `.forgeflow/local/session.md` lists that file and your prompt | | | | |
+| 43 | `git status` shows nothing under `.forgeflow/local/` | | | | |
+| 44 | Start a new session and ask "what was I working on here last time?" The answer names the file and the prompt without the agent reading any file | | | | |
+| 45 | Tell the agent something it got wrong about the project ("we use pnpm here, not npm"). It adds one line to `.forgeflow/memory/lessons.md` and tells you | | | | |
+| 46 | Run `forge-handoff`. `.forgeflow/local/handoff.md` is written, and a new session can say what is next | | | | |
+| 47 | Compact the conversation, then ask which files this session changed. The answer is right (Cursor: a message tells you which files to point the agent at) | | | | |
+| 48 | Resume an earlier session. No second memory block is added (Claude Code and Codex) | | | | |
+
+Check 42 shows whether the hook fires with a session id on that harness. Check 44 is the one that shows the memory reaches the model.
+
+Two more checks test assumptions the automated tests cannot confirm:
+
+| # | Check | Harness |
+|---|---|---|
+| 49 | With `.forgeflow/memory/` empty or absent, OpenCode starts with no warning about an `instructions` entry that matches no file | OpenCode |
+| 50 | In check 42, a file written by a subagent appears in the same session's record, not a new one | Claude Code, Codex, Cursor |
+
+If check 50 fails on a harness, subagent work starts a new record there and pushes the main session's record into "previous": record it in the README.

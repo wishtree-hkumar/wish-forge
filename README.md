@@ -27,6 +27,7 @@ forgeflow add --flow full --target claude,codex  # several harnesses at once
 forgeflow add security-reviewer --target claude  # one specialist
 forgeflow add --specialists --target claude      # every specialist
 forgeflow add common typescript --target claude  # rules packs
+forgeflow add --memory --target claude           # session memory
 forgeflow status                                 # what is installed here
 forgeflow update                                 # rewrite installed files from the current catalog
 forgeflow remove reviewer --target cursor
@@ -144,6 +145,49 @@ In `AGENTS.md`, forgeflow owns only the text between `<!-- forgeflow:rules:start
 - Rules are not available with `--global` on Cursor, which keeps user-level rules in its settings.
 - Claude Code, Cursor and OpenCode also read `AGENTS.md` in some setups, so in a project that has Codex installed too they may see the Codex block as well as their own rules.
 
+## Session memory
+
+A new session starts cold, and a long one forgets its plan when the harness compacts it. Session memory gives the project three small files that the harness loads by itself.
+
+```bash
+forgeflow add --memory --target claude,codex
+```
+
+That installs one hook and two commands:
+
+| Item             | Does                                                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `session-memory` | Records what each session changes and is asked, and gives a new or compacted session the project's memory                              |
+| `forge-lesson`   | Has the agent add one durable project fact to the lessons file. The agent also does this on its own when you correct it, and tells you |
+| `forge-handoff`  | Has the agent write a note for the next session: done, in progress, next, decisions, open questions                                    |
+
+| File                           | Written by                              | Committed | Holds                                                                                                    |
+| ------------------------------ | --------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------- |
+| `.forgeflow/memory/lessons.md` | the agent                               | yes       | One line per lesson, shared with your team                                                               |
+| `.forgeflow/local/session.md`  | the hook                                | no        | When the last two sessions ran, their branch, the files they changed and your last three prompts in each |
+| `.forgeflow/local/handoff.md`  | the agent, when you run `forge-handoff` | no        | The handoff note                                                                                         |
+
+`.forgeflow/local/` ignores itself with its own `.gitignore`, so nothing in it is committed and your `.gitignore` is not edited. forgeflow never deletes these files: removing the items leaves your memory where it is.
+
+At session start the model receives the lessons, the handoff note and the last session's record, each capped in size, plus any flow run in progress. The handoff note and the record are skipped once they are a week old.
+
+| Target     | At session start                                       | After compaction                                                                  |
+| ---------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `claude`   | a hook adds the memory                                 | the hook adds it again, with this session's activity                              |
+| `codex`    | a hook adds the memory                                 | as Claude Code                                                                    |
+| `cursor`   | a hook adds the memory                                 | Cursor cannot add context here, so you are told which files to point the agent at |
+| `opencode` | the files are listed in `opencode.json` `instructions` | the record is added to the compaction prompt                                      |
+
+### What session memory does not do
+
+- It is per project. Hooks are installed per project, so there is no user-level memory.
+- The model receives the memory. Nothing makes it act on it.
+- Your last three prompts in each of the last two sessions are stored in `.forgeflow/local/` in readable form. Text that looks like a credential is replaced with `[redacted]`, but a secret that matches no known pattern is stored as typed.
+- A lesson can be wrong or go out of date. The lessons file is committed, so additions show up in review, and anyone can edit it.
+- A file changed by a shell command is not in the record: only the agent's own file writes are.
+- Two sessions open at once in one project share the one record and take turns in it.
+- If you installed quality gates before session memory existed, run `forgeflow update` once so the harness config gains the session-start entry. Until then `forgeflow status` shows the wiring as missing.
+
 ## Quality gates
 
 Gates are hooks the harness runs for you. Install all four, or pick the ones you want:
@@ -152,6 +196,8 @@ Gates are hooks the harness runs for you. Install all four, or pick the ones you
 forgeflow add --hooks --target claude
 forgeflow add secret-guard protected-paths --target cursor
 ```
+
+`--hooks` installs the four quality gates. Session memory is also built on hooks, but is installed with `--memory`.
 
 | Gate              | What it does                                                                                                                                                           |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
