@@ -18,10 +18,23 @@ describe('shipped gates', () => {
     expect(hook.gate).not.toMatch(/from '\.\.?\//);
   });
 
-  it('ships exactly four gates and one runtime', () => {
+  it('ships exactly four gates, one memory hook and one runtime', () => {
+    const hooks = [...catalog.values()].filter((item) => item.type === 'hook');
+    expect(hooks.filter((hook) => hook.group === undefined)).toHaveLength(4);
+    expect(hooks.filter((hook) => hook.group === 'memory').map((hook) => hook.name)).toEqual([
+      'session-memory',
+    ]);
     const types = [...catalog.values()].map((item) => item.type);
-    expect(types.filter((type) => type === 'hook')).toHaveLength(4);
     expect(types.filter((type) => type === 'runtime')).toHaveLength(1);
+  });
+
+  it('session-memory handles the session events and imports only node built-ins', () => {
+    const hook = catalog.get('hook:session-memory');
+    expect(hook.events).toEqual(['start', 'compact', 'write', 'prompt']);
+    expect(hook.requires).toEqual(['runtime:hooks']);
+    expect(hook.gate).toContain('export function check(event, ctx)');
+    const imports = [...hook.gate.matchAll(/from '([^']+)'/g)].map((match) => match[1]);
+    expect(imports.every((specifier) => specifier.startsWith('node:'))).toBe(true);
   });
 
   it('shipped runtime code has no shebang and imports only node built-ins', () => {

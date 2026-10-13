@@ -1,4 +1,5 @@
-const PATTERNS = [
+// Exported so session-memory's copy can be checked against it.
+export const PATTERNS = [
   ['AWS access key', /\b(AKIA|ASIA)[0-9A-Z]{16}\b/],
   ['GitHub token', /\b(gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})/],
   ['Slack token', /\bxox[baprs]-[A-Za-z0-9-]{10,}/],
