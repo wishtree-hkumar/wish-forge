@@ -12,12 +12,13 @@ const HARNESS_TOOL =
   /`(Edit|Write|Read|Grep|Glob|Bash|Task|MultiEdit|TodoWrite|apply_patch|str_replace)`|\b(apply_patch|MultiEdit|TodoWrite|str_replace)\b/;
 
 describe('the memory group', () => {
-  it('is the hook and the two skills', () => {
+  it('is the hook and the three skills', () => {
     const group = [...catalog.values()].filter((item) => item.group === 'memory');
     expect(group.map((item) => item.id).sort()).toEqual([
       'hook:session-memory',
       'skill:forge-handoff',
       'skill:forge-lesson',
+      'skill:forge-map',
     ]);
   });
 
@@ -79,7 +80,11 @@ describe('installing memory from the real catalog', () => {
       expect(has(`${dir}/forgeflow/gates/session-memory.mjs`), dir).toBe(true);
     }
     for (const dir of ['.claude/skills', '.agents/skills', '.cursor/skills', '.opencode/skills']) {
-      expect(readdirSync(join(io.cwd, dir)).sort(), dir).toEqual(['forge-handoff', 'forge-lesson']);
+      expect(readdirSync(join(io.cwd, dir)).sort(), dir).toEqual([
+        'forge-handoff',
+        'forge-lesson',
+        'forge-map',
+      ]);
     }
   });
 
@@ -107,7 +112,7 @@ describe('installing memory from the real catalog', () => {
 
   it('removes cleanly and leaves no forgeflow file behind', () => {
     const removal = { ...io, stdout: capture(), stderr: capture() };
-    const ids = ['session-memory', 'forge-handoff', 'forge-lesson'];
+    const ids = ['session-memory', 'forge-handoff', 'forge-lesson', 'forge-map'];
     expect(main(['remove', ...ids, '--target', 'claude,codex,opencode,cursor'], removal)).toBe(0);
     for (const path of ['.claude', '.codex', '.cursor', '.opencode', '.agents', 'opencode.json']) {
       expect(has(path), path).toBe(false);

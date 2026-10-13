@@ -20,6 +20,7 @@ const EXPECTED = [
   ['debugger', 'read-only', 'strong', undefined],
   ['docs-writer', 'write', 'balanced', undefined],
   ['refactorer', 'write', 'balanced', undefined],
+  ['mapper', 'read-only', 'strong', undefined],
 ];
 const REVIEWERS = EXPECTED.filter(([, , , joins]) => joins === 'review').map(([name]) => name);
 const SECTIONS = ['Role', 'Inputs', 'Procedure', 'Output', 'Limits'];

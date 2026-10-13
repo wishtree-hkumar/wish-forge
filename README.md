@@ -94,6 +94,7 @@ Specialists own a subject instead of a stage. Install the ones you want; none co
 | `debugger`               | Finds the root cause of a failure and proposes a fix, without applying  | no               |
 | `docs-writer`            | Writes or updates documentation for code that exists                    | yes (docs only)  |
 | `refactorer`             | Restructures code without changing behavior, tests run before and after | yes              |
+| `mapper`                 | Reads the project and returns a map of it, for the `forge-map` command  | no               |
 
 The five reviewers are also used by the flows. At REVIEW, a flow runs each one that is installed for that harness, saves its report as `07-review-<agent name>.md` in the run directory, and returns to BUILD if any of them requests changes. With none installed, a flow runs exactly as before. Each installed reviewer adds one subagent run to every review round, including for changes outside its subject.
 
