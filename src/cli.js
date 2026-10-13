@@ -20,6 +20,7 @@ const USAGE = `Usage:
   forgeflow add <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
   forgeflow add --flow quick|full --target <t>[,<t>...]
   forgeflow add --hooks --target <t>[,<t>...]
+  forgeflow add --specialists --target <t>[,<t>...] [--global]
   forgeflow remove <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
   forgeflow update [<id...>] [--target <t>[,<t>...]] [--global] [--dry-run] [--force]
   forgeflow status [--global]
@@ -28,6 +29,7 @@ const USAGE = `Usage:
 Targets: ${targetNames.join(', ')}
 An <id> is a name such as "reviewer", or a full id such as "agent:reviewer".
 --hooks installs every quality gate. Gates are installed per project only.
+--specialists installs every agent that is not a flow stage.
 `;
 
 const OPTIONS = {
@@ -35,6 +37,7 @@ const OPTIONS = {
   flow: { type: 'string' },
   type: { type: 'string' },
   hooks: { type: 'boolean' },
+  specialists: { type: 'boolean' },
   global: { type: 'boolean' },
   'dry-run': { type: 'boolean' },
   force: { type: 'boolean' },
@@ -153,12 +156,13 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         .sort((a, b) => a.id.localeCompare(b.id));
       if (values.json) {
         const rows = items.map(
-          ({ id, type, name, description, stage, access, modelTier, events, requires }) => ({
+          ({ id, type, name, description, stage, joins, access, modelTier, events, requires }) => ({
             id,
             type,
             name,
             description,
             stage,
+            joins,
             access,
             modelTier,
             events,
@@ -168,7 +172,8 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
       } else {
         for (const item of items) {
-          const stage = (item.stage ?? item.events?.join(',') ?? '-').padEnd(13);
+          const none = item.type === 'agent' ? 'specialist' : '-';
+          const stage = (item.stage ?? item.events?.join(',') ?? none).padEnd(13);
           const access = (item.access ?? '-').padEnd(10);
           stdout.write(`${item.id.padEnd(28)} ${stage} ${access} ${item.description}\n`);
         }
@@ -183,6 +188,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         ['id', item.id],
         ['description', item.description],
         ['stage', item.stage],
+        ['joins', item.joins],
         ['access', item.access],
         ['model tier', item.modelTier],
         ['events', item.events?.join(', ')],
@@ -206,8 +212,16 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         const gates = [...catalog.values()].filter((item) => item.type === 'hook');
         wanted.push(...gates.map((item) => item.id).sort());
       }
+      if (values.specialists) {
+        const specialists = [...catalog.values()].filter(
+          (item) => item.type === 'agent' && item.stage === undefined
+        );
+        wanted.push(...specialists.map((item) => item.id).sort());
+      }
       if (wanted.length === 0) {
-        throw new UsageError('name at least one item, or use --flow quick|full or --hooks.');
+        throw new UsageError(
+          'name at least one item, or use --flow quick|full, --hooks or --specialists.'
+        );
       }
       printResult(stdout, add(ctx, wanted, parseTargets(values.target, true)), ctx.dryRun);
       return 0;
