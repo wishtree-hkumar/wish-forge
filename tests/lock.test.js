@@ -52,3 +52,36 @@ describe('lockfile', () => {
     expect(() => readLock(base)).toThrow('unsupported format (version 2)');
   });
 });
+
+describe('lockfile validation', () => {
+  const lockWith = (targets) =>
+    writeTree(tmpDir(), { '.forgeflow/lock.json': JSON.stringify({ version: 1, targets }) });
+  const withPath = (path) =>
+    lockWith({
+      cursor: { items: { 'agent:a': { explicit: true, files: [{ path, sha256: 'abc' }] } } },
+    });
+
+  it.each(['../outside.txt', '.cursor/../../outside.txt', '/etc/passwd', 'C:\\x', 'a\\..\\b', ''])(
+    'refuses the unsafe file path %j',
+    (path) => {
+      expect(() => readLock(withPath(path))).toThrow(LockError);
+      expect(() => readLock(withPath(path))).toThrow('unsafe file path');
+    }
+  );
+
+  it('accepts ordinary relative paths', () => {
+    expect(() => readLock(withPath('.cursor/agents/a.md'))).not.toThrow();
+  });
+
+  it.each([
+    ['a target without items', { cursor: {} }],
+    ['targets as a list', []],
+    ['an item without files', { cursor: { items: { 'agent:a': { explicit: true } } } }],
+    [
+      'a file without a hash',
+      { cursor: { items: { 'agent:a': { explicit: true, files: [{ path: 'a.md' }] } } } },
+    ],
+  ])('refuses %s', (_label, targets) => {
+    expect(() => readLock(lockWith(targets))).toThrow(LockError);
+  });
+});

@@ -1,4 +1,12 @@
-import { chmodSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  symlinkSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { applyActions, checkWritable } from '../src/apply.js';
@@ -82,5 +90,23 @@ describe('checkWritable', () => {
     } finally {
       chmodSync(join(root, 'locked'), 0o755);
     }
+  });
+});
+
+describe('review fixes', () => {
+  it('does not fail or remove the link when a symlinked directory becomes empty', () => {
+    const root = writeTree(tmpDir(), { 'shared/a.md': 'x' });
+    symlinkSync('shared', join(root, 'link'));
+    expect(() => applyActions(root, [{ type: 'delete', path: 'link/a.md' }])).not.toThrow();
+    expect(existsSync(join(root, 'shared/a.md'))).toBe(false);
+    expect(lstatSync(join(root, 'link')).isSymbolicLink()).toBe(true);
+  });
+
+  it('rejects a write whose parent path is occupied by a file', () => {
+    const root = writeTree(tmpDir(), { 'a/agents': 'not a directory' });
+    const action = { type: 'create', path: 'a/agents/x.md', content: '' };
+    expect(() => checkWritable(root, [action])).toThrow('agents exists and is not a directory');
+    mkdirSync(join(root, 'b'));
+    expect(() => checkWritable(root, [{ ...action, path: 'b/x.md' }])).not.toThrow();
   });
 });

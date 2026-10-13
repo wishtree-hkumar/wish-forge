@@ -279,3 +279,44 @@ describe('status', () => {
     expect(status(ctx())).toEqual([]);
   });
 });
+
+describe('review fixes', () => {
+  it('writes to no target when a file occupies a directory another target needs', () => {
+    writeTree(cwd, { '.cursor/agents': 'not a directory' });
+    expect(() => add(ctx(), ['alpha'], ['claude', 'cursor'])).toThrow(
+      'exists and is not a directory'
+    );
+    expect(existsSync(at('.claude'))).toBe(false);
+    expect(existsSync(lockPath(cwd))).toBe(false);
+  });
+
+  it('updates a named item only where it is installed when no target is given', () => {
+    add(ctx(), ['alpha'], ['cursor']);
+    add(ctx(), ['beta'], ['claude']);
+    const result = update(ctx(), ['alpha'], undefined);
+    expect(result.plans.map((plan) => plan.target)).toEqual(['cursor']);
+  });
+
+  it('rejects updating a named item that no target has', () => {
+    add(ctx(), ['alpha'], ['cursor']);
+    expect(() => update(ctx(), ['beta'], undefined)).toThrow('agent:beta is not installed');
+  });
+
+  it('refuses to delete a file outside the root named by a tampered lockfile', () => {
+    add(ctx(), ['alpha'], ['cursor']);
+    const outside = join(cwd, '..', `outside-${process.pid}.txt`);
+    writeFileSync(outside, 'keep me');
+    try {
+      const lock = JSON.parse(readFileSync(lockPath(cwd), 'utf8'));
+      lock.targets.cursor.items['agent:alpha'].files.push({
+        path: `../outside-${process.pid}.txt`,
+        sha256: 'ignored',
+      });
+      writeFileSync(lockPath(cwd), JSON.stringify(lock));
+      expect(() => remove(ctx({ force: true }), ['alpha'], ['cursor'])).toThrow('unsafe file path');
+      expect(readFileSync(outside, 'utf8')).toBe('keep me');
+    } finally {
+      rmSync(outside, { force: true });
+    }
+  });
+});

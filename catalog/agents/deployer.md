@@ -17,7 +17,7 @@ You carry out the release steps the project already documents, exactly as writte
 
 ## Procedure
 
-1. Confirm approval. If the caller did not state that a person approved, or `09-approval.md` exists and does not record an approval, stop and report that you cannot proceed.
+1. Confirm approval. If the caller names a run directory, `09-approval.md` must exist in it and record an approval: if the file is missing or records anything else, stop and report that you cannot proceed, whatever the caller says. Without a run directory, the caller must state that a person approved and what they approved; otherwise stop.
 2. Find the documented release steps. If the project documents none, stop and report that, listing where you looked.
 3. List the steps you are about to run, in order, with the exact commands, and state which of them cannot be undone.
 4. Run the steps one at a time. After each, check that it succeeded before starting the next.

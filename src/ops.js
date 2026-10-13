@@ -89,10 +89,21 @@ export function add(ctx, refs, targets) {
 export function update(ctx, refs, targets) {
   const lock = readLock(baseOf(ctx));
   const skipped = [];
-  const perTarget = (targets ?? Object.keys(lock.targets)).map((target) => {
+  const named = refs.map((ref) => findId(ctx.catalog, ref));
+  // Without --target, a named item is updated wherever it is installed.
+  const everywhere = targets === undefined;
+  if (everywhere) {
+    for (const id of named) {
+      if (!Object.values(lock.targets).some((target) => target.items[id])) {
+        throw new UsageError(`${id} is not installed. Run "forgeflow status" to see what is.`);
+      }
+    }
+  }
+  const perTarget = (targets ?? Object.keys(lock.targets)).flatMap((target) => {
     const installed = lock.targets[target]?.items ?? {};
-    const ids =
-      refs.length > 0 ? refs.map((ref) => findId(ctx.catalog, ref)) : Object.keys(installed);
+    const wanted = everywhere ? named.filter((id) => installed[id]) : named;
+    if (everywhere && named.length > 0 && wanted.length === 0) return [];
+    const ids = named.length > 0 ? wanted : Object.keys(installed);
     const current = [];
     for (const id of ids) {
       if (!installed[id]) {
@@ -107,7 +118,7 @@ export function update(ctx, refs, targets) {
       item,
       explicit: installed[item.id]?.explicit ?? false,
     }));
-    return { target, entries };
+    return [{ target, entries }];
   });
   return { plans: install(ctx, lock, perTarget), skipped };
 }

@@ -2,11 +2,13 @@ import {
   accessSync,
   constants,
   existsSync,
+  lstatSync,
   mkdirSync,
   readdirSync,
   renameSync,
   rmdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -23,6 +25,7 @@ export function checkWritable(root, actions, force = false) {
     if (!touchesDisk(action, force)) continue;
     let dir = dirname(join(root, action.path));
     while (!existsSync(dir)) dir = dirname(dir);
+    if (!statSync(dir).isDirectory()) throw new Error(`${dir} exists and is not a directory`);
     try {
       accessSync(dir, constants.W_OK);
     } catch {
@@ -41,9 +44,15 @@ function writeAtomic(full, content) {
 function removeAndPrune(root, path) {
   rmSync(join(root, path), { force: true });
   let dir = dirname(join(root, path));
-  while (dir !== root && dir.startsWith(root) && readdirSync(dir).length === 0) {
-    rmdirSync(dir);
-    dir = dirname(dir);
+  // Pruning is tidying, not part of the delete: never fail on it, never unlink a symlink.
+  try {
+    while (dir !== root && dir.startsWith(root) && !lstatSync(dir).isSymbolicLink()) {
+      if (readdirSync(dir).length > 0) break;
+      rmdirSync(dir);
+      dir = dirname(dir);
+    }
+  } catch {
+    // leave the directory in place
   }
 }
 

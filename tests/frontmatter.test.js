@@ -41,3 +41,13 @@ describe('parseFrontmatter', () => {
     expect(() => parseFrontmatter('---\n- a\n- b\n---\nBody')).toThrow('must be a YAML mapping');
   });
 });
+
+describe('review fixes', () => {
+  it('does not end the frontmatter at an indented --- inside a block scalar', () => {
+    const { data, body } = parseFrontmatter(
+      '---\ndescription: |\n  a\n  ---\n  b\nname: x\n---\nBody'
+    );
+    expect(data).toEqual({ description: 'a\n---\nb\n', name: 'x' });
+    expect(body).toBe('Body');
+  });
+});

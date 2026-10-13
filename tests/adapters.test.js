@@ -198,3 +198,13 @@ describe('every Markdown adapter', () => {
     expect(parseFrontmatter(file.content).data.description).toBe(tricky);
   });
 });
+
+describe('review fixes', () => {
+  it.each(['"""', 'x""""""', 'a\\"""', 'ends with one "', 'ends with two ""'])(
+    'codex preserves the body %j',
+    (body) => {
+      const parsed = parseToml(codex.render(item({ body }), ctx)[0].content);
+      expect(parsed.developer_instructions).toBe(`${body}\n`);
+    }
+  );
+});

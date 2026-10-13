@@ -53,6 +53,7 @@ If a subagent named here is not available, stop and tell the user to install the
 5. **Human confirmation.** Show the user: the change summary from `05-build.md`, the test result, the review verdict with any open minor findings, and the release-gate checklist. Ask plainly whether they accept the change. Then stop and wait for their reply. Save their decision, in their words, with the date, as `09-approval.md`. Silence, an unrelated reply, or an earlier general go-ahead is not confirmation.
 6. **After confirmation.** Do not commit, push, merge, publish or deploy as part of this flow. If the user wants any of those, they will ask, and that is a separate request.
 7. **Stopping.** Whenever the flow stops early, update `state.md`, tell the user which phase stopped and why, and say that the run can be resumed from its run directory.
+8. **Fail closed.** If a subagent's reply lacks the verdict line its phase requires, or the subagent reports that it stopped or could not finish its work, stop the flow and report what it said. Never treat a missing verdict as a pass.
 
 ## Keeping state
 

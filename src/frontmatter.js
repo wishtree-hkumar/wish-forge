@@ -3,7 +3,7 @@ import { parse } from 'yaml';
 export function parseFrontmatter(text) {
   const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/);
   if (lines[0].trim() !== '---') throw new Error('missing frontmatter: file must start with ---');
-  const end = lines.findIndex((line, index) => index > 0 && line.trim() === '---');
+  const end = lines.findIndex((line, index) => index > 0 && line.trimEnd() === '---');
   if (end === -1) throw new Error('unterminated frontmatter: no closing ---');
 
   let data;

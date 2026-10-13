@@ -61,6 +61,7 @@ If a subagent named here is not available, stop and tell the user to install the
 5. **Human approval.** Show the user: the change summary from `05-build.md`, the test result, the review verdict with any open minor findings, and the release-gate checklist. Ask plainly whether they approve deploying. Then stop and wait for their reply. Continue only if they explicitly approve in this conversation. Save their decision, in their words, with the date, as `09-approval.md`. If they decline or ask for changes, record that, stop the flow, and say what they asked for. Silence, an unrelated reply, or an earlier general go-ahead is not approval.
 6. **Deploy.** Nothing in DEPLOY may run unless `09-approval.md` records an approval. If the `deployer` reports that the project documents no release steps, stop and ask the user what deploying means for this project.
 7. **Stopping.** Whenever the flow stops early, update `state.md`, tell the user which stage stopped and why, and say that the run can be resumed from its run directory. Then run FEEDBACK if at least BUILD completed.
+8. **Fail closed.** If a subagent's reply lacks the verdict line its stage requires, or the subagent reports that it stopped or could not finish its work, stop the flow and report what it said. Never treat a missing verdict as a pass.
 
 ## Keeping state
 

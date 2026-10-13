@@ -10,8 +10,7 @@ const basic = (text) => JSON.stringify(text).replace(/\u007f/g, '\\u007f');
 
 // Body of a TOML multi-line basic string: keep newlines and single quotes
 // readable, escape only what would end or corrupt the string.
-const multiline = (text) =>
-  escapeControl(text.replace(/\\/g, '\\\\').replace(/"""/g, '""\\"').replace(/"$/, '\\"'));
+const multiline = (text) => escapeControl(text.replace(/\\/g, '\\\\').replace(/"""/g, '""\\"'));
 
 export const name = 'codex';
 

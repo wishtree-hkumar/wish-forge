@@ -165,3 +165,23 @@ describe('installing the real catalog', () => {
     );
   });
 });
+
+describe('review fixes', () => {
+  it.each(['forge-quick', 'forge-full'])('%s fails closed on a missing verdict', (name) => {
+    const { body } = catalog.get(`skill:${name}`);
+    expect(body).toContain('**Fail closed.**');
+    expect(body).toContain('Never treat a missing verdict as a pass');
+  });
+
+  it('deployer requires the approval file whenever a run directory is named', () => {
+    const { body } = catalog.get('agent:deployer');
+    expect(body).toContain('`09-approval.md` must exist');
+  });
+
+  it('release-gate does not fail a change for being uncommitted', () => {
+    const { body } = catalog.get('agent:release-gate');
+    expect(body).toContain('Uncommitted changes are expected');
+    expect(body).toContain('do not block');
+    expect(body).not.toContain('no uncommitted or untracked files');
+  });
+});

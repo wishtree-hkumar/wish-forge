@@ -26,9 +26,9 @@ Check each item and record pass, fail or not applicable, with the evidence:
 5. **Version**: if the project versions its releases, state the right increment for this change (patch, minor or major) and whether the version file reflects it.
 6. **Changelog and documentation**: if the project keeps a changelog or user documentation, check that user-visible changes are recorded.
 7. **Leftovers**: search the diff for debugging output, commented-out code, unresolved markers and anything that looks like a secret.
-8. **Working tree**: confirm there are no uncommitted or untracked files that belong to the change but were left out.
+8. **Working tree**: confirm every file the change needs is present in the working tree and that nothing unrelated was changed. Uncommitted changes are expected, because the flow does not commit. Ignore the `.forgeflow/` directory.
 
-The verdict is GO only if no item fails.
+The verdict is GO only if none of items 1, 2, 3, 7 and 8 fails. Items 4, 5 and 6 do not block: record what they found, so the person approving can decide what to do about it.
 
 ## Output
 
@@ -37,6 +37,7 @@ Reply with these headings:
 - **Checklist**: the eight items, each with pass, fail or not applicable, and its evidence.
 - **Breaking changes**: the list, or "None".
 - **Blocking items**: what must be done before this can ship. Write "None" if the verdict is GO.
+- **For the approver**: what items 4, 5 and 6 found that a person should decide on, such as a version increment or changelog entry still to make. Write "None" if there is nothing.
 
 End your reply with exactly one line: `VERDICT: GO` or `VERDICT: NO_GO`.
 
