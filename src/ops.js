@@ -2,40 +2,49 @@ import { getAdapter } from './adapters/index.js';
 import { applyActions, checkWritable } from './apply.js';
 import { ConflictError, UsageError } from './errors.js';
 import { readLock, sha256, writeLock } from './lock.js';
-import { planInstall, planRemove } from './plan.js';
+import { planInstall, planRemove, planUnwire, planWire, wiringState } from './plan.js';
 import { findId, resolve } from './resolve.js';
+import { RUNTIME_ID } from './wiring.js';
 
 const FILE_STATE = { delete: 'ok', keep: 'edited', missing: 'missing' };
 
 const baseOf = (ctx) => (ctx.scope === 'global' ? ctx.home : ctx.cwd);
+const isHookItem = (item) => item.type === 'hook' || item.type === 'runtime';
+const wiringRow = ({ type, path }) => ({ id: RUNTIME_ID, type, path });
 
+// A plan is { target, root, items, before?, after? }. before and after hold
+// wiring actions: unwire runs before files are removed, wire after they exist,
+// so a harness config never points at a runner that is not there.
 function report(plans) {
-  return plans.map(({ target, root, items }) => ({
+  return plans.map(({ target, root, items, before = [], after = [] }) => ({
     target,
     root,
-    actions: items.flatMap((entry) =>
-      entry.actions.map(({ type, path, reason }) =>
-        reason ? { id: entry.id, type, path, reason } : { id: entry.id, type, path }
-      )
-    ),
+    actions: [
+      ...before.map(wiringRow),
+      ...items.flatMap((entry) =>
+        entry.actions.map(({ type, path, reason }) =>
+          reason ? { id: entry.id, type, path, reason } : { id: entry.id, type, path }
+        )
+      ),
+      ...after.map(wiringRow),
+    ],
   }));
 }
 
 function commit(ctx, lock, plans, record) {
   if (ctx.dryRun) return;
-  for (const plan of plans) {
-    checkWritable(
-      plan.root,
-      plan.items.flatMap((entry) => entry.actions),
-      ctx.force
-    );
+  for (const { root, items, before = [], after = [] } of plans) {
+    const actions = [...before, ...items.flatMap((entry) => entry.actions), ...after];
+    checkWritable(root, actions, ctx.force);
   }
   for (const plan of plans) {
     const target = (lock.targets[plan.target] ??= { items: {} });
+    applyActions(plan.root, plan.before ?? [], ctx.force);
     for (const entry of plan.items) {
       applyActions(plan.root, entry.actions, ctx.force);
       record(target.items, entry);
     }
+    applyActions(plan.root, plan.after ?? [], ctx.force);
   }
   // Written last: a crash never leaves a lockfile that claims unwritten files.
   writeLock(baseOf(ctx), lock, ctx.version);
@@ -44,15 +53,25 @@ function commit(ctx, lock, plans, record) {
 // perTarget: [{ target, entries: [{ item, explicit }] }]
 function install(ctx, lock, perTarget) {
   const plans = perTarget.map(({ target, entries }) => {
+    if (ctx.scope === 'global' && entries.some(({ item }) => isHookItem(item))) {
+      throw new UsageError('quality gates are installed per project. Run this without --global.');
+    }
     const adapter = getAdapter(target);
     const root = adapter.root(ctx.scope, ctx);
     const installed = lock.targets[target]?.items ?? {};
+    const after = [];
     const items = entries.map(({ item, explicit }) => {
       const files = adapter.render(item, { scope: ctx.scope, version: ctx.version });
       const actions = planInstall(root, files, installed[item.id]?.files ?? []);
-      return { id: item.id, explicit, files, actions };
+      const entry = { id: item.id, explicit, files, actions };
+      if (item.id === RUNTIME_ID && adapter.wiring) {
+        const wired = planWire(root, adapter.wiring, installed[item.id]?.wiring);
+        after.push(wired.action);
+        entry.wiring = wired.record;
+      }
+      return entry;
     });
-    return { target, root, items };
+    return { target, root, items, after };
   });
 
   const conflicts = plans.flatMap((plan) =>
@@ -68,6 +87,7 @@ function install(ctx, lock, perTarget) {
     items[entry.id] = {
       explicit: entry.explicit,
       files: entry.files.map((file) => ({ path: file.path, sha256: sha256(file.content) })),
+      ...(entry.wiring ? { wiring: entry.wiring } : {}),
     };
   });
   return report(plans);
@@ -130,7 +150,8 @@ export function remove(ctx, refs, targets) {
   const requiresOf = (id) => ctx.catalog.get(id)?.requires ?? [];
 
   const plans = targets.map((target) => {
-    const root = getAdapter(target).root(ctx.scope, ctx);
+    const adapter = getAdapter(target);
+    const root = adapter.root(ctx.scope, ctx);
     const installed = lock.targets[target]?.items ?? {};
     for (const id of ids) {
       if (!installed[id]) throw new UsageError(`${id} is not installed for ${target}.`);
@@ -146,7 +167,7 @@ export function remove(ctx, refs, targets) {
     }
 
     // Sweep requirements nothing else needs, until none are left.
-    for (let changed = true; changed;) {
+    for (let changed = true; changed; ) {
       changed = false;
       for (const [id, entry] of Object.entries(installed)) {
         if (going.has(id) || entry.explicit) continue;
@@ -160,10 +181,15 @@ export function remove(ctx, refs, targets) {
       }
     }
 
+    const before = [];
+    const wiring = installed[RUNTIME_ID]?.wiring;
+    if (going.has(RUNTIME_ID) && wiring) {
+      before.push(planUnwire(root, wiring, adapter.wiring?.skeleton));
+    }
     const items = Object.keys(installed)
       .filter((id) => going.has(id))
       .map((id) => ({ id, actions: planRemove(root, installed[id].files) }));
-    return { target, root, items };
+    return { target, root, items, before };
   });
 
   commit(ctx, lock, plans, (items, entry) => {
@@ -175,10 +201,16 @@ export function remove(ctx, refs, targets) {
 export function status(ctx) {
   const lock = readLock(baseOf(ctx));
   return Object.entries(lock.targets).map(([target, { items }]) => {
-    const root = getAdapter(target).root(ctx.scope, ctx);
+    const adapter = getAdapter(target);
+    const root = adapter.root(ctx.scope, ctx);
+    const record = items[RUNTIME_ID]?.wiring;
     return {
       target,
       root,
+      wiring:
+        record && adapter.wiring
+          ? { path: record.path, state: wiringState(root, adapter.wiring) }
+          : null,
       items: Object.entries(items).map(([id, entry]) => ({
         id,
         explicit: entry.explicit,

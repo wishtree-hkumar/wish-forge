@@ -26,20 +26,30 @@ function isSafePath(path) {
 function validate(path, lock) {
   const malformed = (what) =>
     new LockError(`${path} is malformed: ${what}. Fix or delete it, then re-run.`);
+  const requireSafe = (candidate, id) => {
+    if (isSafePath(candidate)) return;
+    throw new LockError(
+      `${path} contains an unsafe file path (${JSON.stringify(candidate)}) for ${id}. ` +
+        'Paths must be relative and stay inside the install directory. Fix or delete the lockfile.'
+    );
+  };
+
   if (!isObject(lock.targets)) throw malformed('"targets" must be an object');
   for (const [target, entry] of Object.entries(lock.targets)) {
-    if (!isObject(entry) || !isObject(entry.items))
+    if (!isObject(entry) || !isObject(entry.items)) {
       throw malformed(`target "${target}" has no items`);
+    }
     for (const [id, item] of Object.entries(entry.items)) {
       if (!isObject(item) || !Array.isArray(item.files)) throw malformed(`${id} has no files list`);
       for (const file of item.files) {
-        if (!isSafePath(file?.path)) {
-          throw new LockError(
-            `${path} contains an unsafe file path (${JSON.stringify(file?.path)}) for ${id}. ` +
-              'Paths must be relative and stay inside the install directory. Fix or delete the lockfile.'
-          );
-        }
+        requireSafe(file?.path, id);
         if (typeof file.sha256 !== 'string') throw malformed(`${id} has a file without a sha256`);
+      }
+      if (item.wiring !== undefined) {
+        if (!isObject(item.wiring) || typeof item.wiring.created !== 'boolean') {
+          throw malformed(`${id} has a malformed wiring record`);
+        }
+        requireSafe(item.wiring.path, id);
       }
     }
   }

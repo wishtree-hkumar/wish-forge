@@ -13,7 +13,9 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-const ALWAYS = new Set(['create', 'update', 'delete']);
+// wire and unwire rewrite a harness config with only forgeflow's entries
+// changed, so they are never conflicts and do not depend on force.
+const ALWAYS = new Set(['create', 'update', 'delete', 'wire', 'unwire']);
 const WITH_FORCE = new Set(['conflict', 'keep']);
 
 function touchesDisk(action, force) {
