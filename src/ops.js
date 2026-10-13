@@ -263,8 +263,8 @@ export function remove(ctx, refs, targets) {
 
 export function status(ctx) {
   const lock = readLock(baseOf(ctx));
-  return Object.entries(lock.targets).map(([target, entry]) => {
-    const { items } = entry;
+  return Object.entries(lock.targets).map(([target, installed]) => {
+    const { items } = installed;
     const adapter = getAdapter(target);
     const root = adapter.root(ctx.scope, ctx);
     const record = items[RUNTIME_ID]?.wiring;
@@ -276,8 +276,8 @@ export function status(ctx) {
           ? { path: record.path, state: wiringState(root, adapter.wiring) }
           : null,
       rules:
-        entry.rules && adapter.rulesWiring
-          ? { path: entry.rules.path, state: rulesState(root, adapter.rulesWiring(ctx.scope)) }
+        installed.rules && adapter.rulesWiring
+          ? { path: installed.rules.path, state: rulesState(root, adapter.rulesWiring(ctx.scope)) }
           : null,
       items: Object.entries(items).map(([id, entry]) => ({
         id,

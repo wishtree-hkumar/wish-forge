@@ -48,7 +48,7 @@ export function rulesWiring(scope) {
         RULES_INTRO,
         '',
         ...rules.map(
-          ({ name, applies }) => `- \`${dir}/${name}.md\`${applies ? `: ${applies}` : ''}`
+          (rule) => `- \`${dir}/${rule.name}.md\`${rule.applies ? `: ${rule.applies}` : ''}`
         ),
         END,
       ].join('\n'),
