@@ -183,12 +183,20 @@ not override it)
 The message names the file and the problem, and for OpenCode prints the
 entry to add by hand.
 
+**Wired by hand.** If forgeflow cannot use the OpenCode config (it does not
+parse, or only `opencode.jsonc` exists) but the file's text already contains
+the entry, forgeflow treats the rules as wired by the user: it installs the
+rule files, leaves the config alone, and keeps no record for it. This is what
+makes the printed instruction work on the next run.
+
 **Removing**
 
 - Removing a rule while others remain rewrites the Codex block and leaves the
   OpenCode entry.
 - Removing the last rule for a target removes the block, with the blank line
   forgeflow added, or the entry; an `instructions` list left empty is dropped.
+  An `AGENTS.md` that did not end in a newline before forgeflow added its
+  block ends in one afterwards.
 - The file is deleted only if forgeflow created it and nothing else is left:
   an `AGENTS.md` with only whitespace, or an `opencode.json` holding only
   `$schema`.
@@ -299,7 +307,8 @@ refused under section 6.
   at both scopes; `rulesLocation`; agent bodies filled.
 - **Block merging**: absent file, file without a block, file with a block,
   CRLF, byte-order mark, no trailing newline; every refused marker shape;
-  strip restores the original bytes; idempotent.
+  strip restores the original bytes of a file that ended in a newline;
+  idempotent.
 - **`instructions` merging**: absent file, no key, existing entries kept in
   order, entry already present; every refused shape; strip; lone `.jsonc`.
 - **Ops**: add one rule, add a second (Codex block grows, OpenCode entry
