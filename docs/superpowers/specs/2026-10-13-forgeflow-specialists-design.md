@@ -135,26 +135,27 @@ joins: review
 `stage` is already optional, so the other six specialists need no catalog
 change.
 
-### 4.2 The `{{agents-dir}}` placeholder
+### 4.2 Agents-folder placeholders
 
 A flow needs to know whether a specialist is installed for the harness it is
 running in. A project may have forgeflow installed for several harnesses, so
 the skill cannot list every harness's folder: the skill installed for Claude
-Code must look only in `.claude/agents`.
+Code must look only in Claude Code's folders.
 
-Skill bodies may contain the placeholder `{{agents-dir}}`. When an adapter
-renders a skill, it replaces every occurrence with that harness's agents
-folder, relative to the install root:
+Skill bodies may contain two placeholders. When an adapter renders a skill,
+it replaces every occurrence with that harness's agents folder:
 
-| Harness | Value |
-|---|---|
-| Claude Code | `.claude/agents` |
-| Codex | `.codex/agents` |
-| OpenCode | `.opencode/agents` |
-| Cursor | `.cursor/agents` |
+| Harness | `{{agents-dir}}` (project) | `{{global-agents-dir}}` (user) |
+|---|---|---|
+| Claude Code | `.claude/agents` | `~/.claude/agents` |
+| Codex | `.codex/agents` | `~/.codex/agents` |
+| OpenCode | `.opencode/agents` | `~/.config/opencode/agents` |
+| Cursor | `.cursor/agents` | `~/.cursor/agents` |
 
-- Each adapter exports the value as `agentsDir`, and its agent output path is
-  built from the same constant.
+- Each adapter exports the pair as `agentDirs = { project, global }`.
+- The same text is written whichever scope the skill is installed at, so a
+  globally installed flow still finds a specialist installed in the project,
+  and the reverse.
 - The catalog rejects any other `{{…}}` token in a skill body, so a typo
   cannot ship as literal text.
 - Agent bodies, supporting skill files and hook files are not substituted.
@@ -171,8 +172,8 @@ handles the review specialists, in this order: `security-reviewer`,
 `performance-reviewer`, `database-reviewer`, `accessibility-reviewer`.
 
 1. **Installed?** A specialist is installed when a file named for it (any
-   extension) exists in `{{agents-dir}}` in the project or in the user's home
-   directory. The orchestrator checks by listing those folders.
+   extension) exists in `{{agents-dir}}` in the project or in
+   `{{global-agents-dir}}`. The orchestrator checks by listing those folders.
 2. **Run.** It delegates to each installed specialist with the run directory
    path and saves the full reply as `07-review-<agent name>.md`.
 3. **Not installed.** It skips the specialist without comment and without
@@ -248,10 +249,11 @@ ordinary agent items.
 
 - **Catalog**: `joins` accepted on a read-only agent with no stage; rejected
   with a bad value, with a stage, and with write access; unknown placeholder
-  rejected; `{{agents-dir}}` accepted.
-- **Adapters**: each harness renders a skill with the placeholder replaced by
-  its own folder, in every occurrence; an agent body containing the same text
-  is left alone; `agentsDir` matches the path agents are written to.
+  rejected; both placeholders accepted.
+- **Adapters**: each harness renders a skill with both placeholders replaced
+  by its own folders, in every occurrence and at both scopes; an agent body
+  containing the same text is left alone; `agentDirs.project` matches the
+  path agents are written to.
 - **CLI**: `add --specialists` installs exactly the agents with no stage;
   combines with `--flow`; `list` shows `specialist`; `list --json` and `info`
   show `joins`.
@@ -275,7 +277,7 @@ Whether each harness's model finds and runs installed specialists is added to
 | Specialists are ordinary agent items | The whole install pipeline already works for them |
 | Flows do not require specialists | Installing a flow stays the same size; the user chooses the extra cost |
 | Detection by a file in the harness's own agents folder | Works for project and global installs, and for a project installed on several harnesses |
-| Placeholder filled by the adapter | Only the adapter knows the harness's folder; the skill text stays one source |
+| Placeholders filled by the adapter | Only the adapter knows the harness's folder; the skill text stays one source |
 | Not reading `.forgeflow/lock.json` to detect | It records project installs only, and one lock covers several harnesses |
 | Every installed review specialist runs every round | No per-change selection logic to get wrong; the agent itself says "nothing in scope" |
 | `joins` field in the catalog | One source for "which agents the flows call", checked against the skills by a test |
