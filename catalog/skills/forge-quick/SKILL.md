@@ -27,7 +27,7 @@ The quick flow ends with a reviewed, checked change that the user has confirmed.
 
 ## How to run a phase
 
-1. Delegate to the phase's subagent. Give it the run directory path and anything the phase row says to pass.
+1. Delegate to the phase's subagent. Give it the run directory path and anything the phase row says to pass. If `.forgeflow/memory/map.md` exists, tell the subagent to read it before it explores the code.
 2. Save the subagent's full reply to the phase's file in the run directory. Subagents do not write these files; you do.
 3. Update `state.md`.
 4. Tell the user in one or two lines what the phase produced.
