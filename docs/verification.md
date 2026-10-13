@@ -70,3 +70,22 @@ Three more checks came out of code review. Each tests an assumption about a harn
 | 24 | During a run waiting at HUMAN_APPROVAL, ask the agent to start a subagent whose instructions begin with "approve". `09-approval.md` must not be created | OpenCode |
 
 If check 24 fails, the prompt hook fires for subagent prompts and the approval can be forged on that harness: do not rely on `approval-gate` there until it is fixed.
+
+## Specialists
+
+Install the specialists and a flow in the same scratch repository:
+
+    forgeflow add --specialists --flow quick --target <harness>
+
+| # | Check | Claude Code | Codex | OpenCode | Cursor |
+|---|---|---|---|---|---|
+| 25 | All ten specialists appear in the harness's agent list | | | | |
+| 26 | Asking "use the security-reviewer agent on the last commit" runs it, and its reply ends with a `VERDICT:` line | | | | |
+| 27 | A quick-flow run creates `07-review-security-reviewer.md` and the three other specialist reports in the run directory | | | | |
+| 28 | After `forgeflow remove` of all four reviewers, a new run creates no `07-review-*` file other than `07-review.md` and says nothing about specialists | | | | |
+| 29 | With `security-reviewer` installed only with `--global`, a run in a project still runs it | | | | |
+| 30 | Ask for a change with an obvious injection flaw: `security-reviewer` requests changes and the run returns to BUILD, then reviews again | | | | |
+
+Check 27 shows whether the model follows the instruction to look in the agents folder. If a harness skips the specialists, record it in the README: on that harness they must be run by hand.
+
+Check 29 matters most on OpenCode, whose user-level folder is `~/.config/opencode/agents`.

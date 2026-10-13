@@ -24,6 +24,8 @@ forgeflow list                                   # what is available
 forgeflow add reviewer --target cursor           # one agent
 forgeflow add --flow quick --target claude       # a flow and the agents it needs
 forgeflow add --flow full --target claude,codex  # several harnesses at once
+forgeflow add security-reviewer --target claude  # one specialist
+forgeflow add --specialists --target claude      # all ten specialists
 forgeflow status                                 # what is installed here
 forgeflow update                                 # rewrite installed files from the current catalog
 forgeflow remove reviewer --target cursor
@@ -72,6 +74,27 @@ The stops in a flow are instructions to the model. Install the quality gates bel
 | `feedback`            | FEEDBACK     | no               |
 
 Every agent also works on its own, outside a flow.
+
+### Specialists
+
+Specialists own a subject instead of a stage. Install the ones you want; none comes with a flow.
+
+| Agent                    | Does                                                                    | Can change files |
+| ------------------------ | ----------------------------------------------------------------------- | ---------------- |
+| `security-reviewer`      | Reviews a change for security defects and gives a verdict               | no               |
+| `performance-reviewer`   | Reviews a change for performance defects and gives a verdict            | no               |
+| `database-reviewer`      | Reviews schema changes, migrations and queries and gives a verdict      | no               |
+| `accessibility-reviewer` | Reviews interface changes for accessibility and gives a verdict         | no               |
+| `api-designer`           | Designs an interface before it is built                                 | no               |
+| `test-strategist`        | Says what to test, at which level, and what is missing                  | no               |
+| `dependency-auditor`     | Audits dependencies and recommends an action for each                   | no               |
+| `debugger`               | Finds the root cause of a failure and proposes a fix, without applying  | no               |
+| `docs-writer`            | Writes or updates documentation for code that exists                    | yes (docs only)  |
+| `refactorer`             | Restructures code without changing behavior, tests run before and after | yes              |
+
+The four reviewers are also used by the flows. At REVIEW, a flow runs each one that is installed for that harness, saves its report as `07-review-<agent name>.md` in the run directory, and returns to BUILD if any of them requests changes. With none installed, a flow runs exactly as before. Each installed reviewer adds one subagent run to every review round, including for changes outside its subject.
+
+A specialist is a prompt for your harness's model, not a tool: `security-reviewer` is not a scanner, and `accessibility-reviewer` reads the code without running the interface.
 
 ## Quality gates
 
@@ -138,6 +161,8 @@ forgeflow records what it installed in `.forgeflow/lock.json`. It never overwrit
 - An agent is one file, `catalog/agents/<name>.md`.
 - A skill is a folder, `catalog/skills/<name>/SKILL.md`.
 - A gate is a folder, `catalog/hooks/<name>/`, with `HOOK.md` and `gate.mjs`. `gate.mjs` exports `check(event, ctx)` and may import only `node:` built-ins.
+- An agent with no `stage` is a specialist. Add `joins: review` to a read-only specialist to mark it as one the flows run at REVIEW, and name it in both flow skills: a test fails if the two disagree.
+- A skill body may use `{{agents-dir}}` and `{{global-agents-dir}}`. Each harness's installer replaces them with that harness's agents folders.
 
 The frontmatter fields are described in `docs/superpowers/specs/2026-10-13-forgeflow-core-design.md`, section 4. Run `forgeflow doctor` to validate the catalog, and `npm test` before committing.
 
