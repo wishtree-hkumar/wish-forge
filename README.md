@@ -161,10 +161,12 @@ That installs one hook and two commands:
 | `session-memory` | Records what each session changes and is asked, and gives a new or compacted session the project's memory                              |
 | `forge-lesson`   | Has the agent add one durable project fact to the lessons file. The agent also does this on its own when you correct it, and tells you |
 | `forge-handoff`  | Has the agent write a note for the next session: done, in progress, next, decisions, open questions                                    |
+| `forge-map`      | Builds or refreshes the project map, using the `mapper` agent. Only you can start it                                                   |
 
 | File                           | Written by                              | Committed | Holds                                                                                                    |
 | ------------------------------ | --------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------- |
 | `.forgeflow/memory/lessons.md` | the agent                               | yes       | One line per lesson, shared with your team                                                               |
+| `.forgeflow/memory/map.md`     | the agent, when you run `forge-map`     | yes       | The project map                                                                                          |
 | `.forgeflow/local/session.md`  | the hook                                | no        | When the last two sessions ran, their branch, the files they changed and your last three prompts in each |
 | `.forgeflow/local/handoff.md`  | the agent, when you run `forge-handoff` | no        | The handoff note                                                                                         |
 
@@ -178,6 +180,30 @@ At session start the model receives the lessons, the handoff note and the last s
 | `codex`    | a hook adds the memory                                 | as Claude Code                                                                    |
 | `cursor`   | a hook adds the memory                                 | Cursor cannot add context here, so you are told which files to point the agent at |
 | `opencode` | the files are listed in `opencode.json` `instructions` | the record is added to the compaction prompt                                      |
+
+### The project map
+
+Most tasks begin with the agent reading the same files to find its way around. Run `forge-map` once and it writes `.forgeflow/memory/map.md`: a short description of the project, under fixed headings.
+
+| Section           | Holds                                                           |
+| ----------------- | --------------------------------------------------------------- |
+| Purpose           | What the project is, in a line or two                           |
+| Stack             | Languages, frameworks and versions, from the manifests          |
+| Commands          | Install, run, test, lint and build, as the project defines them |
+| Layout            | The main folders, one line each                                 |
+| Entry points      | Where execution starts                                          |
+| Where things live | "To change X, look in Y" for the main concerns                  |
+| Conventions       | Naming, test placement and patterns the code follows            |
+| Configuration     | Names of settings and environment variables, never their values |
+| Do not touch      | Generated and vendored folders                                  |
+| Not determined    | What the agent looked for and could not establish               |
+
+The map is committed, so your team shares it. Every new session receives it with the rest of the memory, and the flows tell each stage agent to read it first. Run `forge-map` again to have the agent check the map against the code and update it.
+
+- The map is a model's reading of the code and can be wrong. Review it like any change.
+- It changes only when you run `forge-map`. When it is more than 30 days old, new sessions are told so. That is by date only: forgeflow cannot tell how much the code changed.
+- It takes up to 3,000 characters of every session's context on Claude Code, Codex and Cursor, and the whole file on OpenCode, which also gives no age warning.
+- One map per project. In a monorepo it covers the top levels only.
 
 ### What session memory does not do
 

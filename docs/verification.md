@@ -159,3 +159,17 @@ Three more checks cover harness behavior the design assumes and no test here can
 | 53 | In a session with several edits, the cost or speed of later turns does not degrade compared with a project without session memory. `session.md` changes on every write and prompt; if OpenCode re-reads `instructions` on each model call, its prompt cache is lost every turn | OpenCode |
 
 If check 53 fails, remove `.forgeflow/local/*.md` from `instructions` on OpenCode and record it in the README: the lessons still load, and the session record stays readable on request.
+
+## Project map
+
+With `--memory` installed in a scratch repository that has real source code:
+
+| # | Check | Claude Code | Codex | OpenCode | Cursor |
+|---|---|---|---|---|---|
+| 54 | Run `forge-map`. `.forgeflow/memory/map.md` is written with Purpose, Commands and Layout, a `Generated` line with today's date, and is under 6,000 bytes | | | | |
+| 55 | Pick five statements from the map and check each against the code. All five are true | | | | |
+| 56 | Start a new session and ask where one of the map's concerns is handled. The agent answers from the map, opening at most the file it names | | | | |
+| 57 | Change the date in the `Generated` line to two months ago and start a new session. The agent says the map may be out of date (not OpenCode) | | | | |
+| 58 | Start a quick-flow run. The first stage's subagent reads `.forgeflow/memory/map.md` before exploring | | | | |
+
+Check 55 is the one that shows whether the map can be trusted. If more than one statement in five is wrong on a harness, record it in the README.
