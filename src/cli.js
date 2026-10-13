@@ -53,6 +53,7 @@ const LABELS = {
   missing: 'already gone',
   wire: 'wired',
   unwire: 'unwired',
+  manual: 'by hand',
 };
 const NOTHING = 'Nothing is installed here.\n';
 

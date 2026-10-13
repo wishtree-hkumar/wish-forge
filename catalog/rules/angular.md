@@ -2,16 +2,12 @@
 name: angular
 description: Angular standards - components, signals and RxJS, templates, dependency injection and tests.
 paths:
-  - "**/*.component.ts"
-  - "**/*.component.html"
-  - "**/*.service.ts"
-  - "**/*.directive.ts"
-  - "**/*.pipe.ts"
-  - "**/*.module.ts"
+  - "**/*.ts"
+  - "**/*.html"
 ---
 # Angular standards
 
-These follow current Angular. Where the project is on an older version, keep to the style its code already uses.
+These apply only in an Angular project, and follow current Angular. Where the project is on an older version, keep to the style its code already uses.
 
 ## Components
 

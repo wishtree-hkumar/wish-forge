@@ -1,5 +1,6 @@
 import {
   accessSync,
+  chmodSync,
   constants,
   existsSync,
   lstatSync,
@@ -39,7 +40,15 @@ export function checkWritable(root, actions, force = false) {
 function writeAtomic(full, content) {
   mkdirSync(dirname(full), { recursive: true });
   const tmp = `${full}.forgeflow-tmp-${process.pid}`;
-  writeFileSync(tmp, content);
+  // A file being replaced keeps its permissions: a harness config may hold secrets.
+  let mode;
+  try {
+    mode = statSync(full).mode & 0o7777;
+  } catch {
+    // a new file gets the default mode
+  }
+  writeFileSync(tmp, content, mode === undefined ? {} : { mode });
+  if (mode !== undefined) chmodSync(tmp, mode);
   renameSync(tmp, full);
 }
 

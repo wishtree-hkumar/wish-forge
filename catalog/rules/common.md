@@ -4,7 +4,7 @@ description: Coding standards for every language - naming, functions, errors, te
 ---
 # Common standards
 
-These apply to all code. Where a rule here differs from what this project already does consistently, the project's convention wins: match the code around you.
+These apply to all code you add or change. Do not rewrite code a task does not touch to make it comply, unless you are asked to. Where a rule here differs from what this project already does consistently, the project's convention wins: match the code around you.
 
 ## Naming and structure
 
@@ -54,5 +54,5 @@ These apply to all code. Where a rule here differs from what this project alread
 ## Version control
 
 - One logical change per commit, with a message that says why.
-- Do not commit generated files, build output, editor settings or secrets.
+- Do not commit generated files, build output, personal editor settings or secrets.
 - Use the project's formatter and linter, and leave no warnings behind.

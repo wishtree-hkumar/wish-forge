@@ -186,11 +186,14 @@ describe('opencode', () => {
     writeFileSync(join(cwd, 'opencode.jsonc'), byHand);
     const accepted = run('add', 'common', '--target', 'opencode');
     expect(accepted.code).toBe(0);
-    expect(accepted.out).toMatch(/unchanged\s+opencode\.jsonc/);
+    expect(accepted.out).toMatch(/by hand\s+opencode\.jsonc/);
     expect(has('.opencode/forgeflow/rules/common.md')).toBe(true);
     expect(has('opencode.json')).toBe(false);
     expect(read('opencode.jsonc')).toBe(byHand);
-    expect(readLock(cwd).targets.opencode.rules).toBeUndefined();
+    expect(readLock(cwd).targets.opencode.rules).toMatchObject({
+      path: 'opencode.jsonc',
+      manual: true,
+    });
 
     expect(run('remove', 'common', '--target', 'opencode').code).toBe(0);
     expect(read('opencode.jsonc')).toBe(byHand);

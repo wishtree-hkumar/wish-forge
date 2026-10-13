@@ -28,7 +28,7 @@ These assume Vue 3. In a Vue 2 project, follow the project's existing component 
 ## Reactivity
 
 - Use `ref` for single values and `reactive` for objects you never replace. Pick one habit per project.
-- Never destructure a reactive object or props without `toRefs` or a getter. The result is no longer reactive.
+- Never destructure a reactive object without `toRefs` or a getter: the result is no longer reactive. Destructure props only through `defineProps` on Vue 3.5 or later, where they stay reactive.
 - Compute derived values with `computed`. A computed getter has no side effects and does not change state.
 - Use a watcher only to cause an effect outside the component's state: a request, storage, the document. Do not use one to keep two pieces of state in step.
 - Clean up what a watcher or lifecycle hook starts: timers, listeners, subscriptions.

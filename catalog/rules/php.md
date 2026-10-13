@@ -8,7 +8,7 @@ paths:
 
 ## Language
 
-- Start every file with `declare(strict_types=1);`.
+- New PHP source files start with `declare(strict_types=1);`. Do not add it to an existing file or to a template without checking its callers: it changes how calls behave.
 - Follow PSR-12 as the project's formatter applies it, and PSR-4 for where classes live.
 - Declare a type for every parameter, return value and property. Use `?T` or a union when a value can be absent.
 - Compare with `===` and `!==`. Never rely on loose comparison or type juggling.

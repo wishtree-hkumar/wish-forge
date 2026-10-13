@@ -53,7 +53,9 @@ function validate(path, lock) {
       }
     }
     if (entry.rules !== undefined) {
-      if (!isObject(entry.rules) || typeof entry.rules.created !== 'boolean') {
+      const { created, manual } = entry.rules ?? {};
+      const flags = typeof created === 'boolean' && [undefined, true, false].includes(manual);
+      if (!isObject(entry.rules) || !flags) {
         throw malformed(`target "${target}" has a malformed rules record`);
       }
       requireSafe(entry.rules.path, `target "${target}"`);

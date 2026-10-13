@@ -22,17 +22,7 @@ const EXPECTED = [
   ['go', ['**/*.go']],
   ['react', ['**/*.tsx', '**/*.jsx']],
   ['vue', ['**/*.vue']],
-  [
-    'angular',
-    [
-      '**/*.component.ts',
-      '**/*.component.html',
-      '**/*.service.ts',
-      '**/*.directive.ts',
-      '**/*.pipe.ts',
-      '**/*.module.ts',
-    ],
-  ],
+  ['angular', ['**/*.ts', '**/*.html']],
 ];
 const NAMES = EXPECTED.map(([name]) => name);
 const HARNESS_TOOL =

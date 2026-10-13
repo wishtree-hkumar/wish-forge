@@ -54,7 +54,7 @@ code looks like in a stack, and stay in force for every task. Phase 3b adds:
 | `go` | Go | `**/*.go` |
 | `react` | React components and hooks | `**/*.tsx`, `**/*.jsx` |
 | `vue` | Vue single-file components | `**/*.vue` |
-| `angular` | Angular components, services, templates | `**/*.component.ts`, `**/*.component.html`, `**/*.service.ts`, `**/*.directive.ts`, `**/*.pipe.ts`, `**/*.module.ts` |
+| `angular` | Angular components, services, templates | `**/*.ts`, `**/*.html` (the pack says it applies only in an Angular project; current Angular no longer names files `*.component.ts`) |
 
 Content contract for every pack:
 
@@ -160,13 +160,15 @@ wiring of phase 2.
 **Merging**
 
 - `AGENTS.md`: only the text from the start marker to the end marker is
-  forgeflow's. With no block present, the block is appended after one blank
+  forgeflow's. A marker counts only when it is a whole line, so text that
+  mentions one is left alone. With no block present, the block is appended after one blank
   line. With a block present, it is replaced in place. All other bytes are
   kept, including a byte-order mark; a file that uses CRLF gets the block in
   CRLF.
 - `opencode.json`: the entry is appended to `instructions` if absent. No
   other key or entry is added, removed or reordered. The file is written back
   as two-space JSON.
+- A rewritten file keeps its permissions.
 - A file that is a symbolic link is edited through the link: the link stays,
   its target changes. If the target is outside the install root, forgeflow
   refuses.
@@ -185,9 +187,13 @@ entry to add by hand.
 
 **Wired by hand.** If forgeflow cannot use the OpenCode config (it does not
 parse, or only `opencode.jsonc` exists) but the file's text already contains
-the entry, forgeflow treats the rules as wired by the user: it installs the
-rule files, leaves the config alone, and keeps no record for it. This is what
-makes the printed instruction work on the next run.
+the entry in its `instructions` list (read as JSON with comments and trailing
+commas allowed), forgeflow treats the rules as wired by the user: it installs
+the rule files, leaves the config alone, reports the file as `by hand`, and
+records it with `manual: true`. This is what makes the printed instruction
+work on the next run. Removing rules is never stopped by an OpenCode config
+forgeflow cannot edit: the rule files go, the config is left alone, and
+forgeflow says which entry to take out by hand.
 
 **Removing**
 

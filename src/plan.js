@@ -147,18 +147,27 @@ function nextRulesText(wiring, current, rules) {
   return { text, bare: same(next, wiring.skeleton) };
 }
 
-// A config forgeflow cannot use is still fine when the user has put the entry
-// in by hand. Returns the path of that file, or undefined.
+const BY_HAND = 'forgeflow leaves this file alone; the entry is already there';
+const takeOut = (entry) => `remove ${JSON.stringify(entry)} from its "instructions" list`;
+
+function parses(wiring, text) {
+  try {
+    parseInstructions(text, wiring.path, wiring.entry);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// A config forgeflow will not edit is still fine when the user has put the
+// entry in by hand. Returns the path of that file, or undefined when forgeflow
+// can edit the config itself. Throws when neither holds.
 function wiredByHand(root, wiring, path, current) {
   if (wiring.kind !== 'json') return undefined;
   if (current !== undefined) {
-    try {
-      parseInstructions(current, wiring.path, wiring.entry);
-      return undefined;
-    } catch (error) {
-      if (handWired(current, wiring.entry)) return path;
-      throw error;
-    }
+    if (parses(wiring, current)) return undefined;
+    if (handWired(current, wiring.entry)) return path;
+    return parseInstructions(current, wiring.path, wiring.entry);
   }
   const other = readText(root, wiring.alternative);
   if (other === undefined) return undefined;
@@ -170,16 +179,39 @@ function wiredByHand(root, wiring, path, current) {
   );
 }
 
+// The config forgeflow cannot edit, if that is the state of things: the file
+// to name and whether the entry is in it.
+function uneditable(root, wiring, path, current) {
+  if (wiring.kind !== 'json') return undefined;
+  if (current !== undefined) {
+    if (parses(wiring, current)) return undefined;
+    return { file: path, wired: handWired(current, wiring.entry) };
+  }
+  const other = readText(root, wiring.alternative);
+  if (other === undefined) return undefined;
+  return { file: wiring.alternative, wired: handWired(other, wiring.entry) };
+}
+
 // rules is every rule the target will have after the operation: [{ name, applies }].
-// An empty list takes forgeflow's part out again. previous is the lockfile record.
-export function planRulesWiring(root, wiring, rules, previous) {
+// An empty list takes forgeflow's part out again. previous is the lockfile
+// record. removing is true when the operation takes rules away: a config that
+// cannot be edited then never stops it.
+export function planRulesWiring(root, wiring, rules, previous, { removing = false } = {}) {
   const path = throughLink(root, wiring.path);
   const current = readText(root, path);
   const row = (type, extra = {}) => ({ id: RULES_ID, type, path, ...extra });
 
   if (rules.length > 0) {
+    const stuck = removing ? uneditable(root, wiring, path, current) : undefined;
+    if (stuck && !stuck.wired)
+      return { action: row('skip', { path: stuck.file }), record: previous };
     const byHand = wiredByHand(root, wiring, path, current);
-    if (byHand) return { action: { id: RULES_ID, type: 'skip', path: byHand }, record: null };
+    if (byHand) {
+      return {
+        action: row('manual', { path: byHand, reason: BY_HAND }),
+        record: { path: byHand, created: false, manual: true },
+      };
+    }
     const { text } = nextRulesText(wiring, current, rules);
     const created = current === undefined ? true : (previous?.created ?? false);
     return {
@@ -188,6 +220,13 @@ export function planRulesWiring(root, wiring, rules, previous) {
     };
   }
 
+  const stuck = uneditable(root, wiring, path, current);
+  if (stuck) {
+    const action = stuck.wired
+      ? row('manual', { path: stuck.file, reason: takeOut(wiring.entry) })
+      : row('skip', { path: stuck.file });
+    return { action, record: null };
+  }
   if (current === undefined) return { action: row('missing'), record: null };
   const { text, bare } = nextRulesText(wiring, current, rules);
   if (text === current) return { action: row('skip'), record: null };
@@ -197,7 +236,10 @@ export function planRulesWiring(root, wiring, rules, previous) {
 
 export function rulesState(root, wiring) {
   try {
-    const current = readText(root, throughLink(root, wiring.path));
+    const path = throughLink(root, wiring.path);
+    const current = readText(root, path);
+    const stuck = uneditable(root, wiring, path, current);
+    if (stuck) return stuck.wired ? 'ok' : 'unreadable';
     if (current === undefined) return 'missing';
     if (wiring.kind === 'block') return hasBlock(current, wiring.path) ? 'ok' : 'missing';
     const config = parseInstructions(current, wiring.path, wiring.entry);

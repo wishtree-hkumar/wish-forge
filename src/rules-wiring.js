@@ -7,22 +7,23 @@ export const END = '<!-- forgeflow:rules:end -->';
 
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const clone = (value) => JSON.parse(JSON.stringify(value));
-const count = (text, needle) => text.split(needle).length - 1;
+const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// A marker counts only when it is a whole line, so text that mentions one is left alone.
+const lineOf = (marker) => new RegExp(`^${escaped(marker)}[ \\t]*\\r?$`, 'gm');
+const offsets = (text, marker) => [...text.matchAll(lineOf(marker))].map((match) => match.index);
 
 // Returns the block's { start, end } offsets, or null when the text has none.
 function locate(text, path) {
-  const starts = count(text, START);
-  const ends = count(text, END);
-  if (starts === 0 && ends === 0) return null;
-  const start = text.indexOf(START);
-  const end = text.indexOf(END);
-  if (starts !== 1 || ends !== 1 || end < start) {
+  const starts = offsets(text, START);
+  const ends = offsets(text, END);
+  if (starts.length === 0 && ends.length === 0) return null;
+  if (starts.length !== 1 || ends.length !== 1 || ends[0] < starts[0]) {
     throw new ConfigError(
       `${path} has damaged forgeflow markers (expected one "${START}" followed by one "${END}"). ` +
         'forgeflow will not modify it: repair the markers, or delete them and the text between them, and re-run.'
     );
   }
-  return { start, end: end + END.length };
+  return { start: starts[0], end: ends[0] + END.length };
 }
 
 export function hasBlock(text, path) {
@@ -69,9 +70,41 @@ export function parseInstructions(text, path, entry) {
   return config;
 }
 
-// True when a config forgeflow cannot use already holds the entry as a string.
+// JSON with comments and trailing commas, reduced to plain JSON. String
+// literals are kept whole, so a "//" inside one is not taken for a comment.
+function plainJson(text) {
+  const pieces =
+    text.match(/"(?:[^"\\]|\\.)*"?|\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)|[^"/]+|\//g) ?? [];
+  let out = '';
+  let code = '';
+  const flush = () => {
+    out += code.replace(/,(?=\s*[}\]])/g, '');
+    code = '';
+  };
+  for (const piece of pieces) {
+    if (piece.startsWith('//') || piece.startsWith('/*')) continue;
+    if (piece.startsWith('"')) {
+      flush();
+      out += piece;
+    } else {
+      code += piece;
+    }
+  }
+  flush();
+  return out;
+}
+
+// True when a config forgeflow will not edit (it has comments, or is a .jsonc
+// file) really holds the entry in its "instructions" list.
 export function handWired(text, entry) {
-  return text.includes(JSON.stringify(entry));
+  try {
+    const config = JSON.parse(plainJson(text));
+    return isObject(config) && Array.isArray(config.instructions)
+      ? config.instructions.includes(entry)
+      : false;
+  } catch {
+    return false;
+  }
 }
 
 export function mergeInstructions(config, { entry, skeleton }) {

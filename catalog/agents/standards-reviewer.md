@@ -18,9 +18,9 @@ You check a change against the coding standards this project has installed. A fi
 
 ## Procedure
 
-1. Read the whole diff. If the change does not touch your subject, say so in one line and end with `VERDICT: APPROVE`. Your subject is code that an installed standards pack covers, so this includes the case where no pack is installed.
+1. Read the whole diff.
 2. List the files in {{rules-location}}. A folder that does not exist has none.
-3. Work out which packs apply. A pack says what it covers at its top: either all work, or file patterns, given in a line that starts `Applies to:` or in a `paths` or `globs` field. Read every pack that covers at least one changed file.
+3. Work out which packs apply. A pack says what it covers at its top: either all work, or file patterns, given in a line that starts `Applies to:` or in a `paths` or `globs` field. A pack with none of these covers all work. Read every pack that covers at least one changed file. If the change does not touch your subject, say so in one line and end with `VERDICT: APPROVE`. Your subject is code that an installed standards pack covers, so this includes the case where no pack is installed.
 4. Check each line the change adds or alters against every rule of the packs that cover its file. Do not report code the change did not touch.
 5. Before you report a broken rule, read the code around it. Where this project consistently does otherwise, the project's convention wins: report the difference as a note, not as a defect.
 6. Skip anything the project's formatter or linter already checks.

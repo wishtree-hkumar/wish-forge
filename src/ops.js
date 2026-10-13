@@ -21,7 +21,8 @@ const baseOf = (ctx) => (ctx.scope === 'global' ? ctx.home : ctx.cwd);
 const isHookItem = (item) => item.type === 'hook' || item.type === 'runtime';
 const isRuleId = (id) => id.startsWith('rule:');
 // Hook wiring rows carry no id of their own; rules wiring rows do.
-const wiringRow = ({ id = RUNTIME_ID, type, path }) => ({ id, type, path });
+const wiringRow = ({ id = RUNTIME_ID, type, path, reason }) =>
+  reason ? { id, type, path, reason } : { id, type, path };
 
 // What a harness needs to list each rule, in name order. A rule that has left
 // the catalog is still installed, so it stays listed without its patterns.
@@ -246,7 +247,8 @@ export function remove(ctx, refs, targets) {
           root,
           rulesWiring,
           describeRules(ctx.catalog, staying),
-          record
+          record,
+          { removing: true }
         );
         before.push(planned.action);
         rules = planned.record;
