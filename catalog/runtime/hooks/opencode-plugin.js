@@ -1,4 +1,4 @@
-// OpenCode plugin: runs forgeflow gates before tool calls and on user messages.
+// OpenCode plugin: runs forgeflow hooks before tool calls, on user messages and before compaction.
 // Lives in .opencode/plugins/; the runtime and gates live in .opencode/forgeflow/.
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -17,27 +17,34 @@ export const ForgeflowGates = async () => {
     return {}; // a broken install must not stop OpenCode from starting
   }
 
-  const check = (payload) => {
-    let result;
+  const evaluate = (payload) => {
     try {
-      result = runtime.evaluate({ harness: 'opencode', payload, root, gates });
+      return runtime.evaluate({ harness: 'opencode', payload, root, gates });
     } catch {
-      return; // fail open
+      return {}; // fail open
     }
+  };
+  const check = (payload) => {
+    const result = evaluate(payload);
     if (result.block) throw new Error(result.block);
   };
 
   return {
     'tool.execute.before': async (input, output) => {
-      check({ hook: 'tool', tool: input?.tool, args: output?.args });
+      check({ hook: 'tool', tool: input?.tool, args: output?.args, session: input?.sessionID });
     },
-    'chat.message': async (_input, output) => {
+    'chat.message': async (input, output) => {
       const parts = Array.isArray(output?.parts) ? output.parts : [];
       const text = parts
         .filter((part) => part?.type === 'text' && typeof part.text === 'string')
         .map((part) => part.text)
         .join('\n');
-      check({ hook: 'prompt', text });
+      check({ hook: 'prompt', text, session: input?.sessionID });
+    },
+    // The only place OpenCode lets a plugin add to what survives compaction.
+    'experimental.session.compacting': async (input, output) => {
+      const result = evaluate({ hook: 'compact', session: input?.sessionID });
+      if (Array.isArray(output?.context)) output.context.push(...(result.contexts ?? []));
     },
   };
 };

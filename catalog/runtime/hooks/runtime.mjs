@@ -38,6 +38,8 @@ const CURSOR_WRITE_TOOLS = new Set([
   'EditNotebook',
 ]);
 const OPENCODE_WRITE_TOOLS = new Set(['write', 'edit', 'multiedit']);
+// A resumed or forked session already holds what its first start was given.
+const START_SOURCES = new Set(['startup', 'clear', 'compact']);
 const HOOK_DIR = /\.(claude|codex|cursor|opencode)\/forgeflow\b/i;
 const SHELL_CHANGE =
   /(^|[\s;&|(])(rm|mv|cp|sed|tee|chmod|chown|truncate|ln|dd|install|rmdir|unlink|touch|rsync)\b|>/;
@@ -262,6 +264,10 @@ export function normalize(harness, payload, root) {
   const patch = (body) => parsePatch(body).map((file) => write(file.path, file.content));
 
   if (harness === 'claude' || harness === 'codex') {
+    if (event === 'SessionStart') {
+      const source = text(data.source) || 'startup';
+      return START_SOURCES.has(source) ? [{ kind: 'start', source }] : [];
+    }
     if (event === 'UserPromptSubmit') return [{ kind: 'prompt', text: text(data.prompt) }];
     if (event === 'Stop') return data.stop_hook_active ? [] : [{ kind: 'stop' }];
     if (event !== 'PreToolUse') return [];
@@ -281,6 +287,8 @@ export function normalize(harness, payload, root) {
   }
 
   if (harness === 'cursor') {
+    if (event === 'sessionStart') return [{ kind: 'start', source: 'startup' }];
+    if (event === 'preCompact') return [{ kind: 'compact' }];
     if (event === 'beforeSubmitPrompt') return [{ kind: 'prompt', text: text(data.prompt) }];
     if (event === 'stop') return data.loop_count ? [] : [{ kind: 'stop' }];
     if (event !== 'preToolUse') return [];
@@ -297,6 +305,7 @@ export function normalize(harness, payload, root) {
   }
 
   if (harness === 'opencode') {
+    if (data.hook === 'compact') return [{ kind: 'compact' }];
     if (data.hook === 'prompt') return [{ kind: 'prompt', text: text(data.text) }];
     if (data.hook !== 'tool') return [];
     const args = data.args ?? {};
@@ -318,7 +327,7 @@ export function normalize(harness, payload, root) {
 export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
   const events = normalize(harness, payload, root);
   const { config, warnings } = loadConfig(root);
-  const notes = [];
+  const said = { notes: [], contexts: [], tells: [] };
   const runs = findRuns(root, now);
   const ctx = {
     root,
@@ -327,13 +336,15 @@ export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
     run: runs[0] ?? null,
     runs,
     state: stateStore(root),
+    // Claude Code and Codex send session_id, Cursor conversation_id, the OpenCode plugin session.
+    session: text(payload?.session_id) || text(payload?.conversation_id) || text(payload?.session),
     now,
     matchesGlob,
   };
 
   for (const event of events) {
     const guard = selfProtect(event, root);
-    if (guard) return { events, block: guard, notes, warnings };
+    if (guard) return { events, block: guard, ...said, warnings };
     for (const gate of gates) {
       let result;
       try {
@@ -342,25 +353,41 @@ export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
         warnings.push(`forgeflow: gate ${gate.name} failed (${error.message}) and was skipped.`);
         continue;
       }
-      if (result?.block) return { events, block: result.block, notes, warnings };
-      if (result?.note) notes.push(result.note);
+      if (result?.block) return { events, block: result.block, ...said, warnings };
+      if (result?.note) said.notes.push(result.note);
+      // context is background for the model; tell is a message for the person.
+      if (result?.context) said.contexts.push(result.context);
+      if (result?.tell) said.tells.push(result.tell);
     }
   }
-  return { events, notes, warnings };
+  return { events, ...said, warnings };
 }
 
-export function respond(harness, payload, { events, block, notes, warnings }) {
+export function respond(
+  harness,
+  payload,
+  { events, block, notes, contexts = [], tells = [], warnings }
+) {
   const allow = { code: 0, stdout: '', stderr: '' };
-  const isStop = events.some((event) => event.kind === 'stop');
+  const has = (kind) => events.some((event) => event.kind === kind);
+  const isStop = has('stop');
   // Warnings ride along with a prompt only: on tool calls they would repeat
   // constantly, and on stop they would keep the turn from ending.
-  const isPrompt = events.some((event) => event.kind === 'prompt');
-  const message = [...notes, ...(isPrompt ? warnings : [])].join('\n');
+  const message = [...notes, ...(has('prompt') ? warnings : [])].join('\n');
+  // Context is delivered only as a session starts; anywhere else it is dropped.
+  const added = [...(has('start') ? contexts : []), message].filter(Boolean).join('\n\n');
 
   if (harness === 'cursor') {
     if (block) {
       const deny = { permission: 'deny', user_message: block, agent_message: block };
       return { code: 2, stdout: JSON.stringify(deny), stderr: block };
+    }
+    if (has('start') && added) {
+      return { ...allow, stdout: JSON.stringify({ additional_context: added }) };
+    }
+    // Cursor's compaction hook can show the person a message and nothing more.
+    if (has('compact') && tells.length > 0) {
+      return { ...allow, stdout: JSON.stringify({ user_message: tells.join('\n') }) };
     }
     if (isStop && message)
       return { ...allow, stdout: JSON.stringify({ followup_message: message }) };
@@ -368,9 +395,13 @@ export function respond(harness, payload, { events, block, notes, warnings }) {
   }
 
   if (block) return { code: 2, stdout: '', stderr: block };
-  if (!message) return allow;
-  if (isStop) return { ...allow, stdout: JSON.stringify({ decision: 'block', reason: message }) };
-  const context = { hookEventName: payload?.hook_event_name, additionalContext: message };
+  if (isStop) {
+    return message
+      ? { ...allow, stdout: JSON.stringify({ decision: 'block', reason: message }) }
+      : allow;
+  }
+  if (!added) return allow;
+  const context = { hookEventName: payload?.hook_event_name, additionalContext: added };
   return { ...allow, stdout: JSON.stringify({ hookSpecificOutput: context }) };
 }
 
