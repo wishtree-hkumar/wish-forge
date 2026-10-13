@@ -1,6 +1,6 @@
 import { UsageError } from './errors.js';
 
-const TYPES = ['agent', 'skill'];
+const TYPES = ['agent', 'skill', 'hook'];
 const unknown = (ref) =>
   new UsageError(`unknown item "${ref}". Run "forgeflow list" to see available items.`);
 

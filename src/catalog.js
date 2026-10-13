@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { CatalogError } from './errors.js';
 import { parseFrontmatter } from './frontmatter.js';
+import { RUNTIME_ID } from './wiring.js';
 
 export const STAGES = [
   'requirement',
@@ -17,12 +18,16 @@ export const STAGES = [
   'deploy',
   'feedback',
 ];
+export const EVENTS = ['shell', 'write', 'prompt', 'stop'];
 const ACCESS = ['read-only', 'write'];
 const TIERS = ['fast', 'balanced', 'strong'];
 const NAME_RE = /^[a-z][a-z0-9-]{0,62}$/;
+const RUNTIME_SOURCES = ['run.mjs', 'runtime.mjs', 'opencode-plugin.js'];
 const FIELDS = {
   agent: ['name', 'description', 'stage', 'access', 'model-tier', 'requires'],
   skill: ['name', 'description', 'user-invocable-only', 'requires'],
+  hook: ['name', 'description', 'events', 'requires'],
+  runtime: ['name', 'description'],
 };
 
 function fail(source, problem) {
@@ -32,8 +37,9 @@ function fail(source, problem) {
 function oneOf(source, data, field, allowed, required) {
   const value = data[field];
   if (value === undefined && !required) return undefined;
-  if (!allowed.includes(value))
+  if (!allowed.includes(value)) {
     fail(source, `field "${field}" must be one of: ${allowed.join(', ')}`);
+  }
   return value;
 }
 
@@ -73,7 +79,7 @@ function buildItem(type, expectedName, text, source) {
     type,
     name: data.name,
     description,
-    requires,
+    requires: [...requires],
     body,
     files: [],
     source,
@@ -82,11 +88,17 @@ function buildItem(type, expectedName, text, source) {
     item.stage = oneOf(source, data, 'stage', STAGES, false);
     item.access = oneOf(source, data, 'access', ACCESS, true);
     item.modelTier = oneOf(source, data, 'model-tier', TIERS, false) ?? 'balanced';
-  } else {
+  } else if (type === 'skill') {
     const flag = data['user-invocable-only'] ?? false;
-    if (typeof flag !== 'boolean')
-      fail(source, 'field "user-invocable-only" must be true or false');
+    if (typeof flag !== 'boolean') fail(source, 'field "user-invocable-only" must be true or false');
     item.userInvocableOnly = flag;
+  } else if (type === 'hook') {
+    const events = data.events;
+    const valid =
+      Array.isArray(events) && events.length > 0 && events.every((event) => EVENTS.includes(event));
+    if (!valid) fail(source, `field "events" must be a non-empty list of: ${EVENTS.join(', ')}`);
+    item.events = events;
+    if (!item.requires.includes(RUNTIME_ID)) item.requires.push(RUNTIME_ID);
   }
   return item;
 }
@@ -98,6 +110,21 @@ function listFiles(dir, prefix = '') {
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       return entry.isDirectory() ? listFiles(join(dir, entry.name), rel) : [rel];
     });
+}
+
+function folders(dir) {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+}
+
+// Reads <dir>/<name>/<main> and returns the built item, or fails if the main file is missing.
+function folderItem(type, kind, dir, name, main) {
+  const path = join(dir, name, main);
+  if (!existsSync(path)) fail(`${kind}/${name}`, `missing ${main}`);
+  return buildItem(type, name, readFileSync(path, 'utf8'), `${kind}/${name}/${main}`);
 }
 
 function checkRequires(items) {
@@ -134,19 +161,35 @@ export function loadCatalog(dir) {
   }
 
   const skillsDir = join(dir, 'skills');
-  if (existsSync(skillsDir)) {
-    for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const folder = join(skillsDir, entry.name);
-      const main = join(folder, 'SKILL.md');
-      if (!existsSync(main)) fail(`skills/${entry.name}`, 'missing SKILL.md');
-      const source = `skills/${entry.name}/SKILL.md`;
-      const item = buildItem('skill', entry.name, readFileSync(main, 'utf8'), source);
-      item.files = listFiles(folder)
-        .filter((rel) => rel !== 'SKILL.md')
-        .map((rel) => ({ path: rel, content: readFileSync(join(folder, rel)) }));
-      items.set(item.id, item);
+  for (const name of folders(skillsDir)) {
+    const item = folderItem('skill', 'skills', skillsDir, name, 'SKILL.md');
+    const folder = join(skillsDir, name);
+    item.files = listFiles(folder)
+      .filter((rel) => rel !== 'SKILL.md')
+      .map((rel) => ({ path: rel, content: readFileSync(join(folder, rel)) }));
+    items.set(item.id, item);
+  }
+
+  const hooksDir = join(dir, 'hooks');
+  for (const name of folders(hooksDir)) {
+    const item = folderItem('hook', 'hooks', hooksDir, name, 'HOOK.md');
+    const gate = join(hooksDir, name, 'gate.mjs');
+    if (!existsSync(gate)) fail(`hooks/${name}`, 'missing gate.mjs');
+    item.gate = readFileSync(gate, 'utf8');
+    items.set(item.id, item);
+  }
+
+  const runtimeDir = join(dir, 'runtime');
+  for (const name of folders(runtimeDir)) {
+    const item = folderItem('runtime', 'runtime', runtimeDir, name, 'RUNTIME.md');
+    if (item.id !== RUNTIME_ID) fail(item.source, `field "name" (${name}) must equal the folder name (hooks)`);
+    item.sources = {};
+    for (const file of RUNTIME_SOURCES) {
+      const path = join(runtimeDir, name, file);
+      if (!existsSync(path)) fail(`runtime/${name}`, `missing ${file}`);
+      item.sources[file] = readFileSync(path, 'utf8');
     }
+    items.set(item.id, item);
   }
 
   checkRequires(items);
