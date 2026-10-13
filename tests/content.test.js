@@ -8,7 +8,10 @@ import { main } from '../src/cli.js';
 import { capture, tmpDir } from './helpers.js';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
-const agents = [...catalog.values()].filter((item) => item.type === 'agent');
+// Flow agents own a stage. Specialists do not: tests/specialist-content.test.js covers them.
+const agents = [...catalog.values()].filter(
+  (item) => item.type === 'agent' && item.stage !== undefined
+);
 
 const EXPECTED = [
   ['requirement-analyst', 'requirement', 'read-only', 'balanced'],
