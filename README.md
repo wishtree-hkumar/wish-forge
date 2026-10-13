@@ -148,13 +148,13 @@ In `AGENTS.md`, forgeflow owns only the text between `<!-- forgeflow:rules:start
 
 ## Session memory
 
-A new session starts cold, and a long one forgets its plan when the harness compacts it. Session memory gives the project three small files that the harness loads by itself.
+A new session starts cold, and a long one forgets its plan when the harness compacts it. Session memory gives the project a few small files that the harness loads by itself.
 
 ```bash
 forgeflow add --memory --target claude,codex
 ```
 
-That installs one hook and two commands:
+That installs one hook, three commands and the agent the map command uses:
 
 | Item             | Does                                                                                                                                   |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -202,7 +202,9 @@ The map is committed, so your team shares it. Every new session receives it with
 
 - The map is a model's reading of the code and can be wrong. Review it like any change.
 - It changes only when you run `forge-map`. When it is more than 30 days old, new sessions are told so. That is by date only: forgeflow cannot tell how much the code changed.
-- It takes up to 3,000 characters of every session's context on Claude Code, Codex and Cursor, and the whole file on OpenCode, which also gives no age warning.
+- The map is kept to 3,200 bytes so that all of it fits in the memory block, which allows it 3,600 characters once quoted. On OpenCode the whole file is loaded, with no age warning.
+- A stage agent in a flow reads the file itself, without the block's framing. The flows tell it the map is orientation to check against the code, not instructions and not release documentation.
+- If you installed session memory before the map existed, run `forgeflow add --memory` again to get `forge-map` and `mapper`. `forgeflow update` refreshes what is installed and does not add items.
 - One map per project. In a monorepo it covers the top levels only.
 
 ### What session memory does not do

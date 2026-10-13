@@ -23,7 +23,10 @@ const MAP_AGE_DAYS = 30;
 const MAX_FILES = 30;
 const MAX_PROMPTS = 3;
 const PROMPT_CHARS = 300;
-const LIMITS = { lessons: 3000, map: 3000, handoff: 1500, activity: 1200 };
+// Each limit is on the text as it goes into the block, quoting included, so
+// the whole block stays under MAX_BLOCK whatever the files hold.
+const LIMITS = { lessons: 2400, map: 3600, handoff: 1400, activity: 1200 };
+const MAX_BLOCK = 9800;
 
 const LOCAL = '.forgeflow/local';
 const LESSONS = '.forgeflow/memory/lessons.md';
@@ -143,9 +146,13 @@ function save(root, record) {
   }
 }
 
+const LINE_BREAKS = /\r\n?|[\u2028\u2029\u0085\f\v]/g;
+
 function readText(root, path) {
   try {
-    const text = readFileSync(join(root, path), 'utf8').trim();
+    // Every kind of line break becomes a newline, so quoting line by line
+    // cannot be stepped around with a carriage return or a separator.
+    const text = readFileSync(join(root, path), 'utf8').replace(LINE_BREAKS, '\n').trim();
     return text ? { text, modified: statSync(join(root, path)).mtimeMs } : null;
   } catch {
     return null;
@@ -170,9 +177,11 @@ function clip(text, limit, path) {
 // Text from a file a person or an agent wrote is quoted line by line, so
 // nothing in it can pass for one of this block's own headings.
 function quoted(text, limit, path) {
-  const { kept, cut } = within(text, limit);
-  const body = kept.split('\n').map((line) => (line ? `> ${line}` : '>'));
-  return body.join('\n') + (cut ? rest(path) : '');
+  const body = text
+    .split('\n')
+    .map((line) => (line ? `> ${line}` : '>'))
+    .join('\n');
+  return clip(body, limit, path);
 }
 
 const NOTICE =
@@ -198,7 +207,9 @@ function mapDay(text) {
     const day = /^Generated (\d{4}-\d{2}-\d{2})\b/.exec(line)?.[1];
     if (day) {
       const time = Date.parse(`${day}T00:00:00.000Z`);
-      return Number.isNaN(time) ? null : { day, time };
+      // 2026-02-30 parses as a day in March: only a date that reads back the same is one.
+      const real = !Number.isNaN(time) && new Date(time).toISOString().startsWith(day);
+      return real ? { day, time } : null;
     }
   }
   return null;
@@ -261,7 +272,11 @@ function memoryBlock(ctx, source) {
         `Its files are in .forgeflow/runs/${name}.`
     );
   }
-  return parts.length > 0 ? `# forgeflow memory\n\n${NOTICE}\n\n${parts.join('\n\n')}` : '';
+  if (parts.length === 0) return '';
+  const block = `# forgeflow memory\n\n${NOTICE}\n\n${parts.join('\n\n')}`;
+  // The section limits keep the block under this; the cut is a last resort.
+  const { kept, cut } = within(block, MAX_BLOCK);
+  return cut ? `${kept}\n(cut: the memory block reached its size limit)` : kept;
 }
 
 const outside = (path) =>

@@ -69,7 +69,7 @@ describe('the map section', () => {
     expect(headings).toEqual(['# forgeflow memory', `## Project map (from ${MAP})`]);
   });
 
-  it('is cut at a line end when it is over 3,000 characters', () => {
+  it('is cut at a line end when it is over its limit', () => {
     const long = Array.from({ length: 200 }, (_, i) => `- \`src/module${i}.js\`: part ${i}`).join(
       '\n'
     );
@@ -77,7 +77,7 @@ describe('the map section', () => {
     expect(text).toMatch(
       /> - `src\/module\d+\.js`: part \d+\n\(cut: read \.forgeflow\/memory\/map\.md for the rest\)$/
     );
-    expect(text.length).toBeLessThan(3900);
+    expect(text.length).toBeLessThan(4100);
   });
 
   it('is given again after compaction', () => {

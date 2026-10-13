@@ -31,7 +31,7 @@ Targets: ${targetNames.join(', ')}
 An <id> is a name such as "reviewer", or a full id such as "agent:reviewer".
 --hooks installs every quality gate. Gates are installed per project only.
 --specialists installs every agent that is not a flow stage.
---memory installs session memory: a hook and two skills. Per project only.
+--memory installs session memory and the project map. Per project only.
 A rule is a pack of coding standards, such as "common" or "typescript".
 `;
 

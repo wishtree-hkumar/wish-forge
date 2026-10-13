@@ -32,21 +32,21 @@ describe('mapper', () => {
   });
 
   it('names every map section, in order, inside its output form', () => {
-    // Indented, so the map's headings are not taken for the agent's own sections.
-    const at = SECTIONS.map((name) => mapper.body.indexOf(`\n    ## ${name}\n`));
+    // Listed as bullets, so the map's headings are not taken for the agent's own sections.
+    const at = SECTIONS.map((name) => mapper.body.indexOf(`\n- \`## ${name}\`\n`));
     expect(at.every((index) => index > 0)).toBe(true);
     expect(at).toEqual([...at].sort((a, b) => a - b));
-    expect(mapper.body).toContain('\n    # Project map\n');
+    expect(mapper.body).toContain('It starts at the line `# Project map`');
   });
 
   it.each([
     'Do not modify any file.',
     'Do not run them',
     'Purpose, Commands and Layout are always present',
-    'at most 6,000 bytes',
+    'at most 3,200 bytes',
     'names only',
     'top two levels',
-    'keep the wording of every statement that is still true',
+    'then keep its wording',
     'Reply with the map and nothing else',
     'No opinions, plans or recommendations',
   ])('says: %s', (phrase) => {
@@ -70,7 +70,7 @@ describe('forge-map', () => {
     'as the existing map',
     'Generated YYYY-MM-DD at commit <short hash> by forge-map. Check it against the code before relying on it.',
     'leave out `at commit <short hash>`',
-    'over 6,000 bytes',
+    'over 3,200 bytes',
     'ask `mapper` once to shorten it',
     'Do not write or correct the map yourself',
     'forgeflow add --memory --target',

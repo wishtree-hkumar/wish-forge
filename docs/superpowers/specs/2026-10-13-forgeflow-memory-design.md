@@ -272,10 +272,10 @@ a test keeps the two lists identical.
 # forgeflow memory
 
 ## Project lessons
-<lessons.md, up to 3,000 characters>
+<lessons.md, up to 2,400 characters once quoted>
 
 ## Handoff note (written <date>)
-<handoff.md, up to 1,500 characters>
+<handoff.md, up to 1,400 characters once quoted>
 
 ## Recent activity
 <session.md, up to 1,200 characters>

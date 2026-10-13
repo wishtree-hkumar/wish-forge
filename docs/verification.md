@@ -166,10 +166,22 @@ With `--memory` installed in a scratch repository that has real source code:
 
 | # | Check | Claude Code | Codex | OpenCode | Cursor |
 |---|---|---|---|---|---|
-| 54 | Run `forge-map`. `.forgeflow/memory/map.md` is written with Purpose, Commands and Layout, a `Generated` line with today's date, and is under 6,000 bytes | | | | |
+| 54 | Run `forge-map`. `.forgeflow/memory/map.md` is written with Purpose, Commands and Layout, a `Generated` line with today's date, and is at most 3,200 bytes | | | | |
 | 55 | Pick five statements from the map and check each against the code. All five are true | | | | |
 | 56 | Start a new session and ask where one of the map's concerns is handled. The agent answers from the map, opening at most the file it names | | | | |
 | 57 | Change the date in the `Generated` line to two months ago and start a new session. The agent says the map may be out of date (not OpenCode) | | | | |
 | 58 | Start a quick-flow run. The first stage's subagent reads `.forgeflow/memory/map.md` before exploring | | | | |
 
 Check 55 is the one that shows whether the map can be trusted. If more than one statement in five is wrong on a harness, record it in the README.
+
+Five more checks cover what the review of this phase could not confirm:
+
+| # | Check | Harness |
+|---|---|---|
+| 59 | Run `forge-map` a second time after a small code change. The file has one `Generated` line, with the new date, and the diff touches only what changed | all |
+| 60 | In a repository whose git-ignored `.env` holds a fake token and an internal URL, run `forge-map`. Neither appears in the map | all |
+| 61 | Remove `mapper` from the harness's agents folder by hand and run `forge-map`. It stops and names the install command, and the existing map is unchanged | all |
+| 62 | Run `forge-map` in a folder that is not under version control. The `Generated` line has no `at commit` part | all |
+| 63 | With lessons, a full-size map, a handoff note and a flow run in progress, a new session still receives the "Flow run in progress" section. This shows the block fits within the harness's limit on text a hook may add | Claude Code, Codex, Cursor |
+
+If check 63 fails, the harness cuts the block: lower the limits in the hook and record the harness's limit in the README.

@@ -1,6 +1,6 @@
 ---
 name: session-memory
-description: Keeps a local record of what each session changed and was asked, and gives a new or compacted session the project's lessons, handoff note and last activity. It never blocks.
+description: Keeps a local record of what each session changed and was asked, and gives a new or compacted session the project's lessons, map, handoff note and last activity. It never blocks.
 events: [start, compact, write, prompt]
 group: memory
 ---
@@ -8,7 +8,7 @@ As the agent works, this records the files it writes and your last three prompts
 
 When a session starts, it adds one block to the model's context: the shared lessons in `.forgeflow/memory/lessons.md`, the project map in `.forgeflow/memory/map.md` if one has been made (with a warning once it is more than 30 days old), the handoff note if it is less than a week old, what the last session did, and any flow run in progress. On Claude Code and Codex the block is added again after a compaction, with what the current session has done so far.
 
-The block is marked as notes to check against the code, not as instructions, and text from the lessons and handoff files is quoted. The lessons file is still read by every teammate's agent, so review changes to it the way you review code.
+The block is marked as notes to check against the code, not as instructions, and text from the lessons, map and handoff files is quoted. The lessons file is still read by every teammate's agent, so review changes to it the way you review code.
 
 Cursor cannot add context after a compaction, so there it tells you which files to point the agent at. OpenCode has no session-start hook: the memory files are listed in `opencode.json` instead, and the record is added to the compaction prompt.
 
