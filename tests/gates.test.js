@@ -11,6 +11,7 @@ import { tmpDir } from './helpers.js';
 function context(overrides = {}) {
   let stored = {};
   return {
+    runs: overrides.run ? [overrides.run] : [],
     root: '/work/app',
     harness: 'claude',
     now: Date.UTC(2026, 9, 13, 12),
@@ -133,9 +134,12 @@ describe('approval-gate', () => {
       'the run is already approved',
       { status: 'waiting for user', stage: 'HUMAN_APPROVAL', approved: true },
     ],
-  ])('does nothing when %s', (_label, overrides) => {
+  ])('records nothing when %s', (_label, overrides) => {
     const run = overrides ? activeRun(overrides) : null;
-    expect(approval(prompt('approve'), context({ run }))).toBeUndefined();
+    const result = approval(prompt('approve'), context({ run }));
+    expect(result?.block).toBeUndefined();
+    if (!run || run.approved) expect(result).toBeUndefined();
+    else expect(result.note).toContain('was not recorded');
     if (run) expect(existsSync(join(run.dir, '09-approval.md'))).toBe(false);
   });
 
@@ -166,7 +170,6 @@ describe('secret-guard', () => {
     ['Slack token', `xoxb-${'123456789012'}-${alnum(12)}`],
     ['Stripe live key', `sk_live_${alnum(24)}`],
     ['Stripe live key', `rk_live_${alnum(24)}`],
-    ['Google API key', `AIza${alnum(35)}`],
     ['Anthropic API key', `sk-ant-${alnum(40)}`],
     ['OpenAI API key', `sk-${alnum(40)}`],
     ['OpenAI API key', `sk-proj-${alnum(40)}`],

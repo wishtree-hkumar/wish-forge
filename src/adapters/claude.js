@@ -6,6 +6,7 @@ export const name = 'claude';
 
 export const wiring = commandWiring(
   '.claude/settings.json',
+  '.claude/forgeflow/run.mjs',
   'node "$CLAUDE_PROJECT_DIR/.claude/forgeflow/run.mjs" claude',
   'Bash|Write|Edit|MultiEdit|NotebookEdit'
 );

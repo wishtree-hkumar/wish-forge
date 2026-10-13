@@ -182,10 +182,13 @@ starts as `{ "version": 1, "hooks": {} }`.
 
 ### Merging rules (`src/wiring.js`)
 
-- An existing array element is forgeflow's if its JSON text contains
-  `forgeflow/run.mjs`. Everything else belongs to the user.
-- Install: for each wired event, drop forgeflow's elements and append the
-  current one. All other keys, events and elements are kept in order.
+- A hook handler is forgeflow's if its `command` contains that target's
+  runner path (for example `.claude/forgeflow/run.mjs`). Everything else
+  belongs to the user, including a handler the user added inside a group
+  forgeflow created.
+- Install: for each wired event, drop forgeflow's handlers and append the
+  current entry. Events forgeflow does not wire are never touched. All other
+  keys, events and elements are kept in order.
 - Remove: drop forgeflow's elements; delete event arrays and a `hooks` object
   that become empty. If forgeflow created the file and nothing but the
   starting skeleton remains, delete the file.
@@ -210,12 +213,12 @@ starts as `{ "version": 1, "hooks": {} }`.
 | | `Edit`, `Write` | as Claude Code when `tool_input.file_path` is present, otherwise as `apply_patch` |
 | | `UserPromptSubmit`, `Stop` | as Claude Code |
 | Cursor | `preToolUse` `Shell` | `shell(tool_input.command)` |
-| | `preToolUse`, any tool whose `tool_input` has `file_path` | `write(file_path, content or new_string, empty when neither is present)` |
+| | `preToolUse`, a tool whose `tool_input` has `file_path` and carries new text (`content`, `new_string`, `edits`), or a known write tool (`Write`, `Edit`, `StrReplace`, `MultiEdit`, `Delete`, `EditNotebook`) | `write(file_path, that text, empty for a delete)`. Read tools also carry `file_path` and produce no event |
 | | `beforeSubmitPrompt` | `prompt(prompt)` |
 | | `stop` | `stop`, when `loop_count` is 0 |
 | OpenCode | `tool.execute.before` `bash` | `shell(args.command)` |
-| | `write` / `edit` | `write(args.filePath, args.content or args.newString)` |
-| | `patch` | as Codex `apply_patch`, from the patch text argument |
+| | `write` / `edit` / `multiedit` | `write(args.filePath, args.content, args.newString, or the edits' newString joined)` |
+| | any tool with a `patchText` or `patch` argument | as Codex `apply_patch` |
 | | `chat.message` | `prompt(text parts joined)` |
 
 Unrecognized input produces no events and is allowed.
@@ -243,9 +246,13 @@ gates are installed:
 - `write` events to the target's `forgeflow/` directory, its wiring file,
   `.opencode/plugins/forgeflow.js`, `.forgeflow/config.json` and
   `.forgeflow/lock.json`.
-- `shell` events whose command names a `forgeflow/run.mjs`,
-  `forgeflow/runtime.mjs` or `forgeflow/gates` path, or runs
-  `forgeflow remove`.
+- `shell` events that name a harness's `forgeflow` folder together with a
+  command that changes files (`rm`, `mv`, `cp`, `sed`, `tee`, a redirect and
+  the like), or that run `forgeflow remove`. Reading or staging those files
+  (`ls`, `cat`, `git add`) is allowed.
+
+Paths are compared after resolving symlinks and without regard to letter
+case, so a file reached through a link or as `.Claude/…` is still protected.
 
 The block message says that a person must make this change. A consequence is
 that agents cannot edit `.claude/settings.json`, `.codex/hooks.json` or
@@ -279,10 +286,16 @@ note naming the problem.
 ### `approval-gate` (events: `shell`, `write`, `prompt`)
 
 **Active run.** A run directory under `.forgeflow/runs/` is active when its
-`state.md` has a `status:` of `running` or `waiting for user` and the file was
-modified within the last 24 hours. If several are active, the most recently
-modified is used. The run is approved when its `09-approval.md` contains the
-line `decision: approved`.
+`state.md` has a `status:` of `waiting for user`, or of `running` with the
+file modified within the last 24 hours. A waiting run does not expire,
+because approvals can take longer than a day. The run is approved when its
+`09-approval.md` contains the line `decision: approved`. `state.md` is read
+tolerantly: list markers, numbering, headings, quotes, backticks, bold and
+table cells around `key: value` are accepted.
+
+Several runs can be active at once. A release command is blocked while any
+active run is unapproved. A typed approval goes to the most recently updated
+unapproved run that is at its approval step.
 
 **Rules:**
 
@@ -295,9 +308,12 @@ line `decision: approved`.
    typing `approve` when the flow asks.
 4. `prompt` whose trimmed text is `approve` or `approved`, or starts with
    `approve` followed by a space or punctuation (case-insensitive), while the active run has status
-   `waiting for user`, stage `HUMAN_APPROVAL` or `SHIP`, and is not approved:
-   write `09-approval.md` and return a note that approval was recorded.
-   In every other situation the prompt passes untouched.
+   `waiting for user`, a stage containing `HUMAN_APPROVAL` or `SHIP` (any
+   case; spaces or hyphens for the underscore), and is not approved: write
+   `09-approval.md` and return a note that approval was recorded. If runs are
+   active but none is at its approval step, return a note saying the approval
+   was not recorded and why. With no unapproved active run, the prompt passes
+   untouched.
 
 The record:
 
@@ -324,10 +340,12 @@ the matched text.
 
 Patterns: AWS access key id (`AKIA`/`ASIA` + 16), GitHub tokens (`ghp_`,
 `gho_`, `ghu_`, `ghs_`, `ghr_`, `github_pat_`), Slack tokens (`xox[baprs]-`),
-Stripe live keys (`sk_live_`, `rk_live_`), Google API keys (`AIza` + 35),
-Anthropic keys (`sk-ant-`), OpenAI keys (`sk-` + 20 or more key characters,
-including `sk-proj-`), and PEM private key headers
-(`-----BEGIN … PRIVATE KEY-----`).
+Stripe live keys (`sk_live_`, `rk_live_`), Anthropic keys (`sk-ant-`), OpenAI
+keys (`sk-`, optionally `proj-`, `svcacct-` or `admin-`, then 20 or more key
+characters including a digit and a capital), and PEM private key headers
+(`-----BEGIN … PRIVATE KEY-----`). A match ending in `EXAMPLE` is a vendor's
+documentation sample and is allowed. Google API keys are not matched: Firebase
+web keys share the format and are public by design.
 
 ### `protected-paths` (events: `write`)
 
@@ -361,8 +379,9 @@ Stated in the README, not hidden:
 - `secret-guard` and `protected-paths` see file-writing tools only. A file
   changed by a shell command is not seen.
 - The approval gate applies only while a run is active. An agent that edits
-  the run's `state.md` to a finished status is no longer gated. Runs idle for
-  24 hours stop gating so an abandoned run does not block pushes forever.
+  the run's `state.md` to a finished status is no longer gated. A run left
+  `running` for 24 hours stops gating. A run left `waiting for user` gates
+  until a person approves it or sets its status to `stopped`.
 - A runner that crashes lets the action through.
 - Codex runs project hooks only after the user trusts them, and needs the
   project to be a git repository to locate the runner.

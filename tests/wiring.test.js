@@ -9,6 +9,7 @@ const handler = {
 };
 const claude = {
   path: '.claude/settings.json',
+  runner: '.claude/forgeflow/run.mjs',
   skeleton: {},
   entries: {
     PreToolUse: { matcher: 'Bash|Write', hooks: [handler] },
@@ -17,6 +18,7 @@ const claude = {
 };
 const cursor = {
   path: '.cursor/hooks.json',
+  runner: '.cursor/forgeflow/run.mjs',
   skeleton: { version: 1, hooks: {} },
   entries: { preToolUse: { command: 'node .cursor/forgeflow/run.mjs cursor', timeout: 10 } },
 };
@@ -56,9 +58,9 @@ describe('mergeWiring', () => {
     const old = {
       hooks: [{ type: 'command', command: 'node old/.claude/forgeflow/run.mjs claude' }],
     };
-    const merged = mergeWiring({ hooks: { PreToolUse: [old, mine], Notification: [old] } }, claude);
+    const merged = mergeWiring({ hooks: { PreToolUse: [old, mine], Stop: [old] } }, claude);
     expect(merged.hooks.PreToolUse).toEqual([mine, claude.entries.PreToolUse]);
-    expect(merged.hooks.Notification).toBeUndefined();
+    expect(merged.hooks.Stop).toEqual([claude.entries.Stop]);
   });
 
   it('does not mutate its input', () => {
@@ -73,23 +75,23 @@ describe('mergeWiring', () => {
 describe('stripWiring', () => {
   it('returns the user data exactly as it was before the merge', () => {
     const original = { permissions: { allow: [] }, hooks: { PreToolUse: [mine], Other: [] } };
-    expect(stripWiring(mergeWiring(original, claude))).toEqual(original);
+    expect(stripWiring(mergeWiring(original, claude), claude)).toEqual(original);
   });
 
   it('removes the hooks key when only our entries were in it', () => {
-    expect(stripWiring(mergeWiring({ model: 'opus' }, claude))).toEqual({ model: 'opus' });
-    expect(stripWiring(mergeWiring(undefined, claude), claude.skeleton)).toEqual({});
+    expect(stripWiring(mergeWiring({ model: 'opus' }, claude), claude)).toEqual({ model: 'opus' });
+    expect(stripWiring(mergeWiring(undefined, claude), claude)).toEqual({});
   });
 
   it('keeps an empty hooks object the skeleton had', () => {
-    expect(stripWiring(mergeWiring(undefined, cursor), cursor.skeleton)).toEqual(cursor.skeleton);
+    expect(stripWiring(mergeWiring(undefined, cursor), cursor)).toEqual(cursor.skeleton);
   });
 
   it('leaves a config without our entries unchanged', () => {
     const config = { hooks: { PreToolUse: [mine] } };
-    expect(stripWiring(config)).toEqual(config);
-    expect(stripWiring({ a: 1 })).toEqual({ a: 1 });
-    expect(stripWiring({ hooks: {} })).toEqual({ hooks: {} });
+    expect(stripWiring(config, claude)).toEqual(config);
+    expect(stripWiring({ a: 1 }, claude)).toEqual({ a: 1 });
+    expect(stripWiring({ hooks: {} }, claude)).toEqual({ hooks: {} });
   });
 });
 

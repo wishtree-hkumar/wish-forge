@@ -18,6 +18,7 @@ export const name = 'codex';
 // located through git rather than a relative path.
 export const wiring = commandWiring(
   '.codex/hooks.json',
+  '.codex/forgeflow/run.mjs',
   'node "$(git rev-parse --show-toplevel)/.codex/forgeflow/run.mjs" codex',
   'Bash|apply_patch|Edit|Write'
 );

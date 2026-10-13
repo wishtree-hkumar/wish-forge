@@ -112,11 +112,13 @@ Gates raise the bar. They are not a sandbox.
 
 - Shell commands are matched by pattern. A script that pushes, or an obfuscated command, is not caught.
 - `secret-guard` and `protected-paths` see file-writing tools only, not files changed by a shell command.
-- `approval-gate` applies only while a flow run is active. A run idle for 24 hours stops gating.
+- `approval-gate` applies only while a flow run is active. A run left running for 24 hours stops gating. A run waiting for your approval keeps gating until you type `approve` or set its status to `stopped` in its `state.md`.
+- Any message starting with `approve` at the approval step counts, including `approve, but not yet`. To decline, say something else.
+- `secret-guard` does not match Google API keys, because Firebase web keys share their format and are public by design.
 - If the runner crashes, the action goes through. `forgeflow doctor` checks the wiring.
 - Agents can no longer edit the harness's hook config or `.forgeflow/config.json`. You make those changes.
 - Codex runs project hooks only after you trust them (`/hooks`), and needs the project to be a git repository.
-- On OpenCode, `test-reminder` does nothing.
+- On OpenCode, `test-reminder` does nothing. On OpenCode and Cursor, a gate's advisory notes are not shown to the agent; blocks are.
 
 ## Where files go
 

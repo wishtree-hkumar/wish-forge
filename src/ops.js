@@ -184,7 +184,7 @@ export function remove(ctx, refs, targets) {
     const before = [];
     const wiring = installed[RUNTIME_ID]?.wiring;
     if (going.has(RUNTIME_ID) && wiring) {
-      before.push(planUnwire(root, wiring, adapter.wiring?.skeleton));
+      before.push(planUnwire(root, wiring, adapter.wiring));
     }
     const items = Object.keys(installed)
       .filter((id) => going.has(id))

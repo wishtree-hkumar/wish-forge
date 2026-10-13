@@ -12,10 +12,13 @@ const RELEASE = [
   /\bterraform\s+apply\b/i,
   /\bhelm\s+(upgrade|install)\b/i,
 ];
-const RECORD = /(^|\/)\.forgeflow\/runs\/[^/]+\/09-approval\.md$/;
+const RECORD = /(^|\/)\.forgeflow\/runs\/[^/]+\/09-approval\.md$/i;
 const APPROVE = /^approved?$|^approve[\s,.!]/i;
-const APPROVAL_STAGES = new Set(['human_approval', 'ship']);
+const APPROVAL_STAGE = /human[\s_-]*approval|\bship\b/i;
 const HOW = 'A person approves by typing "approve" when the flow asks.';
+
+const atApprovalStep = (run) =>
+  run.status.startsWith('waiting for user') && APPROVAL_STAGE.test(run.stage);
 
 export function check(event, ctx) {
   if (event.kind === 'write') {
@@ -24,33 +27,46 @@ export function check(event, ctx) {
   }
 
   if (event.kind === 'shell') {
-    if (event.command.includes('09-approval.md')) {
+    if (event.command.toLowerCase().includes('09-approval.md')) {
       return {
         block:
           'forgeflow approval-gate: shell commands may not touch 09-approval.md. ' +
           'Read it with your file-reading capability instead.',
       };
     }
-    const run = ctx.run;
-    if (!run || run.approved) return undefined;
+    // Any active run without approval gates a release, not only the newest one.
+    const pending = ctx.runs.find((run) => !run.approved);
+    if (!pending) return undefined;
     const isRelease = [...RELEASE, ...ctx.config.releaseCommands].some((pattern) =>
       pattern.test(event.command)
     );
     if (!isRelease) return undefined;
     return {
       block:
-        `forgeflow approval-gate: this release command is blocked because flow run ${run.name} ` +
-        `has no recorded human approval. Complete the flow's approval step first. ${HOW}`,
+        `forgeflow approval-gate: this release command is blocked because flow run ${pending.name} ` +
+        `has no recorded human approval. Complete the flow's approval step first. ${HOW} ` +
+        `If that run was abandoned, a person can set its status to "stopped" in ` +
+        `.forgeflow/runs/${pending.name}/state.md.`,
     };
   }
 
   if (event.kind === 'prompt') {
-    const run = ctx.run;
     const said = event.text.trim();
-    if (!run || run.approved || !APPROVE.test(said)) return undefined;
-    const atApprovalStep =
-      run.status.startsWith('waiting for user') && APPROVAL_STAGES.has(run.stage.toLowerCase());
-    if (!atApprovalStep) return undefined;
+    if (!APPROVE.test(said)) return undefined;
+    const open = ctx.runs.filter((run) => !run.approved);
+    if (open.length === 0) return undefined;
+
+    const run = open.find(atApprovalStep);
+    if (!run) {
+      const [latest] = open;
+      return {
+        note:
+          `forgeflow approval-gate: "approve" was not recorded. Run ${latest.name} is not waiting ` +
+          `at its approval step: its state.md has status "${latest.status}" and current stage ` +
+          `"${latest.stage}". Before asking for approval, the flow must set status to ` +
+          '"waiting for user" and current stage to HUMAN_APPROVAL or SHIP.',
+      };
+    }
 
     const record = [
       'decision: approved',

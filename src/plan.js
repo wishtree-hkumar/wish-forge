@@ -66,13 +66,15 @@ export function planWire(root, wiring, previous) {
   };
 }
 
-export function planUnwire(root, record, skeleton = {}) {
+// wiring is the adapter's wiring; without it there is nothing of ours to find.
+export function planUnwire(root, record, wiring) {
   const { path } = record;
+  if (!wiring) return { type: 'skip', path };
   const current = readConfig(root, path);
   if (current === undefined) return { type: 'missing', path };
-  const stripped = stripWiring(current, skeleton);
+  const stripped = stripWiring(current, wiring);
   if (same(stripped, current)) return { type: 'skip', path };
-  if (record.created && same(stripped, skeleton)) return { type: 'delete', path };
+  if (record.created && same(stripped, wiring.skeleton)) return { type: 'delete', path };
   return { type: 'unwire', path, content: serialize(stripped) };
 }
 

@@ -7,6 +7,7 @@ const entry = { command: 'node .cursor/forgeflow/run.mjs cursor', timeout: 10 };
 
 export const wiring = {
   path: '.cursor/hooks.json',
+  runner: '.cursor/forgeflow/run.mjs',
   skeleton: { version: 1, hooks: {} },
   entries: { preToolUse: entry, beforeSubmitPrompt: entry, stop: entry },
 };

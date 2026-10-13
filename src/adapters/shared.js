@@ -36,10 +36,11 @@ export function hookFiles(dir, item, version) {
 }
 
 // Wiring in the shape Claude Code and Codex share.
-export function commandWiring(path, command, matcher) {
+export function commandWiring(path, runner, command, matcher) {
   const handler = { type: 'command', command, timeout: 10 };
   return {
     path,
+    runner,
     skeleton: {},
     entries: {
       PreToolUse: { matcher, hooks: [handler] },

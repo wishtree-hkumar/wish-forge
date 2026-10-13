@@ -2,11 +2,7 @@ import { ConfigError } from './errors.js';
 
 export const RUNTIME_ID = 'runtime:hooks';
 
-// Any hook entry that runs this path is forgeflow's. Everything else is the user's.
-const OURS = 'forgeflow/run.mjs';
-
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
-const isOurs = (element) => JSON.stringify(element).includes(OURS);
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -29,32 +25,55 @@ export function parseConfig(text, path) {
   return config;
 }
 
-// Drops our elements. A list we emptied is removed; a list the user left empty stays.
-function withoutOurs(hooks) {
-  const kept = {};
-  for (const [event, list] of Object.entries(hooks)) {
-    const rest = list.filter((element) => !isOurs(element));
-    if (rest.length > 0 || rest.length === list.length) kept[event] = rest;
+// A hook handler is forgeflow's when its command runs this target's runner
+// (wiring.runner, such as ".claude/forgeflow/run.mjs"). Everything else is the user's.
+const isOurs = (handler, wiring) =>
+  isObject(handler) &&
+  typeof handler.command === 'string' &&
+  handler.command.includes(wiring.runner);
+
+// Removes our handler from one event's list. A group that held only our handler
+// goes; a group the user added handlers to keeps theirs.
+function withoutOurs(list, wiring) {
+  const kept = [];
+  for (const element of list) {
+    if (isOurs(element, wiring)) continue;
+    if (isObject(element) && Array.isArray(element.hooks)) {
+      const handlers = element.hooks.filter((handler) => !isOurs(handler, wiring));
+      if (handlers.length === element.hooks.length) kept.push(element);
+      else if (handlers.length > 0) kept.push({ ...element, hooks: handlers });
+    } else {
+      kept.push(element);
+    }
   }
   return kept;
 }
 
+// Only the events forgeflow wires are touched.
 export function mergeWiring(config, wiring) {
   const base = clone(config ?? wiring.skeleton);
-  const hooks = withoutOurs(base.hooks ?? {});
+  const hooks = { ...base.hooks };
   for (const [event, entry] of Object.entries(wiring.entries)) {
-    hooks[event] = [...(hooks[event] ?? []), clone(entry)];
+    hooks[event] = [...withoutOurs(hooks[event] ?? [], wiring), clone(entry)];
   }
   return { ...base, hooks };
 }
 
-export function stripWiring(config, skeleton = {}) {
+export function stripWiring(config, wiring) {
   const base = clone(config);
   if (base.hooks === undefined) return base;
-  const hooks = withoutOurs(base.hooks);
-  const emptiedByUs = Object.keys(hooks).length === 0 && Object.keys(base.hooks).length > 0;
-  if (emptiedByUs && !('hooks' in skeleton)) delete base.hooks;
-  else base.hooks = hooks;
+  let removed = false;
+  for (const event of Object.keys(wiring.entries)) {
+    const list = base.hooks[event];
+    if (list === undefined) continue;
+    const rest = withoutOurs(list, wiring);
+    if (same(rest, list)) continue;
+    removed = true;
+    if (rest.length > 0) base.hooks[event] = rest;
+    else delete base.hooks[event];
+  }
+  const emptiedByUs = removed && Object.keys(base.hooks).length === 0;
+  if (emptiedByUs && !('hooks' in wiring.skeleton)) delete base.hooks;
   return base;
 }
 

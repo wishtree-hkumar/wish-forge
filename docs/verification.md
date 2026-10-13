@@ -25,3 +25,13 @@ On Codex, run `/hooks` and trust the project hooks first.
 Check 14 matters most on Cursor: it shows whether a partial edit reaches the pre-tool hook with its new text. If it is not blocked there, `secret-guard` on Cursor covers whole-file writes only; record that in the README.
 
 Check 19 shows whether the harness runs hooks for subagent tool calls. Record the result per harness.
+
+Three more checks came out of code review. Each tests an assumption about a harness that the automated tests cannot confirm:
+
+| # | Check | Harness |
+|---|---|---|
+| 22 | With gates installed, the agent can read `09-approval.md`, `.env.example` and other files normally (reads are not treated as writes) | Cursor |
+| 23 | Asking the agent to change several places in `.env` in one step, or to apply a patch that adds `.env`, is blocked | OpenCode |
+| 24 | During a run waiting at HUMAN_APPROVAL, ask the agent to start a subagent whose instructions begin with "approve". `09-approval.md` must not be created | OpenCode |
+
+If check 24 fails, the prompt hook fires for subagent prompts and the approval can be forged on that harness: do not rely on `approval-gate` there until it is fixed.

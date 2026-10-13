@@ -1,9 +1,16 @@
 // forgeflow hook runtime. Uses only node: built-ins, because it runs in
 // projects that have not installed forgeflow.
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -18,10 +25,44 @@ const WIRING_FILES = {
 
 const text = (value) => (typeof value === 'string' ? value : '');
 const posix = (path) => path.split('\\').join('/');
+// The new text of a list of edits, or undefined when there is no list.
+const joined = (edits, key) =>
+  Array.isArray(edits) ? edits.map((edit) => text(edit?.[key])).join('\n') : undefined;
+
+const CURSOR_WRITE_TOOLS = new Set([
+  'Write',
+  'Edit',
+  'StrReplace',
+  'MultiEdit',
+  'Delete',
+  'EditNotebook',
+]);
+const OPENCODE_WRITE_TOOLS = new Set(['write', 'edit', 'multiedit']);
+const HOOK_DIR = /\.(claude|codex|cursor|opencode)\/forgeflow\b/i;
+const SHELL_CHANGE =
+  /(^|[\s;&|(])(rm|mv|cp|sed|tee|chmod|chown|truncate|ln|dd|install|rmdir|unlink|touch|rsync)\b|>/;
+
+// Resolves symlinks in the part of a path that exists, so a file reached
+// through a link is recognised as the file it is.
+function real(path) {
+  const rest = [];
+  let existing = path;
+  while (!existsSync(existing)) {
+    const parent = dirname(existing);
+    if (parent === existing) return path;
+    rest.unshift(basename(existing));
+    existing = parent;
+  }
+  try {
+    return join(realpathSync(existing), ...rest);
+  } catch {
+    return path;
+  }
+}
 
 export function toRelative(root, path, cwd) {
-  const absolute = isAbsolute(path) ? path : resolve(cwd || root, path);
-  const rel = relative(root, absolute);
+  const absolute = real(isAbsolute(path) ? path : resolve(cwd || root, path));
+  const rel = relative(real(root), absolute);
   const outside = rel === '' || rel.startsWith('..') || isAbsolute(rel);
   return posix(outside ? absolute : rel);
 }
@@ -102,19 +143,32 @@ export function loadConfig(root) {
   return { config, warnings };
 }
 
-// Reads "name: value" from state.md, tolerating bullets, backticks and bold.
+// Reads "name: value" from state.md. Models format this file loosely, so list
+// markers, numbering, headings, quotes, backticks, bold and table cells are tolerated.
 function field(body, name) {
   // Spaces and tabs only, never \s: a newline here would let an empty value swallow the next line.
-  const pattern = new RegExp(`^[ \\t\\-*\`]*${name}[\`*]*[ \\t]*:[ \\t\`*]*(.*?)[ \\t\`*]*$`, 'im');
+  const pattern = new RegExp(
+    `^[ \\t\\-*>#|\`]*(?:\\d+[.)][ \\t]*)?[\`*"']*${name}[\`*"']*[ \\t]*[:|][ \\t\`*"'|]*(.*?)[ \\t\`*"'|]*$`,
+    'im'
+  );
   const match = pattern.exec(body);
   return match ? match[1].trim() : '';
 }
 
-export function findRun(root, now = Date.now()) {
-  const runs = join(root, '.forgeflow', 'runs');
-  if (!existsSync(runs)) return null;
+function isApproved(dir) {
+  try {
+    return /^decision:\s*approved\s*$/im.test(readFileSync(join(dir, '09-approval.md'), 'utf8'));
+  } catch {
+    return false; // no approval record
+  }
+}
 
-  let best = null;
+// Every active run, most recently updated first.
+export function findRuns(root, now = Date.now()) {
+  const runs = join(root, '.forgeflow', 'runs');
+  if (!existsSync(runs)) return [];
+
+  const active = [];
   for (const name of readdirSync(runs)) {
     const dir = join(runs, name);
     let body;
@@ -127,22 +181,26 @@ export function findRun(root, now = Date.now()) {
       continue;
     }
     const status = field(body, 'status').toLowerCase();
-    const active = status.startsWith('running') || status.startsWith('waiting for user');
-    if (!active || now - modified > DAY) continue;
-    if (best && best.modified >= modified) continue;
-    best = { dir, name, status, stage: field(body, 'current stage'), modified };
+    const waiting = status.startsWith('waiting for user');
+    if (!waiting && !status.startsWith('running')) continue;
+    // A run left running for a day is treated as abandoned. A run waiting for
+    // its person is not: approvals can take longer than a day.
+    if (!waiting && now - modified > DAY) continue;
+    active.push({ dir, name, status, stage: field(body, 'current stage'), modified });
   }
-  if (!best) return null;
+  return active
+    .sort((a, b) => b.modified - a.modified)
+    .map(({ dir, name, status, stage }) => ({
+      dir,
+      name,
+      status,
+      stage,
+      approved: isApproved(dir),
+    }));
+}
 
-  let approved = false;
-  try {
-    approved = /^decision:\s*approved\s*$/im.test(
-      readFileSync(join(best.dir, '09-approval.md'), 'utf8')
-    );
-  } catch {
-    // no approval record
-  }
-  return { dir: best.dir, name: best.name, status: best.status, stage: best.stage, approved };
+export function findRun(root, now = Date.now()) {
+  return findRuns(root, now)[0] ?? null;
 }
 
 function stateStore(root) {
@@ -171,18 +229,22 @@ export function selfProtect(event, root) {
     `forgeflow: ${what} is protected while quality gates are installed. A person must make this change.`;
 
   if (event.kind === 'write') {
-    const path = event.path;
-    if (path === '.forgeflow/config.json' || path === '.forgeflow/lock.json') return refuse(path);
+    // Compared in lower case: on macOS and Windows .Claude and .claude are one folder.
+    const path = event.path.toLowerCase();
+    if (path === '.forgeflow/config.json' || path === '.forgeflow/lock.json') {
+      return refuse(event.path);
+    }
     for (const [dir, wiring] of Object.entries(WIRING_FILES)) {
-      if (path.startsWith(`${dir}/forgeflow/`)) return refuse(path);
-      if (path === wiring && existsSync(join(root, dir, 'forgeflow'))) return refuse(path);
+      if (path.startsWith(`${dir}/forgeflow/`)) return refuse(event.path);
+      if (path === wiring && existsSync(join(root, dir, 'forgeflow'))) return refuse(event.path);
     }
   }
   if (event.kind === 'shell') {
-    if (/forgeflow\/(run\.mjs|runtime\.mjs|gates)\b/.test(event.command)) {
+    // Reading or staging the hook files is fine; changing them is not.
+    if (HOOK_DIR.test(event.command) && SHELL_CHANGE.test(event.command)) {
       return refuse('the forgeflow hook runner');
     }
-    if (/\bforgeflow\b[^|;&\n]*\bremove\b/.test(event.command)) return refuse('"forgeflow remove"');
+    if (/\bforgeflow(\.js)?\s+remove\b/.test(event.command)) return refuse('"forgeflow remove"');
   }
   return undefined;
 }
@@ -205,12 +267,12 @@ export function normalize(harness, payload, root) {
     if (event !== 'PreToolUse') return [];
     if (data.tool_name === 'Bash') return shell(input.command);
     if (typeof input.file_path === 'string') {
-      if (Array.isArray(input.edits)) {
-        return [
-          write(input.file_path, input.edits.map((edit) => text(edit?.new_string)).join('\n')),
-        ];
-      }
-      return [write(input.file_path, input.content ?? input.new_string)];
+      return [
+        write(
+          input.file_path,
+          input.content ?? input.new_string ?? joined(input.edits, 'new_string')
+        ),
+      ];
     }
     if (typeof input.notebook_path === 'string')
       return [write(input.notebook_path, input.new_source)];
@@ -224,7 +286,12 @@ export function normalize(harness, payload, root) {
     if (event !== 'preToolUse') return [];
     if (data.tool_name === 'Shell') return shell(input.command);
     if (typeof input.file_path === 'string') {
-      return [write(input.file_path, input.content ?? input.new_string)];
+      // Read tools also carry file_path. A call is a write only when it brings
+      // new text, or is a tool known to change files.
+      const body = input.content ?? input.new_string ?? joined(input.edits, 'new_string');
+      if (body !== undefined || CURSOR_WRITE_TOOLS.has(data.tool_name)) {
+        return [write(input.file_path, body)];
+      }
     }
     return [];
   }
@@ -234,9 +301,13 @@ export function normalize(harness, payload, root) {
     if (data.hook !== 'tool') return [];
     const args = data.args ?? {};
     if (data.tool === 'bash') return shell(args.command);
-    if (data.tool === 'patch') return patch(args.patchText ?? args.patch);
-    if ((data.tool === 'write' || data.tool === 'edit') && typeof args.filePath === 'string') {
-      return [write(args.filePath, args.content ?? args.newString)];
+    // Any tool that carries a patch writes files, whatever it is called.
+    const patchText = args.patchText ?? args.patch;
+    if (typeof patchText === 'string') return patch(patchText);
+    if (OPENCODE_WRITE_TOOLS.has(data.tool) && typeof args.filePath === 'string') {
+      return [
+        write(args.filePath, args.content ?? args.newString ?? joined(args.edits, 'newString')),
+      ];
     }
     return [];
   }
@@ -248,11 +319,13 @@ export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
   const events = normalize(harness, payload, root);
   const { config, warnings } = loadConfig(root);
   const notes = [];
+  const runs = findRuns(root, now);
   const ctx = {
     root,
     harness,
     config,
-    run: findRun(root, now),
+    run: runs[0] ?? null,
+    runs,
     state: stateStore(root),
     now,
     matchesGlob,
