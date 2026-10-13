@@ -210,7 +210,7 @@ starts as `{ "version": 1, "hooks": {} }`.
 | | `Edit`, `Write` | as Claude Code when `tool_input.file_path` is present, otherwise as `apply_patch` |
 | | `UserPromptSubmit`, `Stop` | as Claude Code |
 | Cursor | `preToolUse` `Shell` | `shell(tool_input.command)` |
-| | `preToolUse`, any tool whose `tool_input` has `file_path` and `content` or `new_string` | `write(file_path, that text)` |
+| | `preToolUse`, any tool whose `tool_input` has `file_path` | `write(file_path, content or new_string, empty when neither is present)` |
 | | `beforeSubmitPrompt` | `prompt(prompt)` |
 | | `stop` | `stop`, when `loop_count` is 0 |
 | OpenCode | `tool.execute.before` `bash` | `shell(args.command)` |
@@ -294,7 +294,7 @@ line `decision: approved`.
    approved: block. The message names the run and says a person approves by
    typing `approve` when the flow asks.
 4. `prompt` whose trimmed text is `approve` or `approved`, or starts with
-   `approve ` (case-insensitive), while the active run has status
+   `approve` followed by a space or punctuation (case-insensitive), while the active run has status
    `waiting for user`, stage `HUMAN_APPROVAL` or `SHIP`, and is not approved:
    write `09-approval.md` and return a note that approval was recorded.
    In every other situation the prompt passes untouched.
@@ -379,8 +379,8 @@ Stated in the README, not hidden:
 
 `render(item, ctx)` handles two more item types:
 
-- `hook`: one file, `<dir>/gates/<name>.mjs`, a byte-for-byte copy of
-  `gate.mjs`.
+- `hook`: one file, `<dir>/gates/<name>.mjs`: `gate.mjs` with the marker
+  line prepended.
 - `runtime`: `run.mjs` and `runtime.mjs` under `<dir>/` (OpenCode: only
   `runtime.mjs`, plus the plugin at `.opencode/plugins/forgeflow.js`).
 
