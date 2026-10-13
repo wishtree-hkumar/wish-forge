@@ -8,9 +8,12 @@ function problemsOf(targets) {
         .filter((file) => file.state !== 'ok')
         .map((file) => `[${target.target}] ${file.path} is ${file.state}`)
     );
-    const { wiring } = target;
+    const { wiring, rules } = target;
     if (wiring && wiring.state !== 'ok') {
       files.push(`[${target.target}] hook wiring in ${wiring.path} is ${wiring.state}`);
+    }
+    if (rules && rules.state !== 'ok') {
+      files.push(`[${target.target}] rules wiring in ${rules.path} is ${rules.state}`);
     }
     return files;
   });

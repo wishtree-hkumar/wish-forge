@@ -95,13 +95,14 @@ function printStatus(stdout, targets) {
     stdout.write(NOTHING);
     return;
   }
-  for (const { target, root, items, wiring } of targets) {
+  for (const { target, root, items, wiring, rules } of targets) {
     stdout.write(`${target}  (${root})\n`);
     for (const { id, explicit, files } of items) {
       stdout.write(`  ${id}${explicit ? '' : '  (required)'}\n`);
       for (const { path, state } of files) stdout.write(`    ${state.padEnd(8)} ${path}\n`);
     }
     if (wiring) stdout.write(`  ${`wiring ${wiring.state}`.padEnd(17)} ${wiring.path}\n`);
+    if (rules) stdout.write(`  ${`rules ${rules.state}`.padEnd(17)} ${rules.path}\n`);
   }
 }
 
