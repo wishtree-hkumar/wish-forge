@@ -104,16 +104,18 @@ function install(ctx, lock, perTarget) {
       return entry;
     });
     let rules;
-    const rulesWiring = adapter.rulesWiring?.(ctx.scope);
-    const ruleIds = new Set(
-      [...Object.keys(installed), ...entries.map(({ item }) => item.id)].filter(isRuleId)
-    );
-    if (rulesWiring && ruleIds.size > 0) {
+    const ids = [...new Set([...Object.keys(installed), ...entries.map(({ item }) => item.id)])];
+    const rulesWiring = adapter.rulesWiring?.(ctx.scope, ids);
+    const ruleIds = ids.filter(isRuleId);
+    const record = lock.targets[target]?.rules;
+    const wanted =
+      rulesWiring?.kind === 'json' ? rulesWiring.entries.length > 0 : ruleIds.length > 0;
+    if (rulesWiring && (wanted || record)) {
       const planned = planRulesWiring(
         root,
         rulesWiring,
         describeRules(ctx.catalog, ruleIds),
-        lock.targets[target]?.rules
+        record
       );
       after.push(planned.action);
       rules = planned.record;
@@ -238,15 +240,15 @@ export function remove(ctx, refs, targets) {
       .map((id) => ({ id, actions: planRemove(root, installed[id].files) }));
     let rules;
     const record = lock.targets[target]?.rules;
-    if (record && [...going].some(isRuleId)) {
-      const rulesWiring = adapter.rulesWiring?.(ctx.scope);
-      const staying = Object.keys(installed).filter((id) => isRuleId(id) && !going.has(id));
+    if (record) {
+      const staying = Object.keys(installed).filter((id) => !going.has(id));
+      const rulesWiring = adapter.rulesWiring?.(ctx.scope, staying);
       rules = null;
       if (rulesWiring) {
         const planned = planRulesWiring(
           root,
           rulesWiring,
-          describeRules(ctx.catalog, staying),
+          describeRules(ctx.catalog, staying.filter(isRuleId)),
           record,
           { removing: true }
         );
@@ -279,7 +281,10 @@ export function status(ctx) {
           : null,
       rules:
         installed.rules && adapter.rulesWiring
-          ? { path: installed.rules.path, state: rulesState(root, adapter.rulesWiring(ctx.scope)) }
+          ? {
+              path: installed.rules.path,
+              state: rulesState(root, adapter.rulesWiring(ctx.scope, Object.keys(items))),
+            }
           : null,
       items: Object.entries(items).map(([id, entry]) => ({
         id,

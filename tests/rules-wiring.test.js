@@ -110,7 +110,11 @@ describe('damaged markers', () => {
 
 const J = 'opencode.json';
 const ENTRY = '.opencode/forgeflow/rules/*.md';
-const wiring = { entry: ENTRY, skeleton: { $schema: 'https://opencode.ai/config.json' } };
+const wiring = {
+  entries: [ENTRY],
+  known: [ENTRY],
+  skeleton: { $schema: 'https://opencode.ai/config.json' },
+};
 
 describe('mergeInstructions', () => {
   it('starts a new config from the skeleton', () => {
@@ -142,27 +146,29 @@ describe('mergeInstructions', () => {
 
 describe('stripInstructions', () => {
   it('removes only the forgeflow entry', () => {
-    expect(stripInstructions({ instructions: ['a.md', ENTRY, 'b.md'], model: 'x' }, ENTRY)).toEqual(
-      { instructions: ['a.md', 'b.md'], model: 'x' }
-    );
+    expect(
+      stripInstructions({ instructions: ['a.md', ENTRY, 'b.md'], model: 'x' }, [ENTRY])
+    ).toEqual({ instructions: ['a.md', 'b.md'], model: 'x' });
   });
 
   it('drops a list it leaves empty', () => {
-    expect(stripInstructions(mergeInstructions(undefined, wiring), ENTRY)).toEqual(wiring.skeleton);
+    expect(stripInstructions(mergeInstructions(undefined, wiring), [ENTRY])).toEqual(
+      wiring.skeleton
+    );
   });
 
   it('returns a config without the entry unchanged', () => {
-    expect(stripInstructions({ instructions: [] }, ENTRY)).toEqual({ instructions: [] });
-    expect(stripInstructions({ model: 'x' }, ENTRY)).toEqual({ model: 'x' });
+    expect(stripInstructions({ instructions: [] }, [ENTRY])).toEqual({ instructions: [] });
+    expect(stripInstructions({ model: 'x' }, [ENTRY])).toEqual({ model: 'x' });
   });
 });
 
 describe('parseInstructions', () => {
   it('returns a sound config', () => {
-    expect(parseInstructions('{"instructions":["a.md"]}', J, ENTRY)).toEqual({
+    expect(parseInstructions('{"instructions":["a.md"]}', J, [ENTRY])).toEqual({
       instructions: ['a.md'],
     });
-    expect(parseInstructions('{}', J, ENTRY)).toEqual({});
+    expect(parseInstructions('{}', J, [ENTRY])).toEqual({});
   });
 
   it.each([
@@ -179,7 +185,7 @@ describe('parseInstructions', () => {
       'has an "instructions" value that is not a list of strings',
     ],
   ])('refuses %s and says what to add by hand', (_case, text, problem) => {
-    const attempt = () => parseInstructions(text, J, ENTRY);
+    const attempt = () => parseInstructions(text, J, [ENTRY]);
     expect(attempt).toThrow(ConfigError);
     expect(attempt).toThrow(`opencode.json ${problem}`);
     expect(attempt).toThrow('add ".opencode/forgeflow/rules/*.md" to its "instructions" list');
@@ -188,8 +194,8 @@ describe('parseInstructions', () => {
 
 describe('handWired', () => {
   it('finds the quoted entry in text forgeflow cannot parse', () => {
-    expect(handWired(`{\n  // mine\n  "instructions": ["${ENTRY}"]\n}`, ENTRY)).toBe(true);
-    expect(handWired('{\n  // mine\n  "instructions": []\n}', ENTRY)).toBe(false);
-    expect(handWired(`// ${ENTRY}`, ENTRY)).toBe(false);
+    expect(handWired(`{\n  // mine\n  "instructions": ["${ENTRY}"]\n}`, [ENTRY])).toBe(true);
+    expect(handWired('{\n  // mine\n  "instructions": []\n}', [ENTRY])).toBe(false);
+    expect(handWired(`// ${ENTRY}`, [ENTRY])).toBe(false);
   });
 });

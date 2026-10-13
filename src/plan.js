@@ -5,6 +5,7 @@ import { sha256 } from './lock.js';
 import { isWired, mergeWiring, parseConfig, serialize, stripWiring } from './wiring.js';
 import {
   RULES_ID,
+  foundEntries,
   handWired,
   hasBlock,
   mergeBlock,
@@ -130,29 +131,29 @@ function readText(root, path) {
 }
 
 // The file's next text, and whether nothing but forgeflow's skeleton is left.
-function nextRulesText(wiring, current, rules) {
+function nextRulesText(wiring, current, rules, active) {
   if (wiring.kind === 'block') {
-    if (rules.length > 0) {
+    if (active) {
       return { text: mergeBlock(current, wiring.block(rules), wiring.path), bare: false };
     }
     const text = stripBlock(current, wiring.path);
     return { text, bare: text.replace(/^﻿/, '').trim() === '' };
   }
   const config =
-    current === undefined ? undefined : parseInstructions(current, wiring.path, wiring.entry);
-  const next =
-    rules.length > 0 ? mergeInstructions(config, wiring) : stripInstructions(config, wiring.entry);
+    current === undefined ? undefined : parseInstructions(current, wiring.path, wiring.entries);
+  const next = active ? mergeInstructions(config, wiring) : stripInstructions(config, wiring.known);
   // An unchanged config keeps its text, so the user's formatting survives.
   const text = config !== undefined && same(next, config) ? current : serialize(next);
   return { text, bare: same(next, wiring.skeleton) };
 }
 
 const BY_HAND = 'forgeflow leaves this file alone; the entry is already there';
-const takeOut = (entry) => `remove ${JSON.stringify(entry)} from its "instructions" list`;
+const takeOut = (entries) =>
+  `remove ${entries.map((entry) => JSON.stringify(entry)).join(' and ')} from its "instructions" list`;
 
 function parses(wiring, text) {
   try {
-    parseInstructions(text, wiring.path, wiring.entry);
+    parseInstructions(text, wiring.path, wiring.entries);
     return true;
   } catch {
     return false;
@@ -166,42 +167,47 @@ function wiredByHand(root, wiring, path, current) {
   if (wiring.kind !== 'json') return undefined;
   if (current !== undefined) {
     if (parses(wiring, current)) return undefined;
-    if (handWired(current, wiring.entry)) return path;
-    return parseInstructions(current, wiring.path, wiring.entry);
+    if (handWired(current, wiring.entries)) return path;
+    return parseInstructions(current, wiring.path, wiring.entries);
   }
   const other = readText(root, wiring.alternative);
   if (other === undefined) return undefined;
-  if (handWired(other, wiring.entry)) return wiring.alternative;
+  if (handWired(other, wiring.entries)) return wiring.alternative;
   throw new ConfigError(
     `${wiring.alternative} exists and ${wiring.path} does not. forgeflow will not create a ` +
-      `second OpenCode config: add ${JSON.stringify(wiring.entry)} to its "instructions" list ` +
+      `second OpenCode config: add ${wiring.entries.map((entry) => JSON.stringify(entry)).join(' and ')} to its "instructions" list ` +
       `in ${wiring.alternative} by hand, and re-run.`
   );
 }
 
 // The config forgeflow cannot edit, if that is the state of things: the file
-// to name and whether the entry is in it.
+// to name, whether every wanted entry is in it, and which of forgeflow's
+// entries it holds at all.
 function uneditable(root, wiring, path, current) {
   if (wiring.kind !== 'json') return undefined;
-  if (current !== undefined) {
-    if (parses(wiring, current)) return undefined;
-    return { file: path, wired: handWired(current, wiring.entry) };
-  }
+  const describe = (file, text) => ({
+    file,
+    wired: handWired(text, wiring.entries),
+    left: foundEntries(text, wiring.known),
+  });
+  if (current !== undefined) return parses(wiring, current) ? undefined : describe(path, current);
   const other = readText(root, wiring.alternative);
-  if (other === undefined) return undefined;
-  return { file: wiring.alternative, wired: handWired(other, wiring.entry) };
+  return other === undefined ? undefined : describe(wiring.alternative, other);
 }
 
 // rules is every rule the target will have after the operation: [{ name, applies }].
-// An empty list takes forgeflow's part out again. previous is the lockfile
-// record. removing is true when the operation takes rules away: a config that
-// cannot be edited then never stops it.
+// The wiring is active while something wants it: a rule for the AGENTS.md
+// block, a wanted entry for OpenCode. When it is not active, forgeflow's part
+// is taken out again. previous is the lockfile record. removing is true when
+// the operation takes items away: a config that cannot be edited then never
+// stops it.
 export function planRulesWiring(root, wiring, rules, previous, { removing = false } = {}) {
   const path = throughLink(root, wiring.path);
   const current = readText(root, path);
   const row = (type, extra = {}) => ({ id: RULES_ID, type, path, ...extra });
+  const active = wiring.kind === 'json' ? wiring.entries.length > 0 : rules.length > 0;
 
-  if (rules.length > 0) {
+  if (active) {
     const stuck = removing ? uneditable(root, wiring, path, current) : undefined;
     if (stuck && !stuck.wired)
       return { action: row('skip', { path: stuck.file }), record: previous };
@@ -212,7 +218,7 @@ export function planRulesWiring(root, wiring, rules, previous, { removing = fals
         record: { path: byHand, created: false, manual: true },
       };
     }
-    const { text } = nextRulesText(wiring, current, rules);
+    const { text } = nextRulesText(wiring, current, rules, active);
     const created = current === undefined ? true : (previous?.created ?? false);
     return {
       action: row(text === current ? 'skip' : 'wire', { content: text }),
@@ -222,13 +228,14 @@ export function planRulesWiring(root, wiring, rules, previous, { removing = fals
 
   const stuck = uneditable(root, wiring, path, current);
   if (stuck) {
-    const action = stuck.wired
-      ? row('manual', { path: stuck.file, reason: takeOut(wiring.entry) })
-      : row('skip', { path: stuck.file });
+    const action =
+      stuck.left.length > 0
+        ? row('manual', { path: stuck.file, reason: takeOut(stuck.left) })
+        : row('skip', { path: stuck.file });
     return { action, record: null };
   }
   if (current === undefined) return { action: row('missing'), record: null };
-  const { text, bare } = nextRulesText(wiring, current, rules);
+  const { text, bare } = nextRulesText(wiring, current, rules, active);
   if (text === current) return { action: row('skip'), record: null };
   const ours = previous?.created && bare && path === wiring.path;
   return { action: ours ? row('delete') : row('unwire', { content: text }), record: null };
@@ -242,8 +249,9 @@ export function rulesState(root, wiring) {
     if (stuck) return stuck.wired ? 'ok' : 'unreadable';
     if (current === undefined) return 'missing';
     if (wiring.kind === 'block') return hasBlock(current, wiring.path) ? 'ok' : 'missing';
-    const config = parseInstructions(current, wiring.path, wiring.entry);
-    return config.instructions?.includes(wiring.entry) ? 'ok' : 'missing';
+    const config = parseInstructions(current, wiring.path, wiring.entries);
+    const list = config.instructions ?? [];
+    return wiring.entries.every((entry) => list.includes(entry)) ? 'ok' : 'missing';
   } catch {
     return 'unreadable';
   }

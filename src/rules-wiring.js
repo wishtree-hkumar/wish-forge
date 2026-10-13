@@ -50,26 +50,6 @@ export function stripBlock(text, path) {
   return (/(\r?\n){2}$/.test(before) ? before.replace(/\r?\n$/, '') : before) + after;
 }
 
-export function parseInstructions(text, path, entry) {
-  const refuse = (problem) =>
-    new ConfigError(
-      `${path} ${problem}. forgeflow will not modify it: fix the file, ` +
-        `or add ${JSON.stringify(entry)} to its "instructions" list by hand, and re-run.`
-    );
-  let config;
-  try {
-    config = JSON.parse(text);
-  } catch (error) {
-    throw refuse(`is not valid JSON (${error.message})`);
-  }
-  if (!isObject(config)) throw refuse('must contain a JSON object');
-  const list = config.instructions;
-  if (list !== undefined && !(Array.isArray(list) && list.every((e) => typeof e === 'string'))) {
-    throw refuse('has an "instructions" value that is not a list of strings');
-  }
-  return config;
-}
-
 // JSON with comments and trailing commas, reduced to plain JSON. String
 // literals are kept whole, so a "//" inside one is not taken for a comment.
 function plainJson(text) {
@@ -94,30 +74,61 @@ function plainJson(text) {
   return out;
 }
 
-// True when a config forgeflow will not edit (it has comments, or is a .jsonc
-// file) really holds the entry in its "instructions" list.
-export function handWired(text, entry) {
+const quoted = (entries) => entries.map((entry) => JSON.stringify(entry)).join(' and ');
+
+export function parseInstructions(text, path, entries) {
+  const refuse = (problem) =>
+    new ConfigError(
+      `${path} ${problem}. forgeflow will not modify it: fix the file, ` +
+        `or add ${quoted(entries)} to its "instructions" list by hand, and re-run.`
+    );
+  let config;
+  try {
+    config = JSON.parse(text);
+  } catch (error) {
+    throw refuse(`is not valid JSON (${error.message})`);
+  }
+  if (!isObject(config)) throw refuse('must contain a JSON object');
+  const list = config.instructions;
+  if (list !== undefined && !(Array.isArray(list) && list.every((e) => typeof e === 'string'))) {
+    throw refuse('has an "instructions" value that is not a list of strings');
+  }
+  return config;
+}
+
+// Which of the candidates a config forgeflow will not edit (it has comments,
+// or is a .jsonc file) really holds in its "instructions" list.
+export function foundEntries(text, candidates) {
   try {
     const config = JSON.parse(plainJson(text));
-    return isObject(config) && Array.isArray(config.instructions)
-      ? config.instructions.includes(entry)
-      : false;
+    const list = isObject(config) && Array.isArray(config.instructions) ? config.instructions : [];
+    return candidates.filter((candidate) => list.includes(candidate));
   } catch {
-    return false;
+    return [];
   }
 }
 
-export function mergeInstructions(config, { entry, skeleton }) {
+export function handWired(text, entries) {
+  return entries.length > 0 && foundEntries(text, entries).length === entries.length;
+}
+
+// entries are the ones wanted now; known is every entry forgeflow ever adds.
+// Wanted entries stay where they are, missing ones go last, and forgeflow's own
+// entries that are no longer wanted are dropped.
+export function mergeInstructions(config, { entries, known, skeleton }) {
   const base = clone(config ?? skeleton);
-  const list = base.instructions ?? [];
-  if (!list.includes(entry)) base.instructions = [...list, entry];
+  const kept = (base.instructions ?? []).filter(
+    (existing) => !known.includes(existing) || entries.includes(existing)
+  );
+  base.instructions = [...kept, ...entries.filter((entry) => !kept.includes(entry))];
   return base;
 }
 
-export function stripInstructions(config, entry) {
+export function stripInstructions(config, known) {
   const base = clone(config);
-  if (!base.instructions?.includes(entry)) return base;
-  const rest = base.instructions.filter((existing) => existing !== entry);
+  if (!Array.isArray(base.instructions)) return base;
+  const rest = base.instructions.filter((existing) => !known.includes(existing));
+  if (rest.length === base.instructions.length) return base;
   if (rest.length > 0) base.instructions = rest;
   else delete base.instructions;
   return base;

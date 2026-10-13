@@ -54,7 +54,7 @@ describe('an OpenCode config wired by hand', () => {
     ['a string, not a list', `{\n  // mine\n  "instructions": "${ENTRY}"\n}\n`],
     ['under another key', `{\n  // mine\n  "other": ["${ENTRY}"]\n}\n`],
   ])('is not accepted when the entry is %s', (_case, text) => {
-    expect(handWired(text, ENTRY)).toBe(false);
+    expect(handWired(text, [ENTRY])).toBe(false);
     writeFileSync(join(cwd, 'opencode.json'), text);
     const { code, err } = run('add', 'common', '--target', 'opencode');
     expect(code).toBe(1);
@@ -64,7 +64,7 @@ describe('an OpenCode config wired by hand', () => {
 
   it('is accepted with comments and trailing commas, and shown as by hand', () => {
     const text = `{\n  /* mine */\n  "model": "x", // why\n  "instructions": [\n    "a.md",\n    "${ENTRY}", // forgeflow\n  ],\n}\n`;
-    expect(handWired(text, ENTRY)).toBe(true);
+    expect(handWired(text, [ENTRY])).toBe(true);
     writeFileSync(join(cwd, 'opencode.jsonc'), text);
 
     const added = run('add', 'common', '--target', 'opencode');
