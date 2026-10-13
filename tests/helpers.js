@@ -23,6 +23,10 @@ export function skillMd(name, extra = '') {
   return `---\nname: ${name}\ndescription: Runs ${name}.\n${extra}---\nSteps of ${name}.\n`;
 }
 
+export function ruleMd(name, extra = '') {
+  return `---\nname: ${name}\ndescription: ${name} standards.\n${extra}---\n# ${name}\n\n- A rule of ${name}.\n`;
+}
+
 export function item(overrides = {}) {
   return {
     id: 'agent:reviewer',

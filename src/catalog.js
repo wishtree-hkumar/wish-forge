@@ -27,6 +27,7 @@ const NAME_RE = /^[a-z][a-z0-9-]{0,62}$/;
 const RUNTIME_SOURCES = ['run.mjs', 'runtime.mjs', 'opencode-plugin.js'];
 const FIELDS = {
   agent: ['name', 'description', 'stage', 'access', 'model-tier', 'joins', 'requires'],
+  rule: ['name', 'description', 'paths', 'requires'],
   skill: ['name', 'description', 'user-invocable-only', 'requires'],
   hook: ['name', 'description', 'events', 'requires'],
   runtime: ['name', 'description'],
@@ -63,7 +64,7 @@ function buildItem(type, expectedName, text, source) {
     fail(source, `field "name" is required and must match ${NAME_RE}`);
   }
   if (data.name !== expectedName) {
-    const container = type === 'agent' ? 'file' : 'folder';
+    const container = type === 'agent' || type === 'rule' ? 'file' : 'folder';
     fail(source, `field "name" (${data.name}) must equal the ${container} name (${expectedName})`);
   }
   const description = data.description;
@@ -117,6 +118,17 @@ function buildItem(type, expectedName, text, source) {
     if (!valid) fail(source, `field "events" must be a non-empty list of: ${EVENTS.join(', ')}`);
     item.events = events;
     if (!item.requires.includes(RUNTIME_ID)) item.requires.push(RUNTIME_ID);
+  } else if (type === 'rule') {
+    const { paths } = data;
+    if (paths !== undefined) {
+      const valid =
+        Array.isArray(paths) &&
+        paths.length > 0 &&
+        paths.every((pattern) => typeof pattern === 'string' && pattern.trim() !== '');
+      if (!valid) fail(source, 'field "paths" must be a non-empty list of file patterns');
+      // Absent means the rule applies to all work.
+      item.paths = [...paths];
+    }
   }
   return item;
 }
@@ -168,12 +180,17 @@ function checkRequires(items) {
 export function loadCatalog(dir) {
   const items = new Map();
 
-  const agentsDir = join(dir, 'agents');
-  if (existsSync(agentsDir)) {
-    for (const file of readdirSync(agentsDir).sort()) {
+  // Agents and rules are single files; the file name is the item name.
+  for (const [type, kind] of [
+    ['agent', 'agents'],
+    ['rule', 'rules'],
+  ]) {
+    const folder = join(dir, kind);
+    if (!existsSync(folder)) continue;
+    for (const file of readdirSync(folder).sort()) {
       if (!file.endsWith('.md')) continue;
-      const text = readFileSync(join(agentsDir, file), 'utf8');
-      const item = buildItem('agent', file.slice(0, -3), text, `agents/${file}`);
+      const text = readFileSync(join(folder, file), 'utf8');
+      const item = buildItem(type, file.slice(0, -3), text, `${kind}/${file}`);
       items.set(item.id, item);
     }
   }

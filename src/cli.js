@@ -12,10 +12,10 @@ const VERSION = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8')
 ).version;
 const DEFAULT_CATALOG = fileURLToPath(new URL('../catalog', import.meta.url));
-const LISTED_TYPES = ['agent', 'skill', 'hook'];
+const LISTED_TYPES = ['agent', 'skill', 'hook', 'rule'];
 
 const USAGE = `Usage:
-  forgeflow list [--type agent|skill|hook] [--json]
+  forgeflow list [--type agent|skill|hook|rule] [--json]
   forgeflow info <id>
   forgeflow add <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
   forgeflow add --flow quick|full --target <t>[,<t>...]
@@ -30,6 +30,7 @@ Targets: ${targetNames.join(', ')}
 An <id> is a name such as "reviewer", or a full id such as "agent:reviewer".
 --hooks installs every quality gate. Gates are installed per project only.
 --specialists installs every agent that is not a flow stage.
+A rule is a pack of coding standards, such as "common" or "typescript".
 `;
 
 const OPTIONS = {
@@ -156,7 +157,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         .sort((a, b) => a.id.localeCompare(b.id));
       if (values.json) {
         const rows = items.map(
-          ({ id, type, name, description, stage, joins, access, modelTier, events, requires }) => ({
+          ({
             id,
             type,
             name,
@@ -166,13 +167,26 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
             access,
             modelTier,
             events,
+            paths,
+            requires,
+          }) => ({
+            id,
+            type,
+            name,
+            description,
+            stage,
+            joins,
+            access,
+            modelTier,
+            events,
+            paths,
             requires,
           })
         );
         stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
       } else {
         for (const item of items) {
-          const none = item.type === 'agent' ? 'specialist' : '-';
+          const none = { agent: 'specialist', rule: 'rule' }[item.type] ?? '-';
           const stage = (item.stage ?? item.events?.join(',') ?? none).padEnd(13);
           const access = (item.access ?? '-').padEnd(10);
           stdout.write(`${item.id.padEnd(28)} ${stage} ${access} ${item.description}\n`);
@@ -192,6 +206,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         ['access', item.access],
         ['model tier', item.modelTier],
         ['events', item.events?.join(', ')],
+        ['paths', item.type === 'rule' ? (item.paths?.join(', ') ?? 'all work') : undefined],
         ['requires', item.requires.join(', ') || 'nothing'],
       ];
       for (const [label, value] of rows) {
