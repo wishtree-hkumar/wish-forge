@@ -54,7 +54,7 @@ If a subagent that a stage names is not available, stop and tell the user to ins
 
 ## Review specialists
 
-Four optional agents each review one subject: `security-reviewer`, `performance-reviewer`, `database-reviewer` and `accessibility-reviewer`. The flow works without them.
+Five optional agents each review one subject: `security-reviewer`, `performance-reviewer`, `database-reviewer`, `accessibility-reviewer` and `standards-reviewer`. The flow works without them.
 
 At REVIEW, after `reviewer`:
 

@@ -13,6 +13,7 @@ const EXPECTED = [
   ['performance-reviewer', 'read-only', 'strong', 'review'],
   ['database-reviewer', 'read-only', 'strong', 'review'],
   ['accessibility-reviewer', 'read-only', 'balanced', 'review'],
+  ['standards-reviewer', 'read-only', 'balanced', 'review'],
   ['api-designer', 'read-only', 'strong', undefined],
   ['test-strategist', 'read-only', 'balanced', undefined],
   ['dependency-auditor', 'read-only', 'balanced', undefined],

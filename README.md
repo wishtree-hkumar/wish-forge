@@ -25,7 +25,7 @@ forgeflow add reviewer --target cursor           # one agent
 forgeflow add --flow quick --target claude       # a flow and the agents it needs
 forgeflow add --flow full --target claude,codex  # several harnesses at once
 forgeflow add security-reviewer --target claude  # one specialist
-forgeflow add --specialists --target claude      # all ten specialists
+forgeflow add --specialists --target claude      # every specialist
 forgeflow status                                 # what is installed here
 forgeflow update                                 # rewrite installed files from the current catalog
 forgeflow remove reviewer --target cursor
@@ -85,6 +85,7 @@ Specialists own a subject instead of a stage. Install the ones you want; none co
 | `performance-reviewer`   | Reviews a change for performance defects and gives a verdict            | no               |
 | `database-reviewer`      | Reviews schema changes, migrations and queries and gives a verdict      | no               |
 | `accessibility-reviewer` | Reviews interface changes for accessibility and gives a verdict         | no               |
+| `standards-reviewer`     | Reviews a change against the installed rules packs and gives a verdict  | no               |
 | `api-designer`           | Designs an interface before it is built                                 | no               |
 | `test-strategist`        | Says what to test, at which level, and what is missing                  | no               |
 | `dependency-auditor`     | Audits dependencies and recommends an action for each                   | no               |
@@ -92,7 +93,7 @@ Specialists own a subject instead of a stage. Install the ones you want; none co
 | `docs-writer`            | Writes or updates documentation for code that exists                    | yes (docs only)  |
 | `refactorer`             | Restructures code without changing behavior, tests run before and after | yes              |
 
-The four reviewers are also used by the flows. At REVIEW, a flow runs each one that is installed for that harness, saves its report as `07-review-<agent name>.md` in the run directory, and returns to BUILD if any of them requests changes. With none installed, a flow runs exactly as before. Each installed reviewer adds one subagent run to every review round, including for changes outside its subject.
+The five reviewers are also used by the flows. At REVIEW, a flow runs each one that is installed for that harness, saves its report as `07-review-<agent name>.md` in the run directory, and returns to BUILD if any of them requests changes. With none installed, a flow runs exactly as before. Each installed reviewer adds one subagent run to every review round, including for changes outside its subject.
 
 A specialist is a prompt for your harness's model, not a tool: `security-reviewer` is not a scanner, and `accessibility-reviewer` reads the code without running the interface. Where a harness gives read-only agents a read-only sandbox (Codex does), `debugger` may be unable to run the failing command; it then works by reading and says its cause is unconfirmed.
 

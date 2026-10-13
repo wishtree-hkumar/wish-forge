@@ -17,12 +17,13 @@ const ORDER = [
   'performance-reviewer',
   'database-reviewer',
   'accessibility-reviewer',
+  'standards-reviewer',
 ];
 const FLOWS = ['forge-quick', 'forge-full'];
 const body = (flow) => catalog.get(`skill:${flow}`).body;
 
 describe('flow skills and review specialists', () => {
-  it('the catalog marks exactly the four review specialists', () => {
+  it('the catalog marks exactly the review specialists the flows name', () => {
     expect([...joining].sort()).toEqual([...ORDER].sort());
   });
 
@@ -97,7 +98,7 @@ function cli(io, ...argv) {
 }
 
 describe('installing specialists from the real catalog', () => {
-  it('installs all ten into all four harnesses, and removes one', () => {
+  it('installs every specialist into all four harnesses, and removes one', () => {
     const io = { cwd: tmpDir(), home: tmpDir() };
     expect(cli(io, 'add', '--specialists', '--target', TARGETS.join(','))).toEqual({
       code: 0,
@@ -120,7 +121,7 @@ describe('installing specialists from the real catalog', () => {
 
     expect(cli(io, 'remove', 'security-reviewer', '--target', 'cursor').code).toBe(0);
     expect(existsSync(join(io.cwd, '.cursor/agents/security-reviewer.md'))).toBe(false);
-    expect(readdirSync(join(io.cwd, '.cursor/agents'))).toHaveLength(9);
+    expect(readdirSync(join(io.cwd, '.cursor/agents'))).toHaveLength(specialists.length - 1);
     expect(existsSync(join(io.cwd, '.claude/agents/security-reviewer.md'))).toBe(true);
   });
 
