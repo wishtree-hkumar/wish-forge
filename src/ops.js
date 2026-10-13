@@ -240,9 +240,15 @@ export function remove(ctx, refs, targets) {
       .map((id) => ({ id, actions: planRemove(root, installed[id].files) }));
     let rules;
     const record = lock.targets[target]?.rules;
-    if (record) {
-      const staying = Object.keys(installed).filter((id) => !going.has(id));
-      const rulesWiring = adapter.rulesWiring?.(ctx.scope, staying);
+    const staying = Object.keys(installed).filter((id) => !going.has(id));
+    const rulesWiring = adapter.rulesWiring?.(ctx.scope, staying);
+    // The user's file is looked at only when this removal changes what it
+    // should hold. Removing anything else must not depend on that file.
+    const wantedBefore = adapter.rulesWiring?.(ctx.scope, Object.keys(installed));
+    const changes =
+      [...going].some(isRuleId) ||
+      JSON.stringify(wantedBefore?.entries) !== JSON.stringify(rulesWiring?.entries);
+    if (record && changes) {
       rules = null;
       if (rulesWiring) {
         const planned = planRulesWiring(

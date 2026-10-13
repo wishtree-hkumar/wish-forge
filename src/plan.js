@@ -137,7 +137,7 @@ function nextRulesText(wiring, current, rules, active) {
       return { text: mergeBlock(current, wiring.block(rules), wiring.path), bare: false };
     }
     const text = stripBlock(current, wiring.path);
-    return { text, bare: text.replace(/^﻿/, '').trim() === '' };
+    return { text, bare: text.replace(/^\uFEFF/, '').trim() === '' };
   }
   const config =
     current === undefined ? undefined : parseInstructions(current, wiring.path, wiring.entries);
@@ -165,17 +165,25 @@ function parses(wiring, text) {
 // can edit the config itself. Throws when neither holds.
 function wiredByHand(root, wiring, path, current) {
   if (wiring.kind !== 'json') return undefined;
+  // Only the entries that are not there yet are asked for.
+  const missing = (text) => {
+    const found = foundEntries(text, wiring.entries);
+    return wiring.entries.filter((entry) => !found.includes(entry));
+  };
   if (current !== undefined) {
     if (parses(wiring, current)) return undefined;
     if (handWired(current, wiring.entries)) return path;
-    return parseInstructions(current, wiring.path, wiring.entries);
+    return parseInstructions(current, wiring.path, missing(current));
   }
   const other = readText(root, wiring.alternative);
   if (other === undefined) return undefined;
   if (handWired(other, wiring.entries)) return wiring.alternative;
+  const wanted = missing(other)
+    .map((entry) => JSON.stringify(entry))
+    .join(' and ');
   throw new ConfigError(
     `${wiring.alternative} exists and ${wiring.path} does not. forgeflow will not create a ` +
-      `second OpenCode config: add ${wiring.entries.map((entry) => JSON.stringify(entry)).join(' and ')} to its "instructions" list ` +
+      `second OpenCode config: add ${wanted} to its "instructions" list ` +
       `in ${wiring.alternative} by hand, and re-run.`
   );
 }
@@ -208,13 +216,18 @@ export function planRulesWiring(root, wiring, rules, previous, { removing = fals
   const active = wiring.kind === 'json' ? wiring.entries.length > 0 : rules.length > 0;
 
   if (active) {
-    const stuck = removing ? uneditable(root, wiring, path, current) : undefined;
-    if (stuck && !stuck.wired)
+    const stuck = uneditable(root, wiring, path, current);
+    if (removing && stuck && !stuck.wired) {
       return { action: row('skip', { path: stuck.file }), record: previous };
+    }
     const byHand = wiredByHand(root, wiring, path, current);
     if (byHand) {
+      // Entries of forgeflow's that are in the file and no longer wanted stay
+      // there until the person takes them out: say which.
+      const extra = stuck.left.filter((entry) => !wiring.entries.includes(entry));
+      const reason = extra.length > 0 ? takeOut(extra) : BY_HAND;
       return {
-        action: row('manual', { path: byHand, reason: BY_HAND }),
+        action: row('manual', { path: byHand, reason }),
         record: { path: byHand, created: false, manual: true },
       };
     }

@@ -260,7 +260,9 @@ Recording never blocks and never returns a note. A failure to write the
 record is ignored.
 
 **Credentials.** Before a prompt is stored, every match of the patterns
-`secret-guard` uses is replaced with `[redacted]`. The pattern list is
+`secret-guard` uses is replaced with `[redacted]`. A private key is replaced
+whole, from its first line to its last, or to the end of the prompt when the
+last line is missing. The pattern list is
 duplicated in the two gates, because a gate may import nothing from another;
 a test keeps the two lists identical.
 
@@ -288,7 +290,8 @@ a test keeps the two lists identical.
 - Text over a section's limit is cut at a line end and followed by
   `(cut: read <path> for the rest)`.
 - On `startup` and `clear`, "Recent activity" shows the previous session. On
-  `compact` it shows the current one.
+  `compact` it shows the current one, and only when the record belongs to
+  this session or the harness sends no session id.
 
 **Cursor on compaction** tells the person: "forgeflow: this conversation is
 being compacted. If the agent loses its place, ask it to read
@@ -308,6 +311,18 @@ being compacted. If the agent loses its place, ask it to read
   act on it.
 - **Lessons can be wrong or stale.** They are committed, so they appear in
   review, and anyone may edit the file.
+- **The lessons file is a way into every teammate's agent.** The block opens
+  by saying it is notes to check against the code, not instructions, and text
+  from the lessons and handoff files is quoted line by line so it cannot pass
+  for one of the block's own headings. A model can still be steered by what
+  it reads, so changes to `.forgeflow/memory/` need review like code.
+  `forge-lesson` records only what the user said or the code shows.
+- **Unverified harness behavior.** The design assumes that Codex fires
+  `SessionStart` with `source: compact` after a compaction, that Cursor does
+  not fire `sessionStart` when an old chat is reopened, and that OpenCode does
+  not re-read `instructions` on every model call (the session record changes
+  on every write and prompt, which would then change the system prompt each
+  turn). Each is a manual check.
 - **Prompts are stored locally.** The last three prompts of the current and
   previous session sit in `.forgeflow/local/` in readable form. Credential
   patterns are replaced, but a secret that matches no pattern is stored.

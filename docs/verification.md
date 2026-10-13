@@ -149,3 +149,13 @@ Two more checks test assumptions the automated tests cannot confirm:
 | 50 | In check 42, a file written by a subagent appears in the same session's record, not a new one | Claude Code, Codex, Cursor |
 
 If check 50 fails on a harness, subagent work starts a new record there and pushes the main session's record into "previous": record it in the README.
+
+Three more checks cover harness behavior the design assumes and no test here can confirm:
+
+| # | Check | Harness |
+|---|---|---|
+| 51 | Check 47 passes on Codex: after a compaction the agent still knows which files this session changed. This shows Codex fires its session-start hook after compaction | Codex |
+| 52 | Close a chat and reopen it later. No second "forgeflow memory" block is added | Cursor |
+| 53 | In a session with several edits, the cost or speed of later turns does not degrade compared with a project without session memory. `session.md` changes on every write and prompt; if OpenCode re-reads `instructions` on each model call, its prompt cache is lost every turn | OpenCode |
+
+If check 53 fails, remove `.forgeflow/local/*.md` from `instructions` on OpenCode and record it in the README: the lessons still load, and the session record stays readable on request.

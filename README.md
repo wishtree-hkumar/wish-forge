@@ -184,6 +184,9 @@ At session start the model receives the lessons, the handoff note and the last s
 - The model receives the memory. Nothing makes it act on it.
 - Your last three prompts in each of the last two sessions are stored in `.forgeflow/local/` in readable form. Text that looks like a credential is replaced with `[redacted]`, but a secret that matches no known pattern is stored as typed.
 - A lesson can be wrong or go out of date. The lessons file is committed, so additions show up in review, and anyone can edit it.
+- The lessons file is read into every teammate's agent. forgeflow marks the memory as notes, not instructions, and quotes the file's text, but a model can still be steered by what it reads. Review changes to `.forgeflow/memory/` the way you review code.
+- OpenCode loads every Markdown file in `.forgeflow/memory/` and `.forgeflow/local/` as it is, at any age and without a size limit.
+- `.forgeflow/local/` is ignored by git only. Anything else that copies the project folder, such as a container build, takes your recorded prompts with it.
 - A file changed by a shell command is not in the record: only the agent's own file writes are.
 - Two sessions open at once in one project share the one record and take turns in it.
 - If you installed quality gates before session memory existed, run `forgeflow update` once so the harness config gains the session-start entry. Until then `forgeflow status` shows the wiring as missing.
