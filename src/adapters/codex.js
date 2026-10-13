@@ -1,6 +1,7 @@
 import {
   appliesHeader,
   commandWiring,
+  filled,
   hookFiles,
   isHookItem,
   marker,
@@ -24,6 +25,7 @@ export const name = 'codex';
 export const agentDirs = { project: '.codex/agents', global: '~/.codex/agents' };
 export const rulesLocation =
   '`.codex/forgeflow/rules` in the project and `~/.codex/forgeflow/rules`';
+export const places = { agentDirs, rulesLocation };
 
 // Codex runs hooks from the session's working directory, so the runner is
 // located through git rather than a relative path.
@@ -46,7 +48,7 @@ export function render(item, { version }) {
     });
   }
   if (item.type === 'skill') {
-    return skillFiles(`.agents/skills/${item.name}`, item, version, agentDirs);
+    return skillFiles(`.agents/skills/${item.name}`, item, version, places);
   }
   const sandbox = item.access === 'read-only' ? 'read-only' : 'workspace-write';
   const content = [
@@ -55,7 +57,7 @@ export function render(item, { version }) {
     `description = ${basic(item.description)}`,
     `sandbox_mode = ${basic(sandbox)}`,
     'developer_instructions = """',
-    multiline(item.body),
+    multiline(filled(item, places).body),
     '"""',
     '',
   ].join('\n');

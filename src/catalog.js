@@ -77,6 +77,16 @@ function buildItem(type, expectedName, text, source) {
   }
   if (!body) fail(source, 'body is empty');
 
+  if (type === 'agent' || type === 'skill') {
+    const unknown = unknownPlaceholders(body);
+    if (unknown.length > 0) {
+      fail(
+        source,
+        `unknown placeholder ${unknown.join(', ')} (allowed: ${PLACEHOLDERS.join(', ')})`
+      );
+    }
+  }
+
   const item = {
     id: `${type}:${data.name}`,
     type,
@@ -104,13 +114,6 @@ function buildItem(type, expectedName, text, source) {
     if (typeof flag !== 'boolean')
       fail(source, 'field "user-invocable-only" must be true or false');
     item.userInvocableOnly = flag;
-    const unknown = unknownPlaceholders(body);
-    if (unknown.length > 0) {
-      fail(
-        source,
-        `unknown placeholder ${unknown.join(', ')} (allowed: ${PLACEHOLDERS.join(', ')})`
-      );
-    }
   } else if (type === 'hook') {
     const events = data.events;
     const valid =

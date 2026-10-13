@@ -10,12 +10,14 @@ export function markdown(data, item, version) {
   return `---\n${frontmatter}---\n\n${item.body}\n\n<!-- ${marker(item, version)} -->\n`;
 }
 
-// agentDirs is the adapter's { project, global } pair; only SKILL.md is filled.
-export function skillFiles(dir, item, version, agentDirs, extraFrontmatter = {}) {
+// places is the adapter's { agentDirs, rulesLocation }.
+export const filled = (item, places) => ({ ...item, body: fillPlaceholders(item.body, places) });
+
+// Only SKILL.md is filled; supporting files are copied as they are.
+export function skillFiles(dir, item, version, places, extraFrontmatter = {}) {
   const data = { name: item.name, description: item.description, ...extraFrontmatter };
-  const filled = { ...item, body: fillPlaceholders(item.body, agentDirs) };
   return [
-    { path: `${dir}/SKILL.md`, content: markdown(data, filled, version) },
+    { path: `${dir}/SKILL.md`, content: markdown(data, filled(item, places), version) },
     ...item.files.map((file) => ({ path: `${dir}/${file.path}`, content: file.content })),
   ];
 }

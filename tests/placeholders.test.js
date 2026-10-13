@@ -1,3 +1,4 @@
+import { parse as parseToml } from 'smol-toml';
 import { describe, expect, it } from 'vitest';
 import * as claude from '../src/adapters/claude.js';
 import * as codex from '../src/adapters/codex.js';
@@ -6,25 +7,30 @@ import * as opencode from '../src/adapters/opencode.js';
 import { loadCatalog } from '../src/catalog.js';
 import { CatalogError } from '../src/errors.js';
 import { PLACEHOLDERS, fillPlaceholders, unknownPlaceholders } from '../src/placeholders.js';
-import { agentMd, item, skill, skillMd, tmpDir, writeTree } from './helpers.js';
+import { agentMd, item, ruleMd, skill, skillMd, tmpDir, writeTree } from './helpers.js';
 
 const load = (tree) => loadCatalog(writeTree(tmpDir(), tree));
-const dirs = { project: '.x/agents', global: '~/.x/agents' };
+const places = {
+  agentDirs: { project: '.x/agents', global: '~/.x/agents' },
+  rulesLocation: '`.x/rules` in the project',
+};
 const BODY = 'Look in {{agents-dir}} and {{global-agents-dir}}, then {{agents-dir}} again.';
+const RULES = 'List the files in {{rules-location}}.';
 
 describe('placeholders', () => {
-  it('are the two agents-folder tokens', () => {
-    expect(PLACEHOLDERS).toEqual(['{{agents-dir}}', '{{global-agents-dir}}']);
+  it('are the three location tokens', () => {
+    expect(PLACEHOLDERS).toEqual(['{{agents-dir}}', '{{global-agents-dir}}', '{{rules-location}}']);
   });
 
-  it('fills every occurrence of both', () => {
-    expect(fillPlaceholders(BODY, dirs)).toBe(
+  it('fills every occurrence of each', () => {
+    expect(fillPlaceholders(BODY, places)).toBe(
       'Look in .x/agents and ~/.x/agents, then .x/agents again.'
     );
+    expect(fillPlaceholders(RULES, places)).toBe('List the files in `.x/rules` in the project.');
   });
 
   it('leaves text without tokens alone', () => {
-    expect(fillPlaceholders('No tokens here. {single} braces.', dirs)).toBe(
+    expect(fillPlaceholders('No tokens here. {single} braces.', places)).toBe(
       'No tokens here. {single} braces.'
     );
   });
@@ -32,7 +38,7 @@ describe('placeholders', () => {
   it('reports each unknown token once', () => {
     const text = '{{agents-dir}} {{agent-dir}} {{ agents-dir }} {{agent-dir}} {{}}';
     expect(unknownPlaceholders(text)).toEqual(['{{agent-dir}}', '{{ agents-dir }}', '{{}}']);
-    expect(unknownPlaceholders(BODY)).toEqual([]);
+    expect(unknownPlaceholders(`${BODY} ${RULES}`)).toEqual([]);
   });
 });
 
@@ -40,28 +46,37 @@ describe('catalog', () => {
   const flow = (body) => ({
     'skills/flow/SKILL.md': `---\nname: flow\ndescription: Runs flow.\n---\n${body}\n`,
   });
+  const agent = (body) => ({ 'agents/a.md': agentMd('a').replace('Body of a.', body) });
 
-  it('accepts both placeholders in a skill body', () => {
-    expect(load(flow(BODY)).get('skill:flow').body).toBe(BODY);
+  it('accepts every placeholder in a skill body and in an agent body', () => {
+    expect(load(flow(`${BODY} ${RULES}`)).get('skill:flow').body).toBe(`${BODY} ${RULES}`);
+    expect(load(agent(RULES)).get('agent:a').body).toBe(RULES);
   });
 
-  it.each(['{{agent-dir}}', '{{ agents-dir }}', '{{global_agents_dir}}'])(
-    'rejects the unknown placeholder %s and names it',
+  it.each(['{{agent-dir}}', '{{ agents-dir }}', '{{rules_location}}'])(
+    'rejects the unknown placeholder %s in a skill and in an agent',
     (token) => {
-      const attempt = () => load(flow(`Look in ${token}.`));
-      expect(attempt).toThrow(CatalogError);
-      expect(attempt).toThrow(`skills/flow/SKILL.md: unknown placeholder ${token}`);
-      expect(attempt).toThrow('allowed: {{agents-dir}}, {{global-agents-dir}}');
+      for (const [tree, source] of [
+        [flow(`Look in ${token}.`), 'skills/flow/SKILL.md'],
+        [agent(`Look in ${token}.`), 'agents/a.md'],
+      ]) {
+        const attempt = () => load(tree);
+        expect(attempt).toThrow(CatalogError);
+        expect(attempt).toThrow(`${source}: unknown placeholder ${token}`);
+        expect(attempt).toThrow(
+          'allowed: {{agents-dir}}, {{global-agents-dir}}, {{rules-location}}'
+        );
+      }
     }
   );
 
-  it('does not check agent bodies or supporting skill files', () => {
+  it('does not check rule bodies or supporting skill files', () => {
     const catalog = load({
-      'agents/a.md': agentMd('a').replace('Body of a.', 'Uses {{anything}}.'),
+      'rules/r.md': ruleMd('r').replace('- A rule of r.', '- Write {{ value }}.'),
       'skills/flow/SKILL.md': skillMd('flow'),
       'skills/flow/notes.md': 'A {{template}} example.',
     });
-    expect(catalog.get('agent:a').body).toBe('Uses {{anything}}.');
+    expect(catalog.get('rule:r').body).toContain('{{ value }}');
     expect(catalog.get('skill:flow').files[0].content.toString()).toBe('A {{template}} example.');
   });
 });
@@ -73,9 +88,18 @@ const EXPECTED = [
   ['cursor', cursor, '.cursor/agents', '~/.cursor/agents'],
 ];
 
-describe.each(EXPECTED)('%s adapter', (_name, adapter, project, global) => {
-  it('exports its agents folders', () => {
+describe.each(EXPECTED)('%s adapter', (name, adapter, project, global) => {
+  const text = (file) =>
+    name === 'codex' && file.path.endsWith('.toml')
+      ? parseToml(file.content).developer_instructions
+      : file.content;
+
+  it('exports its places', () => {
     expect(adapter.agentDirs).toEqual({ project, global });
+    expect(adapter.places).toEqual({
+      agentDirs: adapter.agentDirs,
+      rulesLocation: adapter.rulesLocation,
+    });
   });
 
   it('writes project agents into the folder it names', () => {
@@ -84,16 +108,24 @@ describe.each(EXPECTED)('%s adapter', (_name, adapter, project, global) => {
   });
 
   it.each(['project', 'global'])('fills a skill body at %s scope', (scope) => {
-    const files = adapter.render(skill({ body: BODY }), { scope, version: '0.1.0' });
+    const files = adapter.render(skill({ body: `${BODY} ${RULES}` }), { scope, version: '0.1.0' });
     const main = files.find((file) => file.path.endsWith('SKILL.md'));
     expect(main.content).toContain(`Look in ${project} and ${global}, then ${project} again.`);
+    expect(main.content).toContain(`List the files in ${adapter.rulesLocation}.`);
     expect(main.content).not.toContain('{{');
   });
 
-  it('leaves an agent body and a supporting skill file unchanged', () => {
+  it.each(['project', 'global'])('fills an agent body at %s scope', (scope) => {
+    const [file] = adapter.render(item({ body: `${BODY} ${RULES}` }), { scope, version: '0.1.0' });
+    expect(text(file)).toContain(`Look in ${project} and ${global}, then ${project} again.`);
+    expect(text(file)).toContain(`List the files in ${adapter.rulesLocation}.`);
+    expect(text(file)).not.toContain('{{');
+  });
+
+  it('leaves a rule body and a supporting skill file unchanged', () => {
     const ctx = { scope: 'project', version: '0.1.0' };
-    const [agent] = adapter.render(item({ body: BODY }), ctx);
-    expect(agent.content).toContain('{{agents-dir}}');
+    const rule = { ...item({ id: 'rule:r', type: 'rule', name: 'r' }), body: `# R\n\n- ${BODY}` };
+    expect(adapter.render(rule, ctx)[0].content).toContain('{{agents-dir}}');
 
     const extra = { path: 'notes.md', content: Buffer.from(BODY) };
     const files = adapter.render(skill({ files: [extra] }), ctx);

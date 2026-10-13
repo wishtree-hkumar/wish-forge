@@ -1,9 +1,10 @@
 import { stringify } from 'yaml';
-import { hookFiles, isHookItem, markdown, ruleFile, skillFiles } from './shared.js';
+import { filled, hookFiles, isHookItem, markdown, ruleFile, skillFiles } from './shared.js';
 
 export const name = 'cursor';
 export const agentDirs = { project: '.cursor/agents', global: '~/.cursor/agents' };
 export const rulesLocation = '`.cursor/rules` in the project (the files named `forgeflow-*.mdc`)';
+export const places = { agentDirs, rulesLocation };
 // Cursor keeps user-level rules in its settings, not in files.
 export const globalRules = false;
 
@@ -34,12 +35,17 @@ export function render(item, { version }) {
   }
   if (item.type === 'skill') {
     const extra = item.userInvocableOnly ? { 'disable-model-invocation': true } : {};
-    return skillFiles(`.cursor/skills/${item.name}`, item, version, agentDirs, extra);
+    return skillFiles(`.cursor/skills/${item.name}`, item, version, places, extra);
   }
   const data = {
     name: item.name,
     description: item.description,
     readonly: item.access === 'read-only',
   };
-  return [{ path: `${agentDirs.project}/${item.name}.md`, content: markdown(data, item, version) }];
+  return [
+    {
+      path: `${agentDirs.project}/${item.name}.md`,
+      content: markdown(data, filled(item, places), version),
+    },
+  ];
 }

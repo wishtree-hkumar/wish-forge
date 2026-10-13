@@ -1,6 +1,10 @@
-// Tokens a skill body may contain. Each adapter fills them with its own agents
-// folders, so a flow can look for optional agents in the harness it runs in.
-const TOKENS = { '{{agents-dir}}': 'project', '{{global-agents-dir}}': 'global' };
+// Tokens an agent or skill body may contain. Each adapter fills them with its
+// own locations, so the text looks only in the harness it is installed for.
+const TOKENS = {
+  '{{agents-dir}}': (places) => places.agentDirs.project,
+  '{{global-agents-dir}}': (places) => places.agentDirs.global,
+  '{{rules-location}}': (places) => places.rulesLocation,
+};
 const TOKEN_RE = /\{\{[^{}]*\}\}/g;
 
 export const PLACEHOLDERS = Object.keys(TOKENS);
@@ -10,9 +14,9 @@ export function unknownPlaceholders(text) {
   return [...found].filter((token) => !Object.hasOwn(TOKENS, token));
 }
 
-// agentDirs is an adapter's { project, global } pair.
-export function fillPlaceholders(text, agentDirs) {
+// places is an adapter's { agentDirs: { project, global }, rulesLocation }.
+export function fillPlaceholders(text, places) {
   return text.replace(TOKEN_RE, (token) =>
-    Object.hasOwn(TOKENS, token) ? agentDirs[TOKENS[token]] : token
+    Object.hasOwn(TOKENS, token) ? TOKENS[token](places) : token
   );
 }
