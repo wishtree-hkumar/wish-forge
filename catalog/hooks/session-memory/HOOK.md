@@ -6,7 +6,7 @@ group: memory
 ---
 As the agent works, this records the files it writes and your last three prompts in `.forgeflow/local/session.json` and a readable copy, `session.md`. That folder ignores itself, so nothing in it is committed. Credentials in a prompt are replaced with `[redacted]` before it is stored.
 
-When a session starts, it adds one block to the model's context: the shared lessons in `.forgeflow/memory/lessons.md`, the handoff note if it is less than a week old, what the last session did, and any flow run in progress. On Claude Code and Codex the block is added again after a compaction, with what the current session has done so far.
+When a session starts, it adds one block to the model's context: the shared lessons in `.forgeflow/memory/lessons.md`, the project map in `.forgeflow/memory/map.md` if one has been made (with a warning once it is more than 30 days old), the handoff note if it is less than a week old, what the last session did, and any flow run in progress. On Claude Code and Codex the block is added again after a compaction, with what the current session has done so far.
 
 The block is marked as notes to check against the code, not as instructions, and text from the lessons and handoff files is quoted. The lessons file is still read by every teammate's agent, so review changes to it the way you review code.
 

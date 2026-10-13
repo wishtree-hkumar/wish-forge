@@ -19,13 +19,15 @@ export const SECRET_PATTERNS = [
 const HOUR = 60 * 60 * 1000;
 const IDLE = 2 * HOUR;
 const STALE = 7 * 24 * HOUR;
+const MAP_AGE_DAYS = 30;
 const MAX_FILES = 30;
 const MAX_PROMPTS = 3;
 const PROMPT_CHARS = 300;
-const LIMITS = { lessons: 3000, handoff: 1500, activity: 1200 };
+const LIMITS = { lessons: 3000, map: 3000, handoff: 1500, activity: 1200 };
 
 const LOCAL = '.forgeflow/local';
 const LESSONS = '.forgeflow/memory/lessons.md';
+const MAP = '.forgeflow/memory/map.md';
 const HANDOFF = `${LOCAL}/handoff.md`;
 const RECORD = `${LOCAL}/session.json`;
 const READABLE = `${LOCAL}/session.md`;
@@ -189,6 +191,33 @@ const worked = (session) =>
 const ownSession = (current, ctx) =>
   current !== null && (ctx.session === '' || current.id === ctx.session) ? current : null;
 
+// The day forge-map wrote into the map, or null. The file's own timestamp is
+// no use here: a clone or a checkout resets it.
+function mapDay(text) {
+  for (const line of text.split('\n').slice(0, 5)) {
+    const day = /^Generated (\d{4}-\d{2}-\d{2})\b/.exec(line)?.[1];
+    if (day) {
+      const time = Date.parse(`${day}T00:00:00.000Z`);
+      return Number.isNaN(time) ? null : { day, time };
+    }
+  }
+  return null;
+}
+
+function mapSection(root, now) {
+  const map = readText(root, MAP);
+  const body = map?.text.replace(/^# .*(\n+|$)/, '');
+  if (!body) return '';
+  const made = mapDay(map.text);
+  // Whole days, so a map made 30 days ago is not yet old at any hour.
+  const old = made !== null && Math.floor((now - made.time) / (24 * HOUR)) > MAP_AGE_DAYS;
+  const warning = old
+    ? `\n(This map was generated on ${made.day}, more than ${MAP_AGE_DAYS} days ago. Parts of it ` +
+      'may be out of date: check it against the code, and tell the user that forge-map refreshes it.)'
+    : '';
+  return `## Project map (from ${MAP})\n${quoted(body, LIMITS.map, MAP)}${warning}`;
+}
+
 function memoryBlock(ctx, source) {
   const { root, now } = ctx;
   const parts = [];
@@ -200,6 +229,9 @@ function memoryBlock(ctx, source) {
       parts.push(`## Project lessons (from ${LESSONS})\n${quoted(body, LIMITS.lessons, LESSONS)}`);
     }
   }
+
+  const map = mapSection(root, now);
+  if (map) parts.push(map);
 
   const handoff = readText(root, HANDOFF);
   if (handoff && now - handoff.modified <= STALE) {
