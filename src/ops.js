@@ -57,6 +57,13 @@ function install(ctx, lock, perTarget) {
       throw new UsageError('quality gates are installed per project. Run this without --global.');
     }
     const adapter = getAdapter(target);
+    const hasRule = entries.some(({ item }) => item.type === 'rule');
+    if (ctx.scope === 'global' && hasRule && adapter.globalRules === false) {
+      throw new UsageError(
+        'Cursor keeps user-level rules in its settings, not in files. ' +
+          'Install rules for cursor without --global.'
+      );
+    }
     const root = adapter.root(ctx.scope, ctx);
     const installed = lock.targets[target]?.items ?? {};
     const after = [];

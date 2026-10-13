@@ -1,4 +1,12 @@
-import { commandWiring, hookFiles, isHookItem, marker, skillFiles } from './shared.js';
+import {
+  appliesHeader,
+  commandWiring,
+  hookFiles,
+  isHookItem,
+  marker,
+  ruleFile,
+  skillFiles,
+} from './shared.js';
 
 // oxlint-disable-next-line no-control-regex -- matching control characters is the point
 const CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/g;
@@ -14,6 +22,8 @@ const multiline = (text) => escapeControl(text.replace(/\\/g, '\\\\').replace(/"
 
 export const name = 'codex';
 export const agentDirs = { project: '.codex/agents', global: '~/.codex/agents' };
+export const rulesLocation =
+  '`.codex/forgeflow/rules` in the project and `~/.codex/forgeflow/rules`';
 
 // Codex runs hooks from the session's working directory, so the runner is
 // located through git rather than a relative path.
@@ -30,6 +40,11 @@ export function root(scope, { cwd, home }) {
 
 export function render(item, { version }) {
   if (isHookItem(item)) return hookFiles('.codex/forgeflow', item, version);
+  if (item.type === 'rule') {
+    return ruleFile(`.codex/forgeflow/rules/${item.name}.md`, item, version, {
+      header: appliesHeader(item),
+    });
+  }
   if (item.type === 'skill') {
     return skillFiles(`.agents/skills/${item.name}`, item, version, agentDirs);
   }

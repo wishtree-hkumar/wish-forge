@@ -1,9 +1,11 @@
 import { join } from 'node:path';
-import { hookFiles, markdown, skillFiles, stamp } from './shared.js';
+import { appliesHeader, hookFiles, markdown, ruleFile, skillFiles, stamp } from './shared.js';
 
 export const name = 'opencode';
 // The global folder has no ".opencode/" prefix: see root().
 export const agentDirs = { project: '.opencode/agents', global: '~/.config/opencode/agents' };
+export const rulesLocation =
+  '`.opencode/forgeflow/rules` in the project and `~/.config/opencode/forgeflow/rules`';
 
 // OpenCode has no hook config file: the plugin below is the wiring.
 export const wiring = null;
@@ -27,6 +29,11 @@ export function render(item, { scope, version }) {
     ];
   }
   const prefix = scope === 'global' ? '' : '.opencode/';
+  if (item.type === 'rule') {
+    return ruleFile(`${prefix}forgeflow/rules/${item.name}.md`, item, version, {
+      header: appliesHeader(item),
+    });
+  }
   if (item.type === 'skill') {
     const extra = item.userInvocableOnly
       ? { metadata: { 'opencode/autoinvoke': 'false', 'opencode/slash': 'true' } }

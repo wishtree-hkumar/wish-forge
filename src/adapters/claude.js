@@ -1,9 +1,12 @@
-import { commandWiring, hookFiles, isHookItem, markdown, skillFiles } from './shared.js';
+import { stringify } from 'yaml';
+import { commandWiring, hookFiles, isHookItem, markdown, ruleFile, skillFiles } from './shared.js';
 
 const MODELS = { fast: 'haiku', balanced: 'sonnet', strong: 'opus' };
 
 export const name = 'claude';
 export const agentDirs = { project: '.claude/agents', global: '~/.claude/agents' };
+export const rulesLocation =
+  '`.claude/rules/forgeflow` in the project and `~/.claude/rules/forgeflow`';
 
 export const wiring = commandWiring(
   '.claude/settings.json',
@@ -18,6 +21,11 @@ export function root(scope, { cwd, home }) {
 
 export function render(item, { version }) {
   if (isHookItem(item)) return hookFiles('.claude/forgeflow', item, version);
+  if (item.type === 'rule') {
+    // A rule without paths loads for every session, so it gets no frontmatter.
+    const frontmatter = item.paths ? stringify({ paths: item.paths }, { lineWidth: 0 }) : '';
+    return ruleFile(`.claude/rules/forgeflow/${item.name}.md`, item, version, { frontmatter });
+  }
   if (item.type === 'skill') {
     const extra = item.userInvocableOnly ? { 'disable-model-invocation': true } : {};
     return skillFiles(`.claude/skills/${item.name}`, item, version, agentDirs, extra);

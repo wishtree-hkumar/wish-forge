@@ -20,6 +20,21 @@ export function skillFiles(dir, item, version, agentDirs, extraFrontmatter = {})
   ];
 }
 
+// How a rule's reach is put into words where the harness cannot scope it.
+export function appliesTo(item) {
+  if (!item.paths) return 'all work';
+  return `files matching ${item.paths.map((pattern) => `\`${pattern}\``).join(', ')}`;
+}
+
+export const appliesHeader = (item) => `Applies to: ${appliesTo(item)}.\n\n`;
+
+// frontmatter is the text between the fences, ending in a newline, or '' for none.
+export function ruleFile(path, item, version, { frontmatter = '', header = '' } = {}) {
+  const front = frontmatter ? `---\n${frontmatter}---\n\n` : '';
+  const content = `${front}${header}${item.body}\n\n<!-- ${marker(item, version)} -->\n`;
+  return [{ path, content }];
+}
+
 export const isHookItem = (item) => item.type === 'hook' || item.type === 'runtime';
 
 // Shipped JavaScript carries the marker as its first line.
