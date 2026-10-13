@@ -10,7 +10,7 @@ export function parseFrontmatter(text) {
   try {
     data = parse(lines.slice(1, end).join('\n')) ?? {};
   } catch (error) {
-    throw new Error(`invalid YAML in frontmatter: ${error.message}`);
+    throw new Error(`invalid YAML in frontmatter: ${error.message}`, { cause: error });
   }
   if (typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('frontmatter must be a YAML mapping');
