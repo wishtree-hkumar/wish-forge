@@ -1,0 +1,21 @@
+import { markdown, skillFiles } from './shared.js';
+
+const MODELS = { fast: 'haiku', balanced: 'sonnet', strong: 'opus' };
+
+export const name = 'claude';
+
+export function root(scope, { cwd, home }) {
+  return scope === 'global' ? home : cwd;
+}
+
+export function render(item, { version }) {
+  if (item.type === 'skill') {
+    const extra = item.userInvocableOnly ? { 'disable-model-invocation': true } : {};
+    return skillFiles(`.claude/skills/${item.name}`, item, version, extra);
+  }
+  const data = { name: item.name, description: item.description };
+  // Read-only agents keep Bash so they can run tests and git diff.
+  if (item.access === 'read-only') data.tools = 'Read, Grep, Glob, Bash';
+  data.model = MODELS[item.modelTier];
+  return [{ path: `.claude/agents/${item.name}.md`, content: markdown(data, item, version) }];
+}
