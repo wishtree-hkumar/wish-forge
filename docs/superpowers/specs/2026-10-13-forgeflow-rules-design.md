@@ -275,6 +275,10 @@ refused under section 6.
 - **Reformatting.** `opencode.json` is rewritten as two-space JSON.
 - **Nested `AGENTS.md` files** are not touched: only the one at the install
   root.
+- **Gates protect some rule files and not others.** With the phase 2 gates
+  installed, an agent cannot edit rule files under `.codex/forgeflow/` or
+  `.opencode/forgeflow/`, because that folder is protected. Rule files for
+  Claude Code and Cursor live in the harness's own rules folder and are not.
 
 ## 11. Error handling
 
