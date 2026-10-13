@@ -1,0 +1,10 @@
+{
+  "env": { "node": true, "es2024": true },
+  "plugins": ["import"],
+  "categories": { "correctness": "error", "suspicious": "warn", "perf": "warn" },
+  "rules": {
+    "no-console": "off",
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
+  },
+  "ignorePatterns": ["node_modules/**"]
+}

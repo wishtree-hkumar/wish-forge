@@ -1,0 +1,24 @@
+{
+  "name": "forgeflow",
+  "version": "0.1.0",
+  "description": "Ready-to-use coding agents and development flows for Claude Code, Codex, OpenCode and Cursor.",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "bin": { "forgeflow": "./bin/forgeflow.js" },
+  "files": ["bin", "src", "catalog", "README.md"],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "oxlint bin src tests",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": { "yaml": "^2.9.1" },
+  "devDependencies": {
+    "oxlint": "^1.75.0",
+    "prettier": "^3.6.2",
+    "smol-toml": "^1.9.1",
+    "vitest": "4.1.10"
+  }
+}
