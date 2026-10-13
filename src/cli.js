@@ -12,12 +12,14 @@ const VERSION = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8')
 ).version;
 const DEFAULT_CATALOG = fileURLToPath(new URL('../catalog', import.meta.url));
+const LISTED_TYPES = ['agent', 'skill', 'hook'];
 
 const USAGE = `Usage:
-  forgeflow list [--type agent|skill] [--json]
+  forgeflow list [--type agent|skill|hook] [--json]
   forgeflow info <id>
   forgeflow add <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
   forgeflow add --flow quick|full --target <t>[,<t>...]
+  forgeflow add --hooks --target <t>[,<t>...]
   forgeflow remove <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
   forgeflow update [<id...>] [--target <t>[,<t>...]] [--global] [--dry-run] [--force]
   forgeflow status [--global]
@@ -25,12 +27,14 @@ const USAGE = `Usage:
 
 Targets: ${targetNames.join(', ')}
 An <id> is a name such as "reviewer", or a full id such as "agent:reviewer".
+--hooks installs every quality gate. Gates are installed per project only.
 `;
 
 const OPTIONS = {
   target: { type: 'string' },
   flow: { type: 'string' },
   type: { type: 'string' },
+  hooks: { type: 'boolean' },
   global: { type: 'boolean' },
   'dry-run': { type: 'boolean' },
   force: { type: 'boolean' },
@@ -39,7 +43,13 @@ const OPTIONS = {
   version: { type: 'boolean' },
 };
 
-const LABELS = { skip: 'unchanged', keep: 'kept', missing: 'already gone' };
+const LABELS = {
+  skip: 'unchanged',
+  keep: 'kept',
+  missing: 'already gone',
+  wire: 'wired',
+  unwire: 'unwired',
+};
 const NOTHING = 'Nothing is installed here.\n';
 
 function parseTargets(value, required) {
@@ -81,12 +91,13 @@ function printStatus(stdout, targets) {
     stdout.write(NOTHING);
     return;
   }
-  for (const { target, root, items } of targets) {
+  for (const { target, root, items, wiring } of targets) {
     stdout.write(`${target}  (${root})\n`);
     for (const { id, explicit, files } of items) {
       stdout.write(`  ${id}${explicit ? '' : '  (required)'}\n`);
       for (const { path, state } of files) stdout.write(`    ${state.padEnd(8)} ${path}\n`);
     }
+    if (wiring) stdout.write(`  ${`wiring ${wiring.state}`.padEnd(17)} ${wiring.path}\n`);
   }
 }
 
@@ -132,15 +143,17 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
 
   switch (command) {
     case 'list': {
-      if (values.type !== undefined && !['agent', 'skill'].includes(values.type)) {
-        throw new UsageError('--type must be agent or skill.');
+      if (values.type !== undefined && !LISTED_TYPES.includes(values.type)) {
+        throw new UsageError(`--type must be one of: ${LISTED_TYPES.join(', ')}.`);
       }
+      // The runtime is installed only as a requirement, so it is not offered.
       const items = [...catalog.values()]
+        .filter((item) => LISTED_TYPES.includes(item.type))
         .filter((item) => values.type === undefined || item.type === values.type)
         .sort((a, b) => a.id.localeCompare(b.id));
       if (values.json) {
         const rows = items.map(
-          ({ id, type, name, description, stage, access, modelTier, requires }) => ({
+          ({ id, type, name, description, stage, access, modelTier, events, requires }) => ({
             id,
             type,
             name,
@@ -148,13 +161,14 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
             stage,
             access,
             modelTier,
+            events,
             requires,
           })
         );
         stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
       } else {
         for (const item of items) {
-          const stage = (item.stage ?? '-').padEnd(13);
+          const stage = (item.stage ?? item.events?.join(',') ?? '-').padEnd(13);
           const access = (item.access ?? '-').padEnd(10);
           stdout.write(`${item.id.padEnd(28)} ${stage} ${access} ${item.description}\n`);
         }
@@ -171,6 +185,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         ['stage', item.stage],
         ['access', item.access],
         ['model tier', item.modelTier],
+        ['events', item.events?.join(', ')],
         ['requires', item.requires.join(', ') || 'nothing'],
       ];
       for (const [label, value] of rows) {
@@ -187,8 +202,12 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         }
         wanted.push(`skill:forge-${values.flow}`);
       }
+      if (values.hooks) {
+        const gates = [...catalog.values()].filter((item) => item.type === 'hook');
+        wanted.push(...gates.map((item) => item.id).sort());
+      }
       if (wanted.length === 0) {
-        throw new UsageError('name at least one item, or use --flow quick|full.');
+        throw new UsageError('name at least one item, or use --flow quick|full or --hooks.');
       }
       printResult(stdout, add(ctx, wanted, parseTargets(values.target, true)), ctx.dryRun);
       return 0;

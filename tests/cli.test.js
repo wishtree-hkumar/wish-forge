@@ -73,7 +73,7 @@ describe('list and info', () => {
       'skill:forge-full',
       'skill:forge-quick',
     ]);
-    expect(run('list', '--type', 'hook').code).toBe(2);
+    expect(run('list', '--type', 'bogus').code).toBe(2);
   });
 
   it('shows one item', () => {
