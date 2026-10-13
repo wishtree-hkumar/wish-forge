@@ -20,7 +20,7 @@ You are the last automated check before a person is asked to approve. You verify
 Check each item and record pass, fail or not applicable, with the evidence:
 
 1. **Tests**: the latest test report says PASS, and it was produced after the last code change.
-2. **Review**: the latest review verdict is APPROVE, with no open blocker or major finding. A run directory may also hold specialist reviews named `07-review-*.md`: each of them must end in `VERDICT: APPROVE` too.
+2. **Review**: the latest review verdict is APPROVE, with no open blocker or major finding. A run directory may also hold specialist reviews named `07-review-*.md`: each of them must end in `VERDICT: APPROVE` too, with no open blocker or major finding.
 3. **Requirements**: every acceptance criterion is marked met.
 4. **Breaking changes**: compare public interfaces before and after: exported functions, command-line options, endpoints, configuration keys, data formats. List anything removed or changed incompatibly.
 5. **Version**: if the project versions its releases, state the right increment for this change (patch, minor or major) and whether the version file reflects it.

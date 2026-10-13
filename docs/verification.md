@@ -85,7 +85,10 @@ Install the specialists and a flow in the same scratch repository:
 | 28 | After `forgeflow remove` of all four reviewers, a new run creates no `07-review-*` file other than `07-review.md` and says nothing about specialists | | | | |
 | 29 | With `security-reviewer` installed only with `--global`, a run in a project still runs it | | | | |
 | 30 | Ask for a change with an obvious injection flaw: `security-reviewer` requests changes and the run returns to BUILD, then reviews again | | | | |
+| 31 | Asking `debugger` to explain a failing test produces a root-cause report. Record whether it could run the test or had to work by reading | | | | |
 
 Check 27 shows whether the model follows the instruction to look in the agents folder. If a harness skips the specialists, record it in the README: on that harness they must be run by hand.
+
+Check 31 matters most on Codex, where a read-only agent runs in a read-only sandbox and many test commands cannot write their caches. There `debugger` works by reading and labels its cause as unconfirmed.
 
 Check 29 matters most on OpenCode, whose user-level folder is `~/.config/opencode/agents`.

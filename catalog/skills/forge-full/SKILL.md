@@ -58,7 +58,7 @@ Four optional agents each review one subject: `security-reviewer`, `performance-
 
 At REVIEW, after `reviewer`:
 
-1. List the files in `{{agents-dir}}` in the project and in `{{global-agents-dir}}`. A specialist is installed when a file named for it, with any extension, is in either folder.
+1. List the files in `{{agents-dir}}` in the project and in `{{global-agents-dir}}`. A specialist is installed when a file named for it, with any extension, is in either folder. A folder that does not exist has no specialists. If you cannot read a folder, tell the user which one in one line, treat it as having none, and carry on.
 2. Delegate to each installed specialist, in the order above, giving it the run directory path. Save each full reply as `07-review-<agent name>.md`, for example `07-review-security-reviewer.md`.
 3. Skip a specialist that is not installed. Do not mention it, and do not ask the user to install it.
 4. Record each verdict in the `stages` list in `state.md`, for example `security-reviewer: APPROVE`.

@@ -94,7 +94,7 @@ Specialists own a subject instead of a stage. Install the ones you want; none co
 
 The four reviewers are also used by the flows. At REVIEW, a flow runs each one that is installed for that harness, saves its report as `07-review-<agent name>.md` in the run directory, and returns to BUILD if any of them requests changes. With none installed, a flow runs exactly as before. Each installed reviewer adds one subagent run to every review round, including for changes outside its subject.
 
-A specialist is a prompt for your harness's model, not a tool: `security-reviewer` is not a scanner, and `accessibility-reviewer` reads the code without running the interface.
+A specialist is a prompt for your harness's model, not a tool: `security-reviewer` is not a scanner, and `accessibility-reviewer` reads the code without running the interface. Where a harness gives read-only agents a read-only sandbox (Codex does), `debugger` may be unable to run the failing command; it then works by reading and says its cause is unconfirmed.
 
 ## Quality gates
 

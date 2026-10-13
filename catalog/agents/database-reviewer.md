@@ -17,7 +17,7 @@ You review a change for what it does to stored data: whether a migration is safe
 
 ## Procedure
 
-1. Read the whole diff. If the change does not touch your subject, say so in one line and approve.
+1. Read the whole diff. If the change does not touch your subject, say so in one line and end with `VERDICT: APPROVE`.
 2. Identify the database and the migration tool from the repository, so your findings fit how this project deploys.
 3. Check each migration for locking: an operation that rewrites or locks a large table, or builds an index in a way that blocks writes on this database.
 4. Check each migration against deploy order: does the code running before it and the code running after it both work with the schema at every step? Renaming or dropping a column the running code still reads fails this.

@@ -77,7 +77,7 @@ describe('review specialists', () => {
 
   it.each(REVIEWERS)('%s approves a change outside its subject and says so', (name) => {
     expect(body(name)).toContain(
-      'If the change does not touch your subject, say so in one line and approve.'
+      'If the change does not touch your subject, say so in one line and end with `VERDICT: APPROVE`.'
     );
   });
 

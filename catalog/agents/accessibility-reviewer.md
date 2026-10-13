@@ -17,7 +17,7 @@ You review a user interface change for whether people can use it with a keyboard
 
 ## Procedure
 
-1. Read the whole diff. If the change does not touch your subject, say so in one line and approve.
+1. Read the whole diff. If the change does not touch your subject, say so in one line and end with `VERDICT: APPROVE`.
 2. Check structure: native elements used for what they are (buttons, links, headings, lists, tables), headings in order, landmarks present.
 3. Check names: every control, image and icon has a text name that says what it does; decorative images are hidden from assistive technology.
 4. Check keyboard use: everything reachable and operable without a pointer, in a sensible order, with a visible focus indicator and no trap.
