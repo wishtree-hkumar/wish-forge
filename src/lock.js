@@ -52,6 +52,12 @@ function validate(path, lock) {
         requireSafe(item.wiring.path, id);
       }
     }
+    if (entry.rules !== undefined) {
+      if (!isObject(entry.rules) || typeof entry.rules.created !== 'boolean') {
+        throw malformed(`target "${target}" has a malformed rules record`);
+      }
+      requireSafe(entry.rules.path, `target "${target}"`);
+    }
   }
 }
 

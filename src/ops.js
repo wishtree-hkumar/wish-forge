@@ -1,8 +1,17 @@
 import { getAdapter } from './adapters/index.js';
+import { appliesTo } from './adapters/shared.js';
 import { applyActions, checkWritable } from './apply.js';
 import { ConflictError, UsageError } from './errors.js';
 import { readLock, sha256, writeLock } from './lock.js';
-import { planInstall, planRemove, planUnwire, planWire, wiringState } from './plan.js';
+import {
+  planInstall,
+  planRemove,
+  planRulesWiring,
+  planUnwire,
+  planWire,
+  rulesState,
+  wiringState,
+} from './plan.js';
 import { findId, resolve } from './resolve.js';
 import { RUNTIME_ID } from './wiring.js';
 
@@ -10,11 +19,24 @@ const FILE_STATE = { delete: 'ok', keep: 'edited', missing: 'missing' };
 
 const baseOf = (ctx) => (ctx.scope === 'global' ? ctx.home : ctx.cwd);
 const isHookItem = (item) => item.type === 'hook' || item.type === 'runtime';
-const wiringRow = ({ type, path }) => ({ id: RUNTIME_ID, type, path });
+const isRuleId = (id) => id.startsWith('rule:');
+// Hook wiring rows carry no id of their own; rules wiring rows do.
+const wiringRow = ({ id = RUNTIME_ID, type, path }) => ({ id, type, path });
 
-// A plan is { target, root, items, before?, after? }. before and after hold
+// What a harness needs to list each rule, in name order. A rule that has left
+// the catalog is still installed, so it stays listed without its patterns.
+function describeRules(catalog, ids) {
+  return [...ids].sort().map((id) => {
+    const item = catalog.get(id);
+    return { name: id.slice('rule:'.length), applies: item ? appliesTo(item) : undefined };
+  });
+}
+
+// A plan is { target, root, items, before?, after?, rules? }. before and after hold
 // wiring actions: unwire runs before files are removed, wire after they exist,
-// so a harness config never points at a runner that is not there.
+// so a harness config never points at a runner that is not there. rules is the
+// lockfile's rules record after the operation: an object to set it, null to
+// drop it, undefined to leave it.
 function report(plans) {
   return plans.map(({ target, root, items, before = [], after = [] }) => ({
     target,
@@ -45,6 +67,8 @@ function commit(ctx, lock, plans, record) {
       record(target.items, entry);
     }
     applyActions(plan.root, plan.after ?? [], ctx.force);
+    if (plan.rules === null) delete target.rules;
+    else if (plan.rules) target.rules = plan.rules;
   }
   // Written last: a crash never leaves a lockfile that claims unwritten files.
   writeLock(baseOf(ctx), lock, ctx.version);
@@ -78,7 +102,22 @@ function install(ctx, lock, perTarget) {
       }
       return entry;
     });
-    return { target, root, items, after };
+    let rules;
+    const rulesWiring = adapter.rulesWiring?.(ctx.scope);
+    const ruleIds = new Set(
+      [...Object.keys(installed), ...entries.map(({ item }) => item.id)].filter(isRuleId)
+    );
+    if (rulesWiring && ruleIds.size > 0) {
+      const planned = planRulesWiring(
+        root,
+        rulesWiring,
+        describeRules(ctx.catalog, ruleIds),
+        lock.targets[target]?.rules
+      );
+      after.push(planned.action);
+      rules = planned.record;
+    }
+    return { target, root, items, after, rules };
   });
 
   const conflicts = plans.flatMap((plan) =>
@@ -196,7 +235,24 @@ export function remove(ctx, refs, targets) {
     const items = Object.keys(installed)
       .filter((id) => going.has(id))
       .map((id) => ({ id, actions: planRemove(root, installed[id].files) }));
-    return { target, root, items, before };
+    let rules;
+    const record = lock.targets[target]?.rules;
+    if (record && [...going].some(isRuleId)) {
+      const rulesWiring = adapter.rulesWiring?.(ctx.scope);
+      const staying = Object.keys(installed).filter((id) => isRuleId(id) && !going.has(id));
+      rules = null;
+      if (rulesWiring) {
+        const planned = planRulesWiring(
+          root,
+          rulesWiring,
+          describeRules(ctx.catalog, staying),
+          record
+        );
+        before.push(planned.action);
+        rules = planned.record;
+      }
+    }
+    return { target, root, items, before, rules };
   });
 
   commit(ctx, lock, plans, (items, entry) => {
@@ -207,7 +263,8 @@ export function remove(ctx, refs, targets) {
 
 export function status(ctx) {
   const lock = readLock(baseOf(ctx));
-  return Object.entries(lock.targets).map(([target, { items }]) => {
+  return Object.entries(lock.targets).map(([target, entry]) => {
+    const { items } = entry;
     const adapter = getAdapter(target);
     const root = adapter.root(ctx.scope, ctx);
     const record = items[RUNTIME_ID]?.wiring;
@@ -217,6 +274,10 @@ export function status(ctx) {
       wiring:
         record && adapter.wiring
           ? { path: record.path, state: wiringState(root, adapter.wiring) }
+          : null,
+      rules:
+        entry.rules && adapter.rulesWiring
+          ? { path: entry.rules.path, state: rulesState(root, adapter.rulesWiring(ctx.scope)) }
           : null,
       items: Object.entries(items).map(([id, entry]) => ({
         id,

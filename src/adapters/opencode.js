@@ -16,6 +16,21 @@ export const rulesLocation =
   '`.opencode/forgeflow/rules` in the project and `~/.config/opencode/forgeflow/rules`';
 export const places = { agentDirs, rulesLocation };
 
+// OpenCode loads every file its "instructions" list names, so one glob covers
+// whichever rules are installed.
+export function rulesWiring(scope) {
+  return {
+    kind: 'json',
+    path: 'opencode.json',
+    alternative: 'opencode.jsonc',
+    entry:
+      scope === 'global'
+        ? '~/.config/opencode/forgeflow/rules/*.md'
+        : '.opencode/forgeflow/rules/*.md',
+    skeleton: { $schema: 'https://opencode.ai/config.json' },
+  };
+}
+
 // OpenCode has no hook config file: the plugin below is the wiring.
 export const wiring = null;
 

@@ -8,6 +8,7 @@ import {
   ruleFile,
   skillFiles,
 } from './shared.js';
+import { END, START } from '../rules-wiring.js';
 
 // oxlint-disable-next-line no-control-regex -- matching control characters is the point
 const CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/g;
@@ -26,6 +27,33 @@ export const agentDirs = { project: '.codex/agents', global: '~/.codex/agents' }
 export const rulesLocation =
   '`.codex/forgeflow/rules` in the project and `~/.codex/forgeflow/rules`';
 export const places = { agentDirs, rulesLocation };
+
+const RULES_INTRO =
+  'These standards are installed by forgeflow. Before you write or review code, ' +
+  'read each file below that applies to the files you are working on, and follow it.';
+
+// Codex reads only AGENTS.md, so the rule files are listed there. rules is
+// [{ name, applies }] in name order; applies is unknown for a rule that has
+// left the catalog.
+export function rulesWiring(scope) {
+  const dir = scope === 'global' ? '~/.codex/forgeflow/rules' : '.codex/forgeflow/rules';
+  return {
+    kind: 'block',
+    path: scope === 'global' ? '.codex/AGENTS.md' : 'AGENTS.md',
+    block: (rules) =>
+      [
+        START,
+        '## Coding standards',
+        '',
+        RULES_INTRO,
+        '',
+        ...rules.map(
+          ({ name, applies }) => `- \`${dir}/${name}.md\`${applies ? `: ${applies}` : ''}`
+        ),
+        END,
+      ].join('\n'),
+  };
+}
 
 // Codex runs hooks from the session's working directory, so the runner is
 // located through git rather than a relative path.
