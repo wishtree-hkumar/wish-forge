@@ -21,10 +21,11 @@ export const STAGES = [
 export const EVENTS = ['shell', 'write', 'prompt', 'stop'];
 const ACCESS = ['read-only', 'write'];
 const TIERS = ['fast', 'balanced', 'strong'];
+const JOINS = ['review'];
 const NAME_RE = /^[a-z][a-z0-9-]{0,62}$/;
 const RUNTIME_SOURCES = ['run.mjs', 'runtime.mjs', 'opencode-plugin.js'];
 const FIELDS = {
-  agent: ['name', 'description', 'stage', 'access', 'model-tier', 'requires'],
+  agent: ['name', 'description', 'stage', 'access', 'model-tier', 'joins', 'requires'],
   skill: ['name', 'description', 'user-invocable-only', 'requires'],
   hook: ['name', 'description', 'events', 'requires'],
   runtime: ['name', 'description'],
@@ -88,6 +89,14 @@ function buildItem(type, expectedName, text, source) {
     item.stage = oneOf(source, data, 'stage', STAGES, false);
     item.access = oneOf(source, data, 'access', ACCESS, true);
     item.modelTier = oneOf(source, data, 'model-tier', TIERS, false) ?? 'balanced';
+    // An agent that joins a stage is called by the flows when it is installed.
+    item.joins = oneOf(source, data, 'joins', JOINS, false);
+    if (item.joins !== undefined) {
+      if (item.stage !== undefined) {
+        fail(source, 'field "joins" is not allowed on an agent that has a stage');
+      }
+      if (item.access !== 'read-only') fail(source, 'field "joins" requires access: read-only');
+    }
   } else if (type === 'skill') {
     const flag = data['user-invocable-only'] ?? false;
     if (typeof flag !== 'boolean')
