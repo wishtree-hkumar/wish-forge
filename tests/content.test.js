@@ -37,7 +37,9 @@ describe('flow agents', () => {
   });
 
   it.each(EXPECTED)('%s has the five sections in order', (name) => {
-    const headings = [...catalog.get(`agent:${name}`).body.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
+    const headings = [...catalog.get(`agent:${name}`).body.matchAll(/^## (.+)$/gm)].map(
+      (m) => m[1]
+    );
     expect(headings).toEqual(SECTIONS);
   });
 
@@ -60,7 +62,15 @@ describe('flow agents', () => {
   });
 });
 
-const QUICK = ['requirement-analyst', 'planner', 'builder', 'tester', 'fixer', 'reviewer', 'release-gate'];
+const QUICK = [
+  'requirement-analyst',
+  'planner',
+  'builder',
+  'tester',
+  'fixer',
+  'reviewer',
+  'release-gate',
+];
 const FULL = EXPECTED.map(([name]) => name);
 
 describe('flow skills', () => {
@@ -72,7 +82,9 @@ describe('flow skills', () => {
     expect(flow.userInvocableOnly).toBe(true);
     expect([...flow.requires].sort()).toEqual(expected.map((agent) => `agent:${agent}`).sort());
 
-    const named = agents.map((agent) => agent.name).filter((agent) => flow.body.includes(`\`${agent}\``));
+    const named = agents
+      .map((agent) => agent.name)
+      .filter((agent) => flow.body.includes(`\`${agent}\``));
     expect(named.sort()).toEqual([...expected].sort());
   });
 
@@ -148,6 +160,8 @@ describe('installing the real catalog', () => {
   it('installs only the seven quick-flow agents for the quick flow', () => {
     const { cwd, code } = install('quick', 'cursor');
     expect(code).toBe(0);
-    expect(readdirSync(join(cwd, '.cursor/agents')).sort()).toEqual(QUICK.map((name) => `${name}.md`).sort());
+    expect(readdirSync(join(cwd, '.cursor/agents')).sort()).toEqual(
+      QUICK.map((name) => `${name}.md`).sort()
+    );
   });
 });

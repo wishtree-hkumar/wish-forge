@@ -67,7 +67,9 @@ describe('checkWritable', () => {
 
   it('passes when the nearest existing directory is writable', () => {
     const root = tmpDir();
-    expect(() => checkWritable(root, [{ type: 'create', path: 'x/y/z.md', content: '' }])).not.toThrow();
+    expect(() =>
+      checkWritable(root, [{ type: 'create', path: 'x/y/z.md', content: '' }])
+    ).not.toThrow();
   });
 
   it.skipIf(!asUser)('throws when the directory cannot be written', () => {

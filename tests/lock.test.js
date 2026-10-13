@@ -29,7 +29,10 @@ describe('lockfile', () => {
 
   it('drops empty targets and deletes the file when nothing is installed', () => {
     const base = tmpDir();
-    const lock = { version: 1, targets: { cursor: { items: { 'agent:a': entry } }, codex: { items: {} } } };
+    const lock = {
+      version: 1,
+      targets: { cursor: { items: { 'agent:a': entry } }, codex: { items: {} } },
+    };
     writeLock(base, lock, '0.1.0');
     expect(Object.keys(readLock(base).targets)).toEqual(['cursor']);
 

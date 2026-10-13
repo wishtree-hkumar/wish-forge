@@ -78,7 +78,10 @@ describe('planInstall', () => {
 describe('planRemove', () => {
   it('classifies recorded files as delete, keep or missing', () => {
     const root = writeTree(tmpDir(), { 'same.md': 'old', 'edited.md': 'changed' });
-    const recorded = ['same.md', 'edited.md', 'gone.md'].map((path) => ({ path, sha256: sha256('old') }));
+    const recorded = ['same.md', 'edited.md', 'gone.md'].map((path) => ({
+      path,
+      sha256: sha256('old'),
+    }));
     expect(planRemove(root, recorded)).toEqual([
       { type: 'delete', path: 'same.md' },
       { type: 'keep', path: 'edited.md', reason: 'was edited after install' },

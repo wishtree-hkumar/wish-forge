@@ -24,7 +24,11 @@ function report(plans) {
 function commit(ctx, lock, plans, record) {
   if (ctx.dryRun) return;
   for (const plan of plans) {
-    checkWritable(plan.root, plan.items.flatMap((entry) => entry.actions), ctx.force);
+    checkWritable(
+      plan.root,
+      plan.items.flatMap((entry) => entry.actions),
+      ctx.force
+    );
   }
   for (const plan of plans) {
     const target = (lock.targets[plan.target] ??= { items: {} });
@@ -131,7 +135,7 @@ export function remove(ctx, refs, targets) {
     }
 
     // Sweep requirements nothing else needs, until none are left.
-    for (let changed = true; changed; ) {
+    for (let changed = true; changed;) {
       changed = false;
       for (const [id, entry] of Object.entries(installed)) {
         if (going.has(id) || entry.explicit) continue;

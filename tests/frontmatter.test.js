@@ -3,7 +3,9 @@ import { parseFrontmatter } from '../src/frontmatter.js';
 
 describe('parseFrontmatter', () => {
   it('splits data and body', () => {
-    const { data, body } = parseFrontmatter('---\nname: a\nrequires: [x, y]\n---\n\nHello\nworld\n');
+    const { data, body } = parseFrontmatter(
+      '---\nname: a\nrequires: [x, y]\n---\n\nHello\nworld\n'
+    );
     expect(data).toEqual({ name: 'a', requires: ['x', 'y'] });
     expect(body).toBe('Hello\nworld');
   });

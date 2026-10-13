@@ -21,7 +21,9 @@ export function readLock(base) {
   try {
     lock = JSON.parse(readFileSync(path, 'utf8'));
   } catch (error) {
-    throw new LockError(`${path} is not valid JSON (${error.message}). Fix or delete it, then re-run.`);
+    throw new LockError(
+      `${path} is not valid JSON (${error.message}). Fix or delete it, then re-run.`
+    );
   }
   if (lock?.version !== LOCK_VERSION || typeof lock.targets !== 'object' || lock.targets === null) {
     throw new LockError(

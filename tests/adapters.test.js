@@ -12,7 +12,12 @@ import { item, skill } from './helpers.js';
 const ctx = { scope: 'project', version: '0.1.0' };
 const dirs = { cwd: '/work/app', home: '/home/dev' };
 const reader = item();
-const writer = item({ id: 'agent:builder', name: 'builder', access: 'write', modelTier: 'balanced' });
+const writer = item({
+  id: 'agent:builder',
+  name: 'builder',
+  access: 'write',
+  modelTier: 'balanced',
+});
 const tricky = 'Reviews: "quoted" text # not a comment, it\'s fine';
 
 describe('registry', () => {
@@ -68,11 +73,15 @@ describe('claude', () => {
       description: 'Run the quick flow.',
       'disable-model-invocation': true,
     });
-    expect(body).toBe('Follow the steps.\n\n<!-- managed by forgeflow: skill:forge-quick@0.1.0 -->');
+    expect(body).toBe(
+      'Follow the steps.\n\n<!-- managed by forgeflow: skill:forge-quick@0.1.0 -->'
+    );
   });
 
   it('leaves model invocation on when the skill allows it', () => {
-    const { data } = parseFrontmatter(claude.render(skill({ userInvocableOnly: false }), ctx)[0].content);
+    const { data } = parseFrontmatter(
+      claude.render(skill({ userInvocableOnly: false }), ctx)[0].content
+    );
     expect(data).toEqual({ name: 'forge-quick', description: 'Run the quick flow.' });
   });
 
@@ -100,7 +109,8 @@ describe('codex', () => {
   });
 
   it('escapes quotes, backslashes, triple quotes and control characters', () => {
-    const body = 'Use "quotes", a \\ backslash, """triple""", """"four"""" and a bell \u0007.\nEnd"';
+    const body =
+      'Use "quotes", a \\ backslash, """triple""", """"four"""" and a bell \u0007.\nEnd"';
     const parsed = parseToml(codex.render(item({ body, description: tricky }), ctx)[0].content);
     expect(parsed.developer_instructions).toBe(`${body}\n`);
     expect(parsed.description).toBe(tricky);

@@ -32,7 +32,8 @@ function fail(source, problem) {
 function oneOf(source, data, field, allowed, required) {
   const value = data[field];
   if (value === undefined && !required) return undefined;
-  if (!allowed.includes(value)) fail(source, `field "${field}" must be one of: ${allowed.join(', ')}`);
+  if (!allowed.includes(value))
+    fail(source, `field "${field}" must be one of: ${allowed.join(', ')}`);
   return value;
 }
 
@@ -67,14 +68,24 @@ function buildItem(type, expectedName, text, source) {
   }
   if (!body) fail(source, 'body is empty');
 
-  const item = { id: `${type}:${data.name}`, type, name: data.name, description, requires, body, files: [], source };
+  const item = {
+    id: `${type}:${data.name}`,
+    type,
+    name: data.name,
+    description,
+    requires,
+    body,
+    files: [],
+    source,
+  };
   if (type === 'agent') {
     item.stage = oneOf(source, data, 'stage', STAGES, false);
     item.access = oneOf(source, data, 'access', ACCESS, true);
     item.modelTier = oneOf(source, data, 'model-tier', TIERS, false) ?? 'balanced';
   } else {
     const flag = data['user-invocable-only'] ?? false;
-    if (typeof flag !== 'boolean') fail(source, 'field "user-invocable-only" must be true or false');
+    if (typeof flag !== 'boolean')
+      fail(source, 'field "user-invocable-only" must be true or false');
     item.userInvocableOnly = flag;
   }
   return item;

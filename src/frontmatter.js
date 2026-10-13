@@ -15,5 +15,11 @@ export function parseFrontmatter(text) {
   if (typeof data !== 'object' || Array.isArray(data)) {
     throw new Error('frontmatter must be a YAML mapping');
   }
-  return { data, body: lines.slice(end + 1).join('\n').trim() };
+  return {
+    data,
+    body: lines
+      .slice(end + 1)
+      .join('\n')
+      .trim(),
+  };
 }

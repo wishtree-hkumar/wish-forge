@@ -8,7 +8,9 @@ import { ConflictError, UsageError } from './errors.js';
 import { add, remove, status, update } from './ops.js';
 import { findId } from './resolve.js';
 
-const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+const VERSION = JSON.parse(
+  readFileSync(new URL('../package.json', import.meta.url), 'utf8')
+).version;
 const DEFAULT_CATALOG = fileURLToPath(new URL('../catalog', import.meta.url));
 
 const USAGE = `Usage:
@@ -45,7 +47,14 @@ function parseTargets(value, required) {
     if (!required) return undefined;
     throw new UsageError(`--target is required. Choose from: ${targetNames.join(', ')}.`);
   }
-  const names = [...new Set(value.split(',').map((name) => name.trim()).filter(Boolean))];
+  const names = [
+    ...new Set(
+      value
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean)
+    ),
+  ];
   if (names.length === 0) {
     throw new UsageError(`--target names no harness. Choose from: ${targetNames.join(', ')}.`);
   }
@@ -82,7 +91,11 @@ function printStatus(stdout, targets) {
 }
 
 function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) {
-  const { values, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true });
+  const { values, positionals } = parseArgs({
+    args: argv,
+    options: OPTIONS,
+    allowPositionals: true,
+  });
   const [command, ...refs] = positionals;
 
   if (values.version) {
@@ -126,16 +139,18 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         .filter((item) => values.type === undefined || item.type === values.type)
         .sort((a, b) => a.id.localeCompare(b.id));
       if (values.json) {
-        const rows = items.map(({ id, type, name, description, stage, access, modelTier, requires }) => ({
-          id,
-          type,
-          name,
-          description,
-          stage,
-          access,
-          modelTier,
-          requires,
-        }));
+        const rows = items.map(
+          ({ id, type, name, description, stage, access, modelTier, requires }) => ({
+            id,
+            type,
+            name,
+            description,
+            stage,
+            access,
+            modelTier,
+            requires,
+          })
+        );
         stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
       } else {
         for (const item of items) {

@@ -69,7 +69,10 @@ describe('list and info', () => {
 
   it('filters by type and prints JSON', () => {
     const { out } = run('list', '--type', 'skill', '--json');
-    expect(JSON.parse(out).map((entry) => entry.id)).toEqual(['skill:forge-full', 'skill:forge-quick']);
+    expect(JSON.parse(out).map((entry) => entry.id)).toEqual([
+      'skill:forge-full',
+      'skill:forge-quick',
+    ]);
     expect(run('list', '--type', 'hook').code).toBe(2);
   });
 
@@ -117,7 +120,9 @@ describe('add', () => {
 
   it('exits 2 when no item is named or the flow is unknown', () => {
     expect(run('add', '--target', 'cursor').err).toContain('name at least one item');
-    expect(run('add', '--flow', 'turbo', '--target', 'cursor').err).toContain('--flow must be quick or full');
+    expect(run('add', '--flow', 'turbo', '--target', 'cursor').err).toContain(
+      '--flow must be quick or full'
+    );
     expect(run('add', 'ghost', '--target', 'cursor').code).toBe(2);
   });
 

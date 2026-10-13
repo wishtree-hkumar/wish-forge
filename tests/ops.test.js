@@ -124,7 +124,13 @@ describe('add', () => {
 });
 
 describe('update', () => {
-  const newer = () => loadCatalog(writeTree(tmpDir(), { ...tree, 'agents/alpha.md': agentMd('alpha').replace('Body', 'New body') }));
+  const newer = () =>
+    loadCatalog(
+      writeTree(tmpDir(), {
+        ...tree,
+        'agents/alpha.md': agentMd('alpha').replace('Body', 'New body'),
+      })
+    );
 
   it('rewrites unedited files from the current catalog', () => {
     add(ctx(), ['flow'], ['cursor']);
@@ -157,7 +163,9 @@ describe('update', () => {
 
   it('rejects an item that is not installed', () => {
     add(ctx(), ['alpha'], ['cursor']);
-    expect(() => update(ctx(), ['beta'], ['cursor'])).toThrow('agent:beta is not installed for cursor');
+    expect(() => update(ctx(), ['beta'], ['cursor'])).toThrow(
+      'agent:beta is not installed for cursor'
+    );
   });
 
   it('skips and reports an installed item the catalog no longer has', () => {
@@ -201,7 +209,12 @@ describe('remove', () => {
 
     const result = remove(ctx(), ['alpha'], ['cursor']);
     expect(result.plans[0].actions).toEqual([
-      { id: 'agent:alpha', type: 'keep', path: '.cursor/agents/alpha.md', reason: 'was edited after install' },
+      {
+        id: 'agent:alpha',
+        type: 'keep',
+        path: '.cursor/agents/alpha.md',
+        reason: 'was edited after install',
+      },
     ]);
     expect(readFileSync(at('.cursor/agents/alpha.md'), 'utf8')).toBe('my edit');
     expect(Object.keys(readLock(cwd).targets.cursor.items)).toEqual(['agent:beta']);
@@ -234,7 +247,9 @@ describe('remove', () => {
   });
 
   it('rejects an item that is not installed', () => {
-    expect(() => remove(ctx(), ['alpha'], ['cursor'])).toThrow('agent:alpha is not installed for cursor');
+    expect(() => remove(ctx(), ['alpha'], ['cursor'])).toThrow(
+      'agent:alpha is not installed for cursor'
+    );
   });
 
   it('removes by full id an installed item the catalog no longer has', () => {
