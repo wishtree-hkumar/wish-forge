@@ -19,17 +19,18 @@ export const STAGES = [
   'deploy',
   'feedback',
 ];
-export const EVENTS = ['shell', 'write', 'prompt', 'stop'];
+export const EVENTS = ['shell', 'write', 'prompt', 'stop', 'start', 'compact'];
 const ACCESS = ['read-only', 'write'];
 const TIERS = ['fast', 'balanced', 'strong'];
 const JOINS = ['review'];
+const GROUPS = ['memory'];
 const NAME_RE = /^[a-z][a-z0-9-]{0,62}$/;
 const RUNTIME_SOURCES = ['run.mjs', 'runtime.mjs', 'opencode-plugin.js'];
 const FIELDS = {
   agent: ['name', 'description', 'stage', 'access', 'model-tier', 'joins', 'requires'],
   rule: ['name', 'description', 'paths', 'requires'],
-  skill: ['name', 'description', 'user-invocable-only', 'requires'],
-  hook: ['name', 'description', 'events', 'requires'],
+  skill: ['name', 'description', 'user-invocable-only', 'group', 'requires'],
+  hook: ['name', 'description', 'events', 'group', 'requires'],
   runtime: ['name', 'description'],
 };
 
@@ -114,6 +115,8 @@ function buildItem(type, expectedName, text, source) {
     if (typeof flag !== 'boolean')
       fail(source, 'field "user-invocable-only" must be true or false');
     item.userInvocableOnly = flag;
+    // Items in a group are installed together by a bundle flag such as --memory.
+    item.group = oneOf(source, data, 'group', GROUPS, false);
   } else if (type === 'hook') {
     const events = data.events;
     const valid =
@@ -121,6 +124,8 @@ function buildItem(type, expectedName, text, source) {
     if (!valid) fail(source, `field "events" must be a non-empty list of: ${EVENTS.join(', ')}`);
     item.events = events;
     if (!item.requires.includes(RUNTIME_ID)) item.requires.push(RUNTIME_ID);
+    // Items in a group are installed together by a bundle flag such as --memory.
+    item.group = oneOf(source, data, 'group', GROUPS, false);
   } else if (type === 'rule') {
     const { paths } = data;
     if (paths !== undefined) {

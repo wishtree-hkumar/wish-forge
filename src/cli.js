@@ -21,6 +21,7 @@ const USAGE = `Usage:
   forgeflow add --flow quick|full --target <t>[,<t>...]
   forgeflow add --hooks --target <t>[,<t>...]
   forgeflow add --specialists --target <t>[,<t>...] [--global]
+  forgeflow add --memory --target <t>[,<t>...]
   forgeflow remove <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
   forgeflow update [<id...>] [--target <t>[,<t>...]] [--global] [--dry-run] [--force]
   forgeflow status [--global]
@@ -30,6 +31,7 @@ Targets: ${targetNames.join(', ')}
 An <id> is a name such as "reviewer", or a full id such as "agent:reviewer".
 --hooks installs every quality gate. Gates are installed per project only.
 --specialists installs every agent that is not a flow stage.
+--memory installs session memory: a hook and two skills. Per project only.
 A rule is a pack of coding standards, such as "common" or "typescript".
 `;
 
@@ -39,6 +41,7 @@ const OPTIONS = {
   type: { type: 'string' },
   hooks: { type: 'boolean' },
   specialists: { type: 'boolean' },
+  memory: { type: 'boolean' },
   global: { type: 'boolean' },
   'dry-run': { type: 'boolean' },
   force: { type: 'boolean' },
@@ -166,6 +169,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
             description,
             stage,
             joins,
+            group,
             access,
             modelTier,
             events,
@@ -178,6 +182,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
             description,
             stage,
             joins,
+            group,
             access,
             modelTier,
             events,
@@ -205,6 +210,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         ['description', item.description],
         ['stage', item.stage],
         ['joins', item.joins],
+        ['group', item.group],
         ['access', item.access],
         ['model tier', item.modelTier],
         ['events', item.events?.join(', ')],
@@ -226,7 +232,10 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         wanted.push(`skill:forge-${values.flow}`);
       }
       if (values.hooks) {
-        const gates = [...catalog.values()].filter((item) => item.type === 'hook');
+        // A hook in a group belongs to that group's bundle, not to the gates.
+        const gates = [...catalog.values()].filter(
+          (item) => item.type === 'hook' && item.group === undefined
+        );
         wanted.push(...gates.map((item) => item.id).sort());
       }
       if (values.specialists) {
@@ -235,9 +244,13 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         );
         wanted.push(...specialists.map((item) => item.id).sort());
       }
+      if (values.memory) {
+        const memory = [...catalog.values()].filter((item) => item.group === 'memory');
+        wanted.push(...memory.map((item) => item.id).sort());
+      }
       if (wanted.length === 0) {
         throw new UsageError(
-          'name at least one item, or use --flow quick|full, --hooks or --specialists.'
+          'name at least one item, or use --flow quick|full, --hooks, --specialists or --memory.'
         );
       }
       printResult(stdout, add(ctx, wanted, parseTargets(values.target, true)), ctx.dryRun);
