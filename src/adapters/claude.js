@@ -1,14 +1,21 @@
-import { markdown, skillFiles } from './shared.js';
+import { commandWiring, hookFiles, isHookItem, markdown, skillFiles } from './shared.js';
 
 const MODELS = { fast: 'haiku', balanced: 'sonnet', strong: 'opus' };
 
 export const name = 'claude';
+
+export const wiring = commandWiring(
+  '.claude/settings.json',
+  'node "$CLAUDE_PROJECT_DIR/.claude/forgeflow/run.mjs" claude',
+  'Bash|Write|Edit|MultiEdit|NotebookEdit'
+);
 
 export function root(scope, { cwd, home }) {
   return scope === 'global' ? home : cwd;
 }
 
 export function render(item, { version }) {
+  if (isHookItem(item)) return hookFiles('.claude/forgeflow', item, version);
   if (item.type === 'skill') {
     const extra = item.userInvocableOnly ? { 'disable-model-invocation': true } : {};
     return skillFiles(`.claude/skills/${item.name}`, item, version, extra);
