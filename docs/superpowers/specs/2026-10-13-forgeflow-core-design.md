@@ -173,7 +173,7 @@ Interface:
 // src/adapters/<target>.js
 export const name = "claude";
 export function root(scope, { cwd, home }) → string      // base directory
-export function render(item, scope) → [{ path, content }] // path relative to root
+export function render(item, { scope, version }) → [{ path, content }] // path relative to root
 ```
 
 `scope` is `project` (default) or `global` (`--global`).
@@ -255,6 +255,7 @@ The planner classifies each rendered file:
 | Disk state | Lockfile | Action |
 |---|---|---|
 | absent | — | `create` |
+| present, content identical to the rendered file | any | `skip` (and recorded in the lockfile) |
 | present, hash equals lockfile hash | recorded | `update` if content differs, else `skip` |
 | present, hash differs from lockfile hash | recorded | `conflict` (user edited it) |
 | present | not recorded | `conflict` (not ours) |
@@ -273,8 +274,9 @@ Rules:
 - `--dry-run` on `add`, `update` and `remove` prints the plan and writes
   nothing.
 - Writes go to a temporary file and are renamed into place. The lockfile is
-  written last, so an interrupted run leaves files that the next run reports
-  as conflicts, not a lockfile that claims files which do not exist.
+  written last, so an interrupted run never leaves a lockfile that claims
+  files which do not exist. Re-running the same command finishes the job:
+  files already written are identical to the rendered ones and are adopted.
 
 ## 7. CLI
 
@@ -325,8 +327,10 @@ HUMAN_APPROVAL is a gate in the flow skill, not an agent.
 
 Every agent works standalone: given only a user request, it does its job and
 returns its result in the conversation. When the caller supplies a run
-directory, it also reads the earlier stage files and writes its own. This is
-what makes per-agent install useful.
+directory, it also reads the earlier stage files from it. The flow skill,
+not the agent, saves each stage's result to the run directory, because
+read-only agents cannot write files. This is what makes per-agent install
+useful.
 
 Each agent prompt has the same sections: role, inputs, procedure, output
 format, and limits (what it must not do, and when to stop and report instead
@@ -418,7 +422,8 @@ block DEPLOY when `09-approval.md` does not record an approval.
   and one skill, and compare to expected strings. Codex output is parsed
   back with a TOML parser (dev dependency) to prove it is valid, including
   bodies containing quotes, backslashes and triple quotes.
-- **Planner**: each row of the action table.
+- **Planner**: each row of the action table, plus files a newer catalog no
+  longer renders (deleted when unedited, kept when edited).
 - **CLI end to end**, in a temporary directory: add, re-add (all `skip`),
   edit a file then update (conflict, then `--force`), remove with shared
   dependencies, `--dry-run` writes nothing, multi-target atomicity.
