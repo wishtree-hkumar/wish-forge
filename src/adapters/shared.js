@@ -66,6 +66,8 @@ export function commandWiring(path, runner, command, matcher) {
       PreToolUse: { matcher, hooks: [handler] },
       UserPromptSubmit: { hooks: [handler] },
       Stop: { hooks: [handler] },
+      // Not resume: a resumed session already holds what its first start was given.
+      SessionStart: { matcher: 'startup|clear|compact', hooks: [handler] },
     },
   };
 }

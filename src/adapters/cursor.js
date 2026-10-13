@@ -15,7 +15,13 @@ export const wiring = {
   path: '.cursor/hooks.json',
   runner: '.cursor/forgeflow/run.mjs',
   skeleton: { version: 1, hooks: {} },
-  entries: { preToolUse: entry, beforeSubmitPrompt: entry, stop: entry },
+  entries: {
+    preToolUse: entry,
+    beforeSubmitPrompt: entry,
+    stop: entry,
+    sessionStart: entry,
+    preCompact: entry,
+  },
 };
 
 export function root(scope, { cwd, home }) {

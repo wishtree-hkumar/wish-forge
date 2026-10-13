@@ -72,7 +72,7 @@ describe.each([
 });
 
 describe('wiring details', () => {
-  it('claude wires three events into settings.json', () => {
+  it('claude wires four events into settings.json', () => {
     const { wiring } = claude;
     expect(wiring.path).toBe('.claude/settings.json');
     expect(wiring.skeleton).toEqual({});
@@ -85,26 +85,38 @@ describe('wiring details', () => {
       PreToolUse: { matcher: 'Bash|Write|Edit|MultiEdit|NotebookEdit', hooks: [handler] },
       UserPromptSubmit: { hooks: [handler] },
       Stop: { hooks: [handler] },
+      SessionStart: { matcher: 'startup|clear|compact', hooks: [handler] },
     });
   });
 
-  it('codex wires three events into hooks.json and finds the repo root itself', () => {
+  it('codex wires four events into hooks.json and finds the repo root itself', () => {
     const { wiring } = codex;
     expect(wiring.path).toBe('.codex/hooks.json');
     expect(wiring.skeleton).toEqual({});
-    expect(Object.keys(wiring.entries)).toEqual(['PreToolUse', 'UserPromptSubmit', 'Stop']);
+    expect(Object.keys(wiring.entries)).toEqual([
+      'PreToolUse',
+      'UserPromptSubmit',
+      'Stop',
+      'SessionStart',
+    ]);
     expect(wiring.entries.PreToolUse.matcher).toBe('Bash|apply_patch|Edit|Write');
     expect(wiring.entries.Stop.hooks[0].command).toBe(
       'node "$(git rev-parse --show-toplevel)/.codex/forgeflow/run.mjs" codex'
     );
   });
 
-  it('cursor wires three events into a versioned hooks.json', () => {
+  it('cursor wires five events into a versioned hooks.json', () => {
     const { wiring } = cursor;
     expect(wiring.path).toBe('.cursor/hooks.json');
     expect(wiring.skeleton).toEqual({ version: 1, hooks: {} });
     const entry = { command: 'node .cursor/forgeflow/run.mjs cursor', timeout: 10 };
-    expect(wiring.entries).toEqual({ preToolUse: entry, beforeSubmitPrompt: entry, stop: entry });
+    expect(wiring.entries).toEqual({
+      preToolUse: entry,
+      beforeSubmitPrompt: entry,
+      stop: entry,
+      sessionStart: entry,
+      preCompact: entry,
+    });
   });
 });
 
