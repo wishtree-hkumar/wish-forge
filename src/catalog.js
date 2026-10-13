@@ -90,7 +90,8 @@ function buildItem(type, expectedName, text, source) {
     item.modelTier = oneOf(source, data, 'model-tier', TIERS, false) ?? 'balanced';
   } else if (type === 'skill') {
     const flag = data['user-invocable-only'] ?? false;
-    if (typeof flag !== 'boolean') fail(source, 'field "user-invocable-only" must be true or false');
+    if (typeof flag !== 'boolean')
+      fail(source, 'field "user-invocable-only" must be true or false');
     item.userInvocableOnly = flag;
   } else if (type === 'hook') {
     const events = data.events;
@@ -182,7 +183,8 @@ export function loadCatalog(dir) {
   const runtimeDir = join(dir, 'runtime');
   for (const name of folders(runtimeDir)) {
     const item = folderItem('runtime', 'runtime', runtimeDir, name, 'RUNTIME.md');
-    if (item.id !== RUNTIME_ID) fail(item.source, `field "name" (${name}) must equal the folder name (hooks)`);
+    if (item.id !== RUNTIME_ID)
+      fail(item.source, `field "name" (${name}) must equal the folder name (hooks)`);
     item.sources = {};
     for (const file of RUNTIME_SOURCES) {
       const path = join(runtimeDir, name, file);

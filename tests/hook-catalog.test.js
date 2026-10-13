@@ -53,7 +53,11 @@ describe('hook items', () => {
   });
 
   it('reports a name shared by an agent and a hook as ambiguous', () => {
-    const catalog = load({ ...runtimeTree(), ...hookTree('twin'), 'agents/twin.md': agentMd('twin') });
+    const catalog = load({
+      ...runtimeTree(),
+      ...hookTree('twin'),
+      'agents/twin.md': agentMd('twin'),
+    });
     expect(() => findId(catalog, 'twin')).toThrow('use agent:twin or hook:twin');
   });
 
@@ -63,29 +67,55 @@ describe('hook items', () => {
     return tree;
   };
   const invalid = [
-    ['a hook without gate.mjs', withHook((t) => delete t['hooks/guard/gate.mjs']), 'hooks/guard: missing gate.mjs'],
-    ['a hook without HOOK.md', withHook((t) => delete t['hooks/guard/HOOK.md']), 'hooks/guard: missing HOOK.md'],
+    [
+      'a hook without gate.mjs',
+      withHook((t) => delete t['hooks/guard/gate.mjs']),
+      'hooks/guard: missing gate.mjs',
+    ],
+    [
+      'a hook without HOOK.md',
+      withHook((t) => delete t['hooks/guard/HOOK.md']),
+      'hooks/guard: missing HOOK.md',
+    ],
     [
       'a hook without events',
-      withHook((t) => (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace('events: [shell]\n', ''))),
+      withHook(
+        (t) =>
+          (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace('events: [shell]\n', ''))
+      ),
       'field "events"',
     ],
     [
       'an empty events list',
-      withHook((t) => (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace('[shell]', '[]'))),
+      withHook(
+        (t) => (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace('[shell]', '[]'))
+      ),
       'field "events"',
     ],
     [
       'an unknown event',
-      withHook((t) => (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace('[shell]', '[shell, click]'))),
+      withHook(
+        (t) =>
+          (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace('[shell]', '[shell, click]'))
+      ),
       'field "events"',
     ],
     [
       'an agent field on a hook',
-      withHook((t) => (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace('events:', 'access: write\nevents:'))),
+      withHook(
+        (t) =>
+          (t['hooks/guard/HOOK.md'] = t['hooks/guard/HOOK.md'].replace(
+            'events:',
+            'access: write\nevents:'
+          ))
+      ),
       'unknown field "access"',
     ],
-    ['a hook name that differs from its folder', { ...runtimeTree(), ...renamed() }, 'must equal the folder name (other)'],
+    [
+      'a hook name that differs from its folder',
+      { ...runtimeTree(), ...renamed() },
+      'must equal the folder name (other)',
+    ],
     ['a hook with no runtime in the catalog', hookTree('guard'), 'unknown item "runtime:hooks"'],
     [
       'a runtime missing a source file',
@@ -94,7 +124,13 @@ describe('hook items', () => {
     ],
     [
       'a runtime not named hooks',
-      withHook((t) => (t['runtime/hooks/RUNTIME.md'] = t['runtime/hooks/RUNTIME.md'].replace('name: hooks', 'name: other'))),
+      withHook(
+        (t) =>
+          (t['runtime/hooks/RUNTIME.md'] = t['runtime/hooks/RUNTIME.md'].replace(
+            'name: hooks',
+            'name: other'
+          ))
+      ),
       'must equal the folder name (hooks)',
     ],
   ];

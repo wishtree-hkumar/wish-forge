@@ -92,7 +92,9 @@ export function loadConfig(root) {
         try {
           config[key].push(new RegExp(entry, 'i'));
         } catch {
-          warn(`has a "${key}[${index}]" entry that is not a valid regular expression; it was ignored.`);
+          warn(
+            `has a "${key}[${index}]" entry that is not a valid regular expression; it was ignored.`
+          );
         }
       }
     });
@@ -134,7 +136,9 @@ export function findRun(root, now = Date.now()) {
 
   let approved = false;
   try {
-    approved = /^decision:\s*approved\s*$/im.test(readFileSync(join(best.dir, '09-approval.md'), 'utf8'));
+    approved = /^decision:\s*approved\s*$/im.test(
+      readFileSync(join(best.dir, '09-approval.md'), 'utf8')
+    );
   } catch {
     // no approval record
   }
@@ -202,11 +206,14 @@ export function normalize(harness, payload, root) {
     if (data.tool_name === 'Bash') return shell(input.command);
     if (typeof input.file_path === 'string') {
       if (Array.isArray(input.edits)) {
-        return [write(input.file_path, input.edits.map((edit) => text(edit?.new_string)).join('\n'))];
+        return [
+          write(input.file_path, input.edits.map((edit) => text(edit?.new_string)).join('\n')),
+        ];
       }
       return [write(input.file_path, input.content ?? input.new_string)];
     }
-    if (typeof input.notebook_path === 'string') return [write(input.notebook_path, input.new_source)];
+    if (typeof input.notebook_path === 'string')
+      return [write(input.notebook_path, input.new_source)];
     if (harness === 'codex') return patch(input.command);
     return [];
   }
@@ -282,7 +289,8 @@ export function respond(harness, payload, { events, block, notes, warnings }) {
       const deny = { permission: 'deny', user_message: block, agent_message: block };
       return { code: 2, stdout: JSON.stringify(deny), stderr: block };
     }
-    if (isStop && message) return { ...allow, stdout: JSON.stringify({ followup_message: message }) };
+    if (isStop && message)
+      return { ...allow, stdout: JSON.stringify({ followup_message: message }) };
     return allow;
   }
 

@@ -23,7 +23,8 @@ export function check(event, ctx) {
     const ranTests = [...TEST_COMMANDS, ...ctx.config.testCommands].some((pattern) =>
       pattern.test(event.command)
     );
-    if (ranTests && (state.dirty || state.reminded)) ctx.state.set({ dirty: false, reminded: false });
+    if (ranTests && (state.dirty || state.reminded))
+      ctx.state.set({ dirty: false, reminded: false });
     return undefined;
   }
 

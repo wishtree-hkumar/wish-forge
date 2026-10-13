@@ -29,7 +29,8 @@ describe('shipped gates', () => {
     for (const [file, source] of Object.entries(sources)) {
       expect(source.startsWith('#!'), file).toBe(false);
       const imports = [...source.matchAll(/from '([^']+)'/g)].map((match) => match[1]);
-      for (const specifier of imports) expect(specifier.startsWith('node:'), `${file}: ${specifier}`).toBe(true);
+      for (const specifier of imports)
+        expect(specifier.startsWith('node:'), `${file}: ${specifier}`).toBe(true);
     }
   });
 });

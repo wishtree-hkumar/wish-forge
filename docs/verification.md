@@ -1,36 +1,27 @@
-# Manual verification per harness
 
-The automated tests prove that forgeflow writes well-formed files. They cannot prove that each harness loads them. Do this check once per harness before the first internal release, and again when a harness changes its agent or skill format.
 
-Record the harness version and the date beside each result.
+## Quality gates
 
-## Setup
+Install the gates in the same scratch repository:
 
-In an empty scratch repository that has at least one source file and a working test command:
+    forgeflow add --hooks --target <harness>
 
-    forgeflow add --flow full --target <harness>
-
-## Checks
+On Codex, run `/hooks` and trust the project hooks first.
 
 | # | Check | Claude Code | Codex | OpenCode | Cursor |
 |---|---|---|---|---|---|
-| 1 | The harness starts with no warning about the installed files | | | | |
-| 2 | All 11 agents appear in the harness's agent list | | | | |
-| 3 | `forge-full` and, after installing it, `forge-quick` can be started explicitly | | | | |
-| 4 | Asking "use the reviewer agent on the last commit" runs `reviewer` as a subagent | | | | |
-| 5 | `reviewer`, asked to edit a file, does not edit it | | | | |
-| 6 | `builder`, asked to make a small change, edits the file | | | | |
-| 7 | A quick-flow run creates `.forgeflow/runs/<run>/` with `state.md` and the stage files | | | | |
-| 8 | A full-flow run stops at HUMAN_APPROVAL and waits | | | | |
-| 9 | Declining at HUMAN_APPROVAL stops the run before DEPLOY | | | | |
-| 10 | `forgeflow remove forge-full --target <harness>` leaves no forgeflow file behind | | | | |
+| 11 | The harness starts with no warning about the hook config or plugin | | | | |
+| 12 | Asking the agent to create `.env` is blocked, and the agent reports why | | | | |
+| 13 | Asking the agent to write a file containing a fake token (`ghp_` followed by 36 letters) is blocked | | | | |
+| 14 | Asking the agent to edit one line of an existing file to add that token is blocked | | | | |
+| 15 | Asking the agent to edit the harness's hook config is blocked | | | | |
+| 16 | During a full-flow run, asking the agent to `git push` before approval is blocked | | | | |
+| 17 | At HUMAN_APPROVAL, typing `approve` creates `09-approval.md` with `decision: approved` | | | | |
+| 18 | After that, `git push` is no longer blocked | | | | |
+| 19 | A subagent (for example `builder`) is blocked by the same gates as the main agent | | | | |
+| 20 | Ending a turn after an edit with no test run produces one reminder (not OpenCode) | | | | |
+| 21 | `forgeflow remove` of all gates leaves the hook config as it was before | | | | |
 
-How to list agents: `/agents` in Claude Code; `/agent` in Codex; `@` completion in OpenCode; the subagent picker in Cursor.
+Check 14 matters most on Cursor: it shows whether a partial edit reaches the pre-tool hook with its new text. If it is not blocked there, `secret-guard` on Cursor covers whole-file writes only; record that in the README.
 
-## Known differences between harnesses
-
-- Model selection is set only for Claude Code. Elsewhere agents use the session's model.
-- On Claude Code, read-only agents can still run shell commands, so check 5 relies on the agent's instructions there. On Codex, OpenCode and Cursor the harness enforces it.
-- In Codex, flows are started with `$forge-quick`, not `/forge-quick`.
-
-If a check fails, record what the harness did, and compare the installed file with that harness's current documentation before changing an adapter.
+Check 19 shows whether the harness runs hooks for subagent tool calls. Record the result per harness.

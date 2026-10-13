@@ -53,7 +53,7 @@ The quick flow ends with a reviewed change you have confirmed; it does not deplo
 
 Each run keeps its stage outputs in `.forgeflow/runs/<date>-<slug>/`. Point a flow at that directory to resume a run in a new session or a different harness.
 
-In this version the gates are instructions to the model. They are not enforced by hooks.
+The stops in a flow are instructions to the model. Install the quality gates below to have the harness enforce them.
 
 ## The agents
 
@@ -73,14 +73,59 @@ In this version the gates are instructions to the model. They are not enforced b
 
 Every agent also works on its own, outside a flow.
 
+## Quality gates
+
+Gates are hooks the harness runs for you. Install all four, or pick the ones you want:
+
+```bash
+forgeflow add --hooks --target claude
+forgeflow add secret-guard protected-paths --target cursor
+```
+
+| Gate              | What it does                                                                                                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `approval-gate`   | During a flow run, blocks `git push`, publish and deploy commands until you type `approve` at the flow's approval step. It records the approval itself; agents cannot. |
+| `secret-guard`    | Blocks a file write whose new text contains a credential in a known format.                                                                                            |
+| `protected-paths` | Blocks agent writes to `.env` files, `*.pem`, `*.key`, and any paths you list.                                                                                         |
+| `test-reminder`   | Nudges the agent once when a turn ends with edits and no test run since.                                                                                               |
+
+Gates are installed per project, not with `--global`. forgeflow copies a small runner into the harness's folder and adds its entries to the harness's hook config (`.claude/settings.json`, `.codex/hooks.json`, `.cursor/hooks.json`, or a plugin file for OpenCode). Your own hook entries are left alone, and `forgeflow remove` takes out only what forgeflow added. Teammates need Node 20 and nothing else.
+
+### Configuring gates
+
+Create `.forgeflow/config.json` to add to the defaults:
+
+```json
+{
+  "releaseCommands": ["\\bmake\\s+deploy\\b"],
+  "protectedPaths": ["migrations/**", "package-lock.json"],
+  "secretAllow": ["EXAMPLE_[A-Z0-9]+"],
+  "testCommands": ["\\bmake\\s+check\\b"]
+}
+```
+
+`protectedPaths` are globs. The other three are regular expressions. To allow one false positive from `secret-guard`, add `forgeflow-allow-secret` to that line.
+
+### What gates do not do
+
+Gates raise the bar. They are not a sandbox.
+
+- Shell commands are matched by pattern. A script that pushes, or an obfuscated command, is not caught.
+- `secret-guard` and `protected-paths` see file-writing tools only, not files changed by a shell command.
+- `approval-gate` applies only while a flow run is active. A run idle for 24 hours stops gating.
+- If the runner crashes, the action goes through. `forgeflow doctor` checks the wiring.
+- Agents can no longer edit the harness's hook config or `.forgeflow/config.json`. You make those changes.
+- Codex runs project hooks only after you trust them (`/hooks`), and needs the project to be a git repository.
+- On OpenCode, `test-reminder` does nothing.
+
 ## Where files go
 
-| Target     | Agents              | Skills              |
-| ---------- | ------------------- | ------------------- |
-| `claude`   | `.claude/agents/`   | `.claude/skills/`   |
-| `codex`    | `.codex/agents/`    | `.agents/skills/`   |
-| `opencode` | `.opencode/agents/` | `.opencode/skills/` |
-| `cursor`   | `.cursor/agents/`   | `.cursor/skills/`   |
+| Target     | Agents              | Skills              | Gates                                                    |
+| ---------- | ------------------- | ------------------- | -------------------------------------------------------- |
+| `claude`   | `.claude/agents/`   | `.claude/skills/`   | `.claude/forgeflow/`, entries in `.claude/settings.json` |
+| `codex`    | `.codex/agents/`    | `.agents/skills/`   | `.codex/forgeflow/`, entries in `.codex/hooks.json`      |
+| `opencode` | `.opencode/agents/` | `.opencode/skills/` | `.opencode/forgeflow/`, `.opencode/plugins/forgeflow.js` |
+| `cursor`   | `.cursor/agents/`   | `.cursor/skills/`   | `.cursor/forgeflow/`, entries in `.cursor/hooks.json`    |
 
 With `--global` these live under your home directory (`~/.config/opencode/` for OpenCode).
 
@@ -90,6 +135,7 @@ forgeflow records what it installed in `.forgeflow/lock.json`. It never overwrit
 
 - An agent is one file, `catalog/agents/<name>.md`.
 - A skill is a folder, `catalog/skills/<name>/SKILL.md`.
+- A gate is a folder, `catalog/hooks/<name>/`, with `HOOK.md` and `gate.mjs`. `gate.mjs` exports `check(event, ctx)` and may import only `node:` built-ins.
 
 The frontmatter fields are described in `docs/superpowers/specs/2026-10-13-forgeflow-core-design.md`, section 4. Run `forgeflow doctor` to validate the catalog, and `npm test` before committing.
 

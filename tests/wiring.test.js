@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { ConfigError } from '../src/errors.js';
 import { isWired, mergeWiring, parseConfig, serialize, stripWiring } from '../src/wiring.js';
 
-const handler = { type: 'command', command: 'node "$X/.claude/forgeflow/run.mjs" claude', timeout: 10 };
+const handler = {
+  type: 'command',
+  command: 'node "$X/.claude/forgeflow/run.mjs" claude',
+  timeout: 10,
+};
 const claude = {
   path: '.claude/settings.json',
   skeleton: {},
@@ -49,7 +53,9 @@ describe('mergeWiring', () => {
   });
 
   it('replaces an older forgeflow entry instead of adding a second one', () => {
-    const old = { hooks: [{ type: 'command', command: 'node old/.claude/forgeflow/run.mjs claude' }] };
+    const old = {
+      hooks: [{ type: 'command', command: 'node old/.claude/forgeflow/run.mjs claude' }],
+    };
     const merged = mergeWiring({ hooks: { PreToolUse: [old, mine], Notification: [old] } }, claude);
     expect(merged.hooks.PreToolUse).toEqual([mine, claude.entries.PreToolUse]);
     expect(merged.hooks.Notification).toBeUndefined();
@@ -110,7 +116,11 @@ describe('parseConfig', () => {
     ['a list', '[]', 'must contain a JSON object'],
     ['a string', '"x"', 'must contain a JSON object'],
     ['hooks as a list', '{"hooks":[]}', '"hooks" value that is not an object'],
-    ['an event that is not a list', '{"hooks":{"Stop":{}}}', '"hooks.Stop" value that is not a list'],
+    [
+      'an event that is not a list',
+      '{"hooks":{"Stop":{}}}',
+      '"hooks.Stop" value that is not a list',
+    ],
   ])('refuses %s and names the file', (_label, text, message) => {
     expect(() => parseConfig(text, '.claude/settings.json')).toThrow(ConfigError);
     expect(() => parseConfig(text, '.claude/settings.json')).toThrow(message);

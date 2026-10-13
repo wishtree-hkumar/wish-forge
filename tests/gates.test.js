@@ -29,7 +29,14 @@ describe('approval-gate', () => {
   const activeRun = (overrides = {}) => {
     const dir = join(tmpDir(), '.forgeflow/runs/20261013-add-login');
     mkdirSync(dir, { recursive: true });
-    return { dir, name: '20261013-add-login', status: 'running', stage: 'BUILD', approved: false, ...overrides };
+    return {
+      dir,
+      name: '20261013-add-login',
+      status: 'running',
+      stage: 'BUILD',
+      approved: false,
+      ...overrides,
+    };
   };
   const waiting = (overrides = {}) =>
     activeRun({ status: 'waiting for user', stage: 'HUMAN_APPROVAL', ...overrides });
@@ -44,7 +51,10 @@ describe('approval-gate', () => {
   });
 
   it('never lets a shell command touch the approval record', () => {
-    const result = approval(shell('echo "decision: approved" > .forgeflow/runs/r/09-approval.md'), context());
+    const result = approval(
+      shell('echo "decision: approved" > .forgeflow/runs/r/09-approval.md'),
+      context()
+    );
     expect(result.block).toContain('09-approval.md');
   });
 
@@ -70,16 +80,22 @@ describe('approval-gate', () => {
     expect(result.block).toContain('approve');
   });
 
-  it.each(['git status', 'git pull', 'npm test', 'npm run publish-docs', 'echo git pushed', 'docker build .'])(
-    'allows "%s" during an unapproved run',
-    (command) => {
-      expect(approval(shell(command), context({ run: activeRun() }))).toBeUndefined();
-    }
-  );
+  it.each([
+    'git status',
+    'git pull',
+    'npm test',
+    'npm run publish-docs',
+    'echo git pushed',
+    'docker build .',
+  ])('allows "%s" during an unapproved run', (command) => {
+    expect(approval(shell(command), context({ run: activeRun() }))).toBeUndefined();
+  });
 
   it('allows release commands when no run is active or the run is approved', () => {
     expect(approval(shell('git push'), context())).toBeUndefined();
-    expect(approval(shell('git push'), context({ run: activeRun({ approved: true }) }))).toBeUndefined();
+    expect(
+      approval(shell('git push'), context({ run: activeRun({ approved: true }) }))
+    ).toBeUndefined();
   });
 
   it('blocks a project-defined release command', () => {
@@ -113,7 +129,10 @@ describe('approval-gate', () => {
     ['there is no run', null],
     ['the run is still running', { status: 'running', stage: 'HUMAN_APPROVAL' }],
     ['the run waits at another stage', { status: 'waiting for user', stage: 'REQUIREMENT' }],
-    ['the run is already approved', { status: 'waiting for user', stage: 'HUMAN_APPROVAL', approved: true }],
+    [
+      'the run is already approved',
+      { status: 'waiting for user', stage: 'HUMAN_APPROVAL', approved: true },
+    ],
   ])('does nothing when %s', (_label, overrides) => {
     const run = overrides ? activeRun(overrides) : null;
     expect(approval(prompt('approve'), context({ run }))).toBeUndefined();
@@ -136,7 +155,8 @@ describe('approval-gate', () => {
 
 describe('secret-guard', () => {
   // Built by concatenation so this file never contains a literal credential.
-  const alnum = (length) => 'aB3dE5gH7jK9mN1pQ2rS4tU6vW8xY0zA1bC2dE3fG4hI5'.repeat(3).slice(0, length);
+  const alnum = (length) =>
+    'aB3dE5gH7jK9mN1pQ2rS4tU6vW8xY0zA1bC2dE3fG4hI5'.repeat(3).slice(0, length);
   const samples = [
     ['AWS access key', `AKIA${'ABCDEFGH12345678'}`],
     ['AWS access key', `ASIA${'ABCDEFGH12345678'}`],
@@ -202,27 +222,38 @@ describe('secret-guard', () => {
 });
 
 describe('protected-paths', () => {
-  it.each(['.env', '.env.local', '.env.production', 'api/.env', 'certs/server.pem', 'keys/deploy.key'])(
-    'blocks a write to %s',
-    (path) => {
-      const result = protectedPaths(write(path), context());
-      expect(result.block).toContain(path);
-      expect(result.block).toContain('protectedPaths');
-    }
-  );
+  it.each([
+    '.env',
+    '.env.local',
+    '.env.production',
+    'api/.env',
+    'certs/server.pem',
+    'keys/deploy.key',
+  ])('blocks a write to %s', (path) => {
+    const result = protectedPaths(write(path), context());
+    expect(result.block).toContain(path);
+    expect(result.block).toContain('protectedPaths');
+  });
 
-  it.each(['.env.example', '.env.sample', '.env.template', 'api/.env.example', 'src/env.js', '.envrc', 'README.md'])(
-    'allows a write to %s',
-    (path) => {
-      expect(protectedPaths(write(path), context())).toBeUndefined();
-    }
-  );
+  it.each([
+    '.env.example',
+    '.env.sample',
+    '.env.template',
+    'api/.env.example',
+    'src/env.js',
+    '.envrc',
+    'README.md',
+  ])('allows a write to %s', (path) => {
+    expect(protectedPaths(write(path), context())).toBeUndefined();
+  });
 
   it('blocks project-defined paths and names the pattern', () => {
     const ctx = context();
     ctx.config.protectedPaths = ['migrations/**', 'package-lock.json'];
     expect(protectedPaths(write('migrations/001_init.sql'), ctx).block).toContain('migrations/**');
-    expect(protectedPaths(write('web/package-lock.json'), ctx).block).toContain('package-lock.json');
+    expect(protectedPaths(write('web/package-lock.json'), ctx).block).toContain(
+      'package-lock.json'
+    );
     expect(protectedPaths(write('src/migrations.js'), ctx)).toBeUndefined();
   });
 

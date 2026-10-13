@@ -19,7 +19,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "oxlint bin src tests",
+    "lint": "oxlint bin src tests catalog",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -24,7 +24,11 @@ const runtime = {
   description: 'Runner.',
   requires: [],
   body: 'About.',
-  sources: { 'run.mjs': '// run\n', 'runtime.mjs': '// runtime\n', 'opencode-plugin.js': '// plugin\n' },
+  sources: {
+    'run.mjs': '// run\n',
+    'runtime.mjs': '// runtime\n',
+    'opencode-plugin.js': '// plugin\n',
+  },
   files: [],
 };
 
@@ -44,7 +48,10 @@ describe.each([
 
   it('renders the runner and runtime', () => {
     expect(adapter.render(runtime, ctx)).toEqual([
-      { path: `${dir}/forgeflow/run.mjs`, content: '// managed by forgeflow: runtime:hooks@0.2.0\n// run\n' },
+      {
+        path: `${dir}/forgeflow/run.mjs`,
+        content: '// managed by forgeflow: runtime:hooks@0.2.0\n// run\n',
+      },
       {
         path: `${dir}/forgeflow/runtime.mjs`,
         content: '// managed by forgeflow: runtime:hooks@0.2.0\n// runtime\n',

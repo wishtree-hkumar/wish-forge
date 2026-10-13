@@ -95,7 +95,9 @@ describe('add --hooks', () => {
     const { code, out } = run('remove', 'g1', '--target', 'claude');
     expect(code).toBe(0);
     expect(out).toMatch(/unwired\s+\.claude\/settings\.json/);
-    expect(JSON.parse(readFileSync(join(cwd, '.claude/settings.json'), 'utf8'))).toEqual({ model: 'opus' });
+    expect(JSON.parse(readFileSync(join(cwd, '.claude/settings.json'), 'utf8'))).toEqual({
+      model: 'opus',
+    });
   });
 });
 

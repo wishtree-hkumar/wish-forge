@@ -34,7 +34,8 @@ const ctx = (overrides = {}) => ({
 });
 const at = (path) => join(cwd, path);
 const json = (path) => JSON.parse(readFileSync(at(path), 'utf8'));
-const rows = (result) => result.plans[0].actions.map((action) => [action.id, action.type, action.path]);
+const rows = (result) =>
+  result.plans[0].actions.map((action) => [action.id, action.type, action.path]);
 const mine = { matcher: 'Bash', hooks: [{ type: 'command', command: './my-hook.sh' }] };
 const userSettings = { permissions: { allow: ['Bash(npm test)'] }, hooks: { PreToolUse: [mine] } };
 
@@ -130,7 +131,9 @@ describe('adding a gate', () => {
     writeTree(cwd, { '.claude/settings.json': text });
     for (const force of [false, true]) {
       expect(() => add(ctx({ force }), ['g1'], ['cursor', 'claude'])).toThrow(ConfigError);
-      expect(() => add(ctx({ force }), ['g1'], ['cursor', 'claude'])).toThrow('.claude/settings.json');
+      expect(() => add(ctx({ force }), ['g1'], ['cursor', 'claude'])).toThrow(
+        '.claude/settings.json'
+      );
     }
     expect(readFileSync(at('.claude/settings.json'), 'utf8')).toBe(text);
     expect(existsSync(at('.cursor'))).toBe(false);
@@ -191,7 +194,11 @@ describe('removing a gate', () => {
   it('succeeds when the user already deleted the config', () => {
     add(ctx(), ['g1'], ['claude']);
     writeFileSync(at('.claude/settings.json'), '{}');
-    expect(rows(remove(ctx(), ['g1'], ['claude']))[0]).toEqual([RUNTIME, 'skip', '.claude/settings.json']);
+    expect(rows(remove(ctx(), ['g1'], ['claude']))[0]).toEqual([
+      RUNTIME,
+      'skip',
+      '.claude/settings.json',
+    ]);
     expect(json('.claude/settings.json')).toEqual({});
   });
 

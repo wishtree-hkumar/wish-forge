@@ -155,7 +155,11 @@ describe('findRun', () => {
 
   it('finds a running run and reads its fields', () => {
     const root = tmpDir();
-    const dir = runIn(root, '20261013-add-login', 'mode: full\ncurrent stage: BUILD\nstatus: running\n');
+    const dir = runIn(
+      root,
+      '20261013-add-login',
+      'mode: full\ncurrent stage: BUILD\nstatus: running\n'
+    );
     expect(findRun(root, NOW)).toEqual({
       dir,
       name: '20261013-add-login',
@@ -260,10 +264,16 @@ describe('selfProtect', () => {
 
 describe('normalize', () => {
   const claude = (tool, input, extra = {}) =>
-    normalize('claude', { hook_event_name: 'PreToolUse', tool_name: tool, tool_input: input, cwd: ROOT, ...extra }, ROOT);
+    normalize(
+      'claude',
+      { hook_event_name: 'PreToolUse', tool_name: tool, tool_input: input, cwd: ROOT, ...extra },
+      ROOT
+    );
 
   it('maps Claude Code tools', () => {
-    expect(claude('Bash', { command: 'npm test' })).toEqual([{ kind: 'shell', command: 'npm test' }]);
+    expect(claude('Bash', { command: 'npm test' })).toEqual([
+      { kind: 'shell', command: 'npm test' },
+    ]);
     expect(claude('Write', { file_path: '/work/app/a.js', content: 'x' })).toEqual([
       { kind: 'write', path: 'a.js', content: 'x' },
     ]);
@@ -271,7 +281,10 @@ describe('normalize', () => {
       { kind: 'write', path: 'a.js', content: 'n' },
     ]);
     expect(
-      claude('MultiEdit', { file_path: 'a.js', edits: [{ new_string: 'one' }, { new_string: 'two' }] })
+      claude('MultiEdit', {
+        file_path: 'a.js',
+        edits: [{ new_string: 'one' }, { new_string: 'two' }],
+      })
     ).toEqual([{ kind: 'write', path: 'a.js', content: 'one\ntwo' }]);
     expect(claude('NotebookEdit', { notebook_path: 'n.ipynb', new_source: 'cell' })).toEqual([
       { kind: 'write', path: 'n.ipynb', content: 'cell' },
@@ -280,11 +293,13 @@ describe('normalize', () => {
 
   it('maps Claude Code and Codex prompts and stops', () => {
     for (const harness of ['claude', 'codex']) {
-      expect(normalize(harness, { hook_event_name: 'UserPromptSubmit', prompt: 'approve' }, ROOT)).toEqual([
-        { kind: 'prompt', text: 'approve' },
-      ]);
+      expect(
+        normalize(harness, { hook_event_name: 'UserPromptSubmit', prompt: 'approve' }, ROOT)
+      ).toEqual([{ kind: 'prompt', text: 'approve' }]);
       expect(normalize(harness, { hook_event_name: 'Stop' }, ROOT)).toEqual([{ kind: 'stop' }]);
-      expect(normalize(harness, { hook_event_name: 'Stop', stop_hook_active: true }, ROOT)).toEqual([]);
+      expect(normalize(harness, { hook_event_name: 'Stop', stop_hook_active: true }, ROOT)).toEqual(
+        []
+      );
     }
   });
 
@@ -303,17 +318,25 @@ describe('normalize', () => {
 
   it('maps Codex Bash and file_path tools like Claude Code', () => {
     const base = { hook_event_name: 'PreToolUse', cwd: ROOT };
-    expect(normalize('codex', { ...base, tool_name: 'Bash', tool_input: { command: 'ls' } }, ROOT)).toEqual([
-      { kind: 'shell', command: 'ls' },
-    ]);
     expect(
-      normalize('codex', { ...base, tool_name: 'Write', tool_input: { file_path: 'a.js', content: 'x' } }, ROOT)
+      normalize('codex', { ...base, tool_name: 'Bash', tool_input: { command: 'ls' } }, ROOT)
+    ).toEqual([{ kind: 'shell', command: 'ls' }]);
+    expect(
+      normalize(
+        'codex',
+        { ...base, tool_name: 'Write', tool_input: { file_path: 'a.js', content: 'x' } },
+        ROOT
+      )
     ).toEqual([{ kind: 'write', path: 'a.js', content: 'x' }]);
   });
 
   it('maps Cursor events', () => {
     const pre = (tool, input) =>
-      normalize('cursor', { hook_event_name: 'preToolUse', tool_name: tool, tool_input: input, cwd: ROOT }, ROOT);
+      normalize(
+        'cursor',
+        { hook_event_name: 'preToolUse', tool_name: tool, tool_input: input, cwd: ROOT },
+        ROOT
+      );
     expect(pre('Shell', { command: 'git push' })).toEqual([{ kind: 'shell', command: 'git push' }]);
     expect(pre('Write', { file_path: '/work/app/a.js', content: 'x' })).toEqual([
       { kind: 'write', path: 'a.js', content: 'x' },
@@ -321,11 +344,15 @@ describe('normalize', () => {
     expect(pre('StrReplace', { file_path: 'a.js', new_string: 'n' })).toEqual([
       { kind: 'write', path: 'a.js', content: 'n' },
     ]);
-    expect(pre('Delete', { file_path: '.env' })).toEqual([{ kind: 'write', path: '.env', content: '' }]);
-    expect(normalize('cursor', { hook_event_name: 'beforeSubmitPrompt', prompt: 'hi' }, ROOT)).toEqual([
-      { kind: 'prompt', text: 'hi' },
+    expect(pre('Delete', { file_path: '.env' })).toEqual([
+      { kind: 'write', path: '.env', content: '' },
     ]);
-    expect(normalize('cursor', { hook_event_name: 'stop', loop_count: 0 }, ROOT)).toEqual([{ kind: 'stop' }]);
+    expect(
+      normalize('cursor', { hook_event_name: 'beforeSubmitPrompt', prompt: 'hi' }, ROOT)
+    ).toEqual([{ kind: 'prompt', text: 'hi' }]);
+    expect(normalize('cursor', { hook_event_name: 'stop', loop_count: 0 }, ROOT)).toEqual([
+      { kind: 'stop' },
+    ]);
     expect(normalize('cursor', { hook_event_name: 'stop', loop_count: 1 }, ROOT)).toEqual([]);
   });
 
@@ -349,9 +376,17 @@ describe('normalize', () => {
   it.each([
     ['an unknown harness', 'vim', { hook_event_name: 'PreToolUse' }],
     ['an unknown event', 'claude', { hook_event_name: 'Notification' }],
-    ['an unknown tool', 'claude', { hook_event_name: 'PreToolUse', tool_name: 'WebFetch', tool_input: { url: 'x' } }],
+    [
+      'an unknown tool',
+      'claude',
+      { hook_event_name: 'PreToolUse', tool_name: 'WebFetch', tool_input: { url: 'x' } },
+    ],
     ['a missing tool_input', 'claude', { hook_event_name: 'PreToolUse', tool_name: 'Bash' }],
-    ['a non-string command', 'claude', { hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 7 } }],
+    [
+      'a non-string command',
+      'claude',
+      { hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 7 } },
+    ],
     ['an empty payload', 'cursor', {}],
     ['a null payload', 'codex', null],
     ['a read tool', 'opencode', { hook: 'tool', tool: 'read', args: { filePath: 'a.js' } }],
@@ -368,7 +403,8 @@ describe('evaluate', () => {
     tool_input: { command: 'npm test' },
   };
   const gate = (name, check) => ({ name, check });
-  const run = (gates, payload = shellPayload) => evaluate({ harness: 'claude', payload, root, gates });
+  const run = (gates, payload = shellPayload) =>
+    evaluate({ harness: 'claude', payload, root, gates });
 
   it('allows when no gate objects', () => {
     const result = run([gate('a', () => undefined)]);
@@ -438,7 +474,12 @@ describe('evaluate', () => {
 
 describe('respond', () => {
   const pre = { hook_event_name: 'PreToolUse' };
-  const result = (overrides) => ({ events: [{ kind: 'shell', command: 'x' }], notes: [], warnings: [], ...overrides });
+  const result = (overrides) => ({
+    events: [{ kind: 'shell', command: 'x' }],
+    notes: [],
+    warnings: [],
+    ...overrides,
+  });
 
   it('allows silently when there is nothing to say', () => {
     for (const harness of ['claude', 'codex', 'cursor']) {
@@ -448,14 +489,22 @@ describe('respond', () => {
 
   it('blocks Claude Code and Codex with exit 2 and the reason on stderr', () => {
     for (const harness of ['claude', 'codex']) {
-      expect(respond(harness, pre, result({ block: 'no' }))).toEqual({ code: 2, stdout: '', stderr: 'no' });
+      expect(respond(harness, pre, result({ block: 'no' }))).toEqual({
+        code: 2,
+        stdout: '',
+        stderr: 'no',
+      });
     }
   });
 
   it('blocks Cursor with exit 2 and a deny decision', () => {
     const out = respond('cursor', { hook_event_name: 'preToolUse' }, result({ block: 'no' }));
     expect(out.code).toBe(2);
-    expect(JSON.parse(out.stdout)).toEqual({ permission: 'deny', user_message: 'no', agent_message: 'no' });
+    expect(JSON.parse(out.stdout)).toEqual({
+      permission: 'deny',
+      user_message: 'no',
+      agent_message: 'no',
+    });
   });
 
   it('delivers a note to Claude Code and Codex as additional context', () => {
@@ -488,12 +537,20 @@ describe('respond', () => {
   it('shows warnings only with a prompt, never on tool calls or stop', () => {
     const warned = { warnings: ['config is broken'] };
     expect(respond('claude', pre, result(warned)).stdout).toBe('');
-    expect(respond('claude', { hook_event_name: 'Stop' }, result({ ...warned, events: [{ kind: 'stop' }] })).stdout).toBe('');
+    expect(
+      respond(
+        'claude',
+        { hook_event_name: 'Stop' },
+        result({ ...warned, events: [{ kind: 'stop' }] })
+      ).stdout
+    ).toBe('');
     const prompt = respond(
       'claude',
       { hook_event_name: 'UserPromptSubmit' },
       result({ ...warned, events: [{ kind: 'prompt', text: 'hi' }], notes: ['recorded'] })
     );
-    expect(JSON.parse(prompt.stdout).hookSpecificOutput.additionalContext).toBe('recorded\nconfig is broken');
+    expect(JSON.parse(prompt.stdout).hookSpecificOutput.additionalContext).toBe(
+      'recorded\nconfig is broken'
+    );
   });
 });
