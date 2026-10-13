@@ -13,6 +13,12 @@ const EXPECTED = [
   ['performance-reviewer', 'read-only', 'strong', 'review'],
   ['database-reviewer', 'read-only', 'strong', 'review'],
   ['accessibility-reviewer', 'read-only', 'balanced', 'review'],
+  ['api-designer', 'read-only', 'strong', undefined],
+  ['test-strategist', 'read-only', 'balanced', undefined],
+  ['dependency-auditor', 'read-only', 'balanced', undefined],
+  ['debugger', 'read-only', 'strong', undefined],
+  ['docs-writer', 'write', 'balanced', undefined],
+  ['refactorer', 'write', 'balanced', undefined],
 ];
 const REVIEWERS = EXPECTED.filter(([, , , joins]) => joins === 'review').map(([name]) => name);
 const SECTIONS = ['Role', 'Inputs', 'Procedure', 'Output', 'Limits'];
@@ -85,5 +91,32 @@ describe('review specialists', () => {
     for (const file of ['01-requirement.md', '03-plan.md', '05-build.md', '06-test.md']) {
       expect(body(name)).toContain(file);
     }
+  });
+});
+
+describe('the other specialists', () => {
+  const OTHERS = EXPECTED.filter(([, , , joins]) => joins === undefined).map(([name]) => name);
+
+  it('only docs-writer and refactorer can change files', () => {
+    const writers = specialists.filter((agent) => agent.access === 'write');
+    expect(writers.map((agent) => agent.name).sort()).toEqual(['docs-writer', 'refactorer']);
+  });
+
+  it.each(OTHERS)(
+    '%s gives no verdict line, so a flow cannot mistake it for a reviewer',
+    (name) => {
+      expect(body(name)).not.toContain('VERDICT:');
+    }
+  );
+
+  it.each([
+    ['api-designer', ['**Open questions**', '**Compatibility**', '**Errors**']],
+    ['test-strategist', ['**Cases**', '**Gaps**', '**Not worth testing**']],
+    ['dependency-auditor', ['Do not install, upgrade or remove', '**Could not check**']],
+    ['debugger', ['**Root cause**', '**Evidence**', 'Do not apply the fix']],
+    ['docs-writer', ['Do not change code', 'by reading the code']],
+    ['refactorer', ['before and after', 'stop and report', 'Do not add features']],
+  ])('%s states its contract', (name, phrases) => {
+    for (const phrase of phrases) expect(body(name), phrase).toContain(phrase);
   });
 });
