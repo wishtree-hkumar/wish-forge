@@ -92,3 +92,30 @@ Check 27 shows whether the model follows the instruction to look in the agents f
 Check 31 matters most on Codex, where a read-only agent runs in a read-only sandbox and many test commands cannot write their caches. There `debugger` works by reading and labels its cause as unconfirmed.
 
 Check 29 matters most on OpenCode, whose user-level folder is `~/.config/opencode/agents`.
+
+## Rules packs
+
+Install two packs and the reviewer in the same scratch repository, which should contain a TypeScript file:
+
+    forgeflow add common typescript standards-reviewer --target <harness>
+
+| # | Check | Claude Code | Codex | OpenCode | Cursor |
+|---|---|---|---|---|---|
+| 32 | The harness starts with no warning about the rule files, `AGENTS.md` or `opencode.json` | | | | |
+| 33 | Ask "which coding standards apply when you edit a .ts file here?" The answer quotes a rule from the `typescript` pack and one from `common` | | | | |
+| 34 | Ask the same about a `.md` file. The answer uses `common` only (not OpenCode, which always loads every pack) | | | | |
+| 35 | Ask the agent to add a function that uses `any` in a `.ts` file. It avoids `any`, or says the standards forbid it | | | | |
+| 36 | Ask "use the standards-reviewer agent on the last commit" after committing a `.ts` file that uses `var`. Its findings name the pack and quote the rule | | | | |
+| 37 | A quick-flow run with `standards-reviewer` installed creates `07-review-standards-reviewer.md` | | | | |
+| 38 | `forgeflow remove common typescript --target <harness>` leaves `AGENTS.md` and `opencode.json` as they were before, or gone if forgeflow created them | | | | |
+
+Check 33 is the one that shows whether the rules reach the model at all. On Codex it also shows whether the model follows the pointer in `AGENTS.md`: record what it did.
+
+Two more checks test assumptions the automated tests cannot confirm:
+
+| # | Check | Harness |
+|---|---|---|
+| 39 | After `forgeflow add common --target opencode --global`, check 33 passes in a project with no rules of its own. This shows OpenCode expands `~` in an `instructions` entry | OpenCode |
+| 40 | The installed `.cursor/rules/forgeflow-typescript.mdc` shows in Cursor's rules settings as applying to specific files, with its patterns listed | Cursor |
+
+If check 39 fails, replace `~` in the global entry with the full path and record it in the README. If check 40 fails, compare the file's frontmatter with a rule created in Cursor itself.

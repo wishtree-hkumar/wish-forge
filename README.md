@@ -26,6 +26,7 @@ forgeflow add --flow quick --target claude       # a flow and the agents it need
 forgeflow add --flow full --target claude,codex  # several harnesses at once
 forgeflow add security-reviewer --target claude  # one specialist
 forgeflow add --specialists --target claude      # every specialist
+forgeflow add common typescript --target claude  # rules packs
 forgeflow status                                 # what is installed here
 forgeflow update                                 # rewrite installed files from the current catalog
 forgeflow remove reviewer --target cursor
@@ -97,6 +98,52 @@ The five reviewers are also used by the flows. At REVIEW, a flow runs each one t
 
 A specialist is a prompt for your harness's model, not a tool: `security-reviewer` is not a scanner, and `accessibility-reviewer` reads the code without running the interface. Where a harness gives read-only agents a read-only sandbox (Codex does), `debugger` may be unable to run the failing command; it then works by reading and says its cause is unconfirmed.
 
+## Rules packs
+
+A rules pack is a short file of coding standards for one stack. Install the ones your project uses; the harness then keeps them in front of the model for every task.
+
+```bash
+forgeflow add common typescript --target claude,codex
+forgeflow list --type rule
+```
+
+| Pack         | Covers                                                                              | Applies to                                                   |
+| ------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `common`     | Naming, functions, errors, tests, security, comments, dependencies, version control | all work                                                     |
+| `typescript` | TypeScript and JavaScript, Node                                                     | `.ts`, `.tsx`, `.js`, `.jsx` and the module variants         |
+| `python`     | Typing, functions, errors, packaging, pytest                                        | `.py`, `.pyi`                                                |
+| `php`        | PHP, with a Laravel section                                                         | `.php`                                                       |
+| `java`       | Java, with a Spring section                                                         | `.java`                                                      |
+| `csharp`     | C#, with an ASP.NET Core section                                                    | `.cs`, `.cshtml`, `.razor`                                   |
+| `go`         | Errors, interfaces, concurrency, packages, tests                                    | `.go`                                                        |
+| `react`      | Components, state, effects, performance                                             | `.tsx`, `.jsx`                                               |
+| `vue`        | Single-file components, reactivity, composables                                     | `.vue`                                                       |
+| `angular`    | Components, signals and RxJS, templates, dependency injection                       | Angular component, service, directive, pipe and module files |
+
+The packs are a generic baseline. Where a pack and your project's established convention disagree, the pack itself says your convention wins. To make a rule your team's own, change it in the catalog; an edit to an installed copy is kept by `forgeflow update` but is not shared.
+
+Install `standards-reviewer` to have a change checked against the installed packs. It quotes the rule each finding breaks, and the flows run it at REVIEW when it is installed.
+
+### How each harness gets the rules
+
+| Target     | Rule files                            | Loaded by                                               | Scoped to file types                        |
+| ---------- | ------------------------------------- | ------------------------------------------------------- | ------------------------------------------- |
+| `claude`   | `.claude/rules/forgeflow/<name>.md`   | Claude Code itself                                      | yes                                         |
+| `cursor`   | `.cursor/rules/forgeflow-<name>.mdc`  | Cursor itself                                           | yes                                         |
+| `codex`    | `.codex/forgeflow/rules/<name>.md`    | a block in `AGENTS.md` that lists them                  | the block says which files each pack is for |
+| `opencode` | `.opencode/forgeflow/rules/<name>.md` | one entry in the `instructions` list of `opencode.json` | no: always loaded                           |
+
+In `AGENTS.md`, forgeflow owns only the text between `<!-- forgeflow:rules:start -->` and `<!-- forgeflow:rules:end -->`, and rewrites it when you add or remove a pack. In `opencode.json` it adds one entry to `instructions` and touches nothing else, though the file is written back as two-space JSON. Removing the last pack takes the block or entry out again. If `AGENTS.md` is a symbolic link, forgeflow edits the file it points to and keeps the link.
+
+### What rules do not do
+
+- Rules are guidance. A model can ignore them; `standards-reviewer` checks, and it is a model too.
+- On Codex the block asks the model to read the pack files. Nothing forces it to. An `AGENTS.override.md` in the repository root, or in `~/.codex/` for a global install, hides the block.
+- On OpenCode every installed pack is in context for every task.
+- forgeflow will not edit an `AGENTS.md` whose markers are damaged, an `opencode.json` it cannot parse, or a project that has only `opencode.jsonc`. It stops and prints the entry to add by hand, and carries on the next time it finds that entry there.
+- Rules are not available with `--global` on Cursor, which keeps user-level rules in its settings.
+- Claude Code, Cursor and OpenCode also read `AGENTS.md` in some setups, so in a project that has Codex installed too they may see the Codex block as well as their own rules.
+
 ## Quality gates
 
 Gates are hooks the harness runs for you. Install all four, or pick the ones you want:
@@ -163,7 +210,9 @@ forgeflow records what it installed in `.forgeflow/lock.json`. It never overwrit
 - A skill is a folder, `catalog/skills/<name>/SKILL.md`.
 - A gate is a folder, `catalog/hooks/<name>/`, with `HOOK.md` and `gate.mjs`. `gate.mjs` exports `check(event, ctx)` and may import only `node:` built-ins.
 - An agent with no `stage` is a specialist. Add `joins: review` to a read-only specialist to mark it as one the flows run at REVIEW, and name it in both flow skills: a test fails if the two disagree.
-- A skill body may use `{{agents-dir}}` and `{{global-agents-dir}}`. Each harness's installer replaces them with that harness's agents folders.
+- A skill or agent body may use `{{agents-dir}}` and `{{global-agents-dir}}`. Each harness's installer replaces them with that harness's agents folders.
+- A rules pack is one file, `catalog/rules/<name>.md`, with an optional `paths` list of file patterns. Without `paths` it applies to all work. Keep it under 6,000 bytes.
+- An agent body may use the same placeholders as a skill body, plus `{{rules-location}}` for where that harness keeps its rules packs.
 
 The frontmatter fields are described in `docs/superpowers/specs/2026-10-13-forgeflow-core-design.md`, section 4. Run `forgeflow doctor` to validate the catalog, and `npm test` before committing.
 
