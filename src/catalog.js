@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { CatalogError } from './errors.js';
 import { parseFrontmatter } from './frontmatter.js';
+import { PLACEHOLDERS, unknownPlaceholders } from './placeholders.js';
 import { RUNTIME_ID } from './wiring.js';
 
 export const STAGES = [
@@ -102,6 +103,13 @@ function buildItem(type, expectedName, text, source) {
     if (typeof flag !== 'boolean')
       fail(source, 'field "user-invocable-only" must be true or false');
     item.userInvocableOnly = flag;
+    const unknown = unknownPlaceholders(body);
+    if (unknown.length > 0) {
+      fail(
+        source,
+        `unknown placeholder ${unknown.join(', ')} (allowed: ${PLACEHOLDERS.join(', ')})`
+      );
+    }
   } else if (type === 'hook') {
     const events = data.events;
     const valid =

@@ -13,6 +13,7 @@ const basic = (text) => JSON.stringify(text).replace(/\u007f/g, '\\u007f');
 const multiline = (text) => escapeControl(text.replace(/\\/g, '\\\\').replace(/"""/g, '""\\"'));
 
 export const name = 'codex';
+export const agentDirs = { project: '.codex/agents', global: '~/.codex/agents' };
 
 // Codex runs hooks from the session's working directory, so the runner is
 // located through git rather than a relative path.
@@ -29,7 +30,9 @@ export function root(scope, { cwd, home }) {
 
 export function render(item, { version }) {
   if (isHookItem(item)) return hookFiles('.codex/forgeflow', item, version);
-  if (item.type === 'skill') return skillFiles(`.agents/skills/${item.name}`, item, version);
+  if (item.type === 'skill') {
+    return skillFiles(`.agents/skills/${item.name}`, item, version, agentDirs);
+  }
   const sandbox = item.access === 'read-only' ? 'read-only' : 'workspace-write';
   const content = [
     `# ${marker(item, version)}`,
@@ -41,5 +44,5 @@ export function render(item, { version }) {
     '"""',
     '',
   ].join('\n');
-  return [{ path: `.codex/agents/${item.name}.toml`, content }];
+  return [{ path: `${agentDirs.project}/${item.name}.toml`, content }];
 }

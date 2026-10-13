@@ -1,4 +1,5 @@
 import { stringify } from 'yaml';
+import { fillPlaceholders } from '../placeholders.js';
 
 export function marker(item, version) {
   return `managed by forgeflow: ${item.id}@${version}`;
@@ -9,10 +10,12 @@ export function markdown(data, item, version) {
   return `---\n${frontmatter}---\n\n${item.body}\n\n<!-- ${marker(item, version)} -->\n`;
 }
 
-export function skillFiles(dir, item, version, extraFrontmatter = {}) {
+// agentDirs is the adapter's { project, global } pair; only SKILL.md is filled.
+export function skillFiles(dir, item, version, agentDirs, extraFrontmatter = {}) {
   const data = { name: item.name, description: item.description, ...extraFrontmatter };
+  const filled = { ...item, body: fillPlaceholders(item.body, agentDirs) };
   return [
-    { path: `${dir}/SKILL.md`, content: markdown(data, item, version) },
+    { path: `${dir}/SKILL.md`, content: markdown(data, filled, version) },
     ...item.files.map((file) => ({ path: `${dir}/${file.path}`, content: file.content })),
   ];
 }

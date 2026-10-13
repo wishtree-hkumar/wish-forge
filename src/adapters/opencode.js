@@ -2,6 +2,8 @@ import { join } from 'node:path';
 import { hookFiles, markdown, skillFiles, stamp } from './shared.js';
 
 export const name = 'opencode';
+// The global folder has no ".opencode/" prefix: see root().
+export const agentDirs = { project: '.opencode/agents', global: '~/.config/opencode/agents' };
 
 // OpenCode has no hook config file: the plugin below is the wiring.
 export const wiring = null;
@@ -29,7 +31,7 @@ export function render(item, { scope, version }) {
     const extra = item.userInvocableOnly
       ? { metadata: { 'opencode/autoinvoke': 'false', 'opencode/slash': 'true' } }
       : {};
-    return skillFiles(`${prefix}skills/${item.name}`, item, version, extra);
+    return skillFiles(`${prefix}skills/${item.name}`, item, version, agentDirs, extra);
   }
   const data = { description: item.description, mode: 'subagent' };
   if (item.access === 'read-only') data.permission = { edit: 'deny' };
