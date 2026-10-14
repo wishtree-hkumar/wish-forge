@@ -20,7 +20,7 @@ const EXPECTED = [
   ['java', ['**/*.java']],
   ['csharp', ['**/*.cs', '**/*.cshtml', '**/*.razor']],
   ['go', ['**/*.go']],
-  ['react', ['**/*.tsx', '**/*.jsx']],
+  ['react', ['**/*.tsx', '**/*.jsx', '**/use*.ts', '**/use*.js']],
   ['vue', ['**/*.vue']],
   ['angular', ['**/*.ts', '**/*.html']],
 ];

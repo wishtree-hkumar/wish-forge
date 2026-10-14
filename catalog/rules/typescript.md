@@ -37,7 +37,7 @@ The typing rules apply to TypeScript files. The rest apply to JavaScript as well
 
 ## Modules
 
-- Use ES modules. Prefer named exports to a default export.
+- Use ES modules, except in files that are CommonJS by design: a `.cjs` file, or a project that uses CommonJS throughout. Prefer named exports to a default export.
 - Import types with `import type`.
 - No import cycles. A module that needs two others to import each other is doing two jobs.
 - Do not reach into another package's internal files. Import from its public entry point.

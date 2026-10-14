@@ -109,18 +109,18 @@ forgeflow add common typescript --target claude,codex
 forgeflow list --type rule
 ```
 
-| Pack         | Covers                                                                              | Applies to                                           |
-| ------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `common`     | Naming, functions, errors, tests, security, comments, dependencies, version control | all work                                             |
-| `typescript` | TypeScript and JavaScript, Node                                                     | `.ts`, `.tsx`, `.js`, `.jsx` and the module variants |
-| `python`     | Typing, functions, errors, packaging, pytest                                        | `.py`, `.pyi`                                        |
-| `php`        | PHP, with a Laravel section                                                         | `.php`                                               |
-| `java`       | Java, with a Spring section                                                         | `.java`                                              |
-| `csharp`     | C#, with an ASP.NET Core section                                                    | `.cs`, `.cshtml`, `.razor`                           |
-| `go`         | Errors, interfaces, concurrency, packages, tests                                    | `.go`                                                |
-| `react`      | Components, state, effects, performance                                             | `.tsx`, `.jsx`                                       |
-| `vue`        | Single-file components, reactivity, composables                                     | `.vue`                                               |
-| `angular`    | Components, signals and RxJS, templates, dependency injection                       | `.ts`, `.html` in an Angular project                 |
+| Pack         | Covers                                                                              | Applies to                                                  |
+| ------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `common`     | Naming, functions, errors, tests, security, comments, dependencies, version control | all work                                                    |
+| `typescript` | TypeScript and JavaScript, Node                                                     | `.ts`, `.tsx`, `.js`, `.jsx` and the module variants        |
+| `python`     | Typing, functions, errors, packaging, pytest                                        | `.py`, `.pyi`                                               |
+| `php`        | PHP, with a Laravel section                                                         | `.php`                                                      |
+| `java`       | Java, with a Spring section                                                         | `.java`                                                     |
+| `csharp`     | C#, with an ASP.NET Core section                                                    | `.cs`, `.cshtml`, `.razor`                                  |
+| `go`         | Errors, interfaces, concurrency, packages, tests                                    | `.go`                                                       |
+| `react`      | Components, state, effects, performance                                             | `.tsx`, `.jsx`, and hook files named `use*.ts` or `use*.js` |
+| `vue`        | Single-file components, reactivity, composables                                     | `.vue`                                                      |
+| `angular`    | Components, signals and RxJS, templates, dependency injection                       | `.ts`, `.html` in an Angular project                        |
 
 The packs are a generic baseline. Where a pack and your project's established convention disagree, the pack itself says your convention wins. To make a rule your team's own, change it in the catalog; an edit to an installed copy is kept by `forgeflow update` but is not shared.
 
@@ -135,7 +135,7 @@ Install `standards-reviewer` to have a change checked against the installed pack
 | `codex`    | `.codex/forgeflow/rules/<name>.md`    | a block in `AGENTS.md` that lists them                  | the block says which files each pack is for |
 | `opencode` | `.opencode/forgeflow/rules/<name>.md` | one entry in the `instructions` list of `opencode.json` | no: always loaded                           |
 
-In `AGENTS.md`, forgeflow owns only the text between `<!-- forgeflow:rules:start -->` and `<!-- forgeflow:rules:end -->`, and rewrites it when you add or remove a pack. In `opencode.json` it adds one entry to `instructions` and touches nothing else, though the file is written back as two-space JSON. Removing the last pack takes the block or entry out again. If `AGENTS.md` is a symbolic link, forgeflow edits the file it points to and keeps the link.
+In `AGENTS.md`, forgeflow owns only the text between `<!-- forgeflow:rules:start -->` and `<!-- forgeflow:rules:end -->`, and rewrites it when you add or remove a pack. In `opencode.json` it adds one entry to `instructions` and touches nothing else, though the file is written back as two-space JSON. Removing the last pack takes the block or entry out again. If `AGENTS.md` is a symbolic link, forgeflow edits the file it points to and keeps the link. Text you change between the markers is replaced the next time you add, update or remove a pack for Codex, and a block you delete comes back the next time you add or update for Codex. Put your own instructions outside the markers.
 
 ### What rules do not do
 

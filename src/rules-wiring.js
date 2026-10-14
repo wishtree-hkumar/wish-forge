@@ -9,8 +9,12 @@ const isObject = (value) => typeof value === 'object' && value !== null && !Arra
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // A marker counts only when it is a whole line, so text that mentions one is left alone.
-const lineOf = (marker) => new RegExp(`^${escaped(marker)}[ \\t]*\\r?$`, 'gm');
-const offsets = (text, marker) => [...text.matchAll(lineOf(marker))].map((match) => match.index);
+const lineOf = (marker) => new RegExp(`^\uFEFF?${escaped(marker)}[ \\t]*\\r?$`, 'gm');
+// The offset of the marker itself, after a byte-order mark that may open the file.
+const offsets = (text, marker) =>
+  [...text.matchAll(lineOf(marker))].map(
+    (match) => match.index + (match[0].startsWith('\uFEFF') ? 1 : 0)
+  );
 
 // Returns the block's { start, end } offsets, or null when the text has none.
 function locate(text, path) {
@@ -45,8 +49,10 @@ export function stripBlock(text, path) {
   const at = locate(text, path);
   if (!at) return text;
   // Take back the line break after the block and the blank line added before it.
-  const after = text.slice(at.end).replace(/^\r?\n/, '');
+  let after = text.slice(at.end).replace(/^\r?\n/, '');
   const before = text.slice(0, at.start);
+  // A block at the very top had a blank line after it, not before: take that one.
+  if (before.replace(/^\uFEFF/, '') === '') after = after.replace(/^\r?\n/, '');
   return (/(\r?\n){2}$/.test(before) ? before.replace(/\r?\n$/, '') : before) + after;
 }
 

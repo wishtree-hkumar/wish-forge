@@ -23,7 +23,7 @@ paths:
 ## Async
 
 - Async all the way: never block on asynchronous work with `.Result`, `.Wait()` or `GetAwaiter().GetResult()`.
-- Suffix asynchronous methods with `Async`, and return a task type. Use `async void` only for event handlers.
+- Suffix asynchronous methods with `Async`, except where a framework sets the name, such as controller actions and message handlers, and return a task type. Use `async void` only for event handlers.
 - Accept a `CancellationToken` in every asynchronous public method and pass it on to every call that takes one.
 - Do not start work and forget it. Await it, or hand it to a background service that owns its lifetime.
 - Do not wrap synchronous code in a thread-pool call to make it look asynchronous.

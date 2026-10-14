@@ -134,6 +134,13 @@ function buildItem(type, expectedName, text, source) {
         paths.length > 0 &&
         paths.every((pattern) => typeof pattern === 'string' && pattern.trim() !== '');
       if (!valid) fail(source, 'field "paths" must be a non-empty list of file patterns');
+      // Cursor reads globs as one comma-separated list, and Codex quotes them in backticks.
+      if (paths.some((pattern) => /[,`]/.test(pattern))) {
+        fail(
+          source,
+          'field "paths": a pattern may not contain a comma or a backtick. List each pattern on its own'
+        );
+      }
       // Absent means the rule applies to all work.
       item.paths = [...paths];
     }

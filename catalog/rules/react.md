@@ -4,6 +4,8 @@ description: React standards - components, state, effects, performance and acces
 paths:
   - "**/*.tsx"
   - "**/*.jsx"
+  - "**/use*.ts"
+  - "**/use*.js"
 ---
 # React standards
 

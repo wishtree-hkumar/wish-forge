@@ -62,8 +62,8 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // Returns the parsed harness config, or undefined when the file does not exist.
 function readConfig(root, path) {
-  const full = join(root, path);
-  return existsSync(full) ? parseConfig(readFileSync(full, 'utf8'), path) : undefined;
+  const text = readText(root, path);
+  return text === undefined ? undefined : parseConfig(text, path);
 }
 
 // previous is the lockfile's wiring record for this target, if there is one.
@@ -113,8 +113,8 @@ function throughLink(root, path) {
     return path;
   }
   if (!stat.isSymbolicLink()) return path;
-  const refuse = (problem) =>
-    new ConfigError(`${path} is ${problem}. forgeflow will not modify it.`);
+  const refuse = (problem, next = '') =>
+    new ConfigError(`${path} is ${problem}. forgeflow will not modify it${next}.`);
   let target;
   try {
     target = realpathSync(full);
@@ -123,14 +123,41 @@ function throughLink(root, path) {
   }
   const inside = relative(realpathSync(root), target);
   if (inside === '' || inside.startsWith('..') || isAbsolute(inside)) {
-    throw refuse(`a symbolic link to a file outside ${root}`);
+    throw refuse(
+      'a symbolic link to a file outside the project',
+      ': forgeflow edits only files inside the project. Replace the link with a regular file, ' +
+        'or point it at a file inside the project'
+    );
   }
   return inside.split(sep).join('/');
 }
 
 function readText(root, path) {
   const full = join(root, path);
-  return existsSync(full) ? readFileSync(full, 'utf8') : undefined;
+  if (!existsSync(full)) return undefined;
+  try {
+    return readFileSync(full, 'utf8');
+  } catch (error) {
+    throw new ConfigError(
+      `${path} cannot be read (${error.code ?? error.message}). forgeflow will not change it: ` +
+        'make it a readable file, or remove it, and re-run.'
+    );
+  }
+}
+
+// The text of a config that is a link to a file outside the project, or
+// undefined when it is not one. Dotfile managers often keep configs that way.
+function outsideText(root, path) {
+  const full = join(root, path);
+  try {
+    if (!lstatSync(full).isSymbolicLink()) return undefined;
+    const target = realpathSync(full);
+    const inside = relative(realpathSync(root), target);
+    if (inside !== '' && !inside.startsWith('..') && !isAbsolute(inside)) return undefined;
+    return readFileSync(target, 'utf8');
+  } catch {
+    return undefined;
+  }
 }
 
 // The file's next text, and whether nothing but forgeflow's skeleton is left.
@@ -213,10 +240,12 @@ function uneditable(root, wiring, path, current) {
 // the operation takes items away: a config that cannot be edited then never
 // stops it.
 export function planRulesWiring(root, wiring, rules, previous, { removing = false } = {}) {
+  const active = wiring.kind === 'json' ? wiring.entries.length > 0 : rules.length > 0;
+  const linked = wiring.kind === 'json' ? outsideText(root, wiring.path) : undefined;
+  if (linked !== undefined) return planOutside(wiring, linked, active, previous, removing);
   const path = throughLink(root, wiring.path);
   const current = readText(root, path);
   const row = (type, extra = {}) => ({ id: RULES_ID, type, path, ...extra });
-  const active = wiring.kind === 'json' ? wiring.entries.length > 0 : rules.length > 0;
 
   if (active) {
     const stuck = uneditable(root, wiring, path, current);
@@ -257,7 +286,37 @@ export function planRulesWiring(root, wiring, rules, previous, { removing = fals
   return { action: ours ? row('delete') : row('unwire', { content: text }), record: null };
 }
 
+// An OpenCode config linked from outside the project is never edited: it can
+// only be wired by hand, and taken apart by hand.
+function planOutside(wiring, text, active, previous, removing) {
+  const path = wiring.path;
+  const row = (type, extra = {}) => ({ id: RULES_ID, type, path, ...extra });
+  const left = foundEntries(text, wiring.known);
+  if (!active) {
+    const action = left.length > 0 ? row('manual', { reason: takeOut(left) }) : row('skip');
+    return { action, record: null };
+  }
+  if (handWired(text, wiring.entries)) {
+    const extra = left.filter((entry) => !wiring.entries.includes(entry));
+    return {
+      action: row('manual', { reason: extra.length > 0 ? takeOut(extra) : BY_HAND }),
+      record: { path, created: false, manual: true },
+    };
+  }
+  if (removing) return { action: row('skip'), record: previous };
+  const missing = wiring.entries
+    .filter((entry) => !left.includes(entry))
+    .map((entry) => JSON.stringify(entry))
+    .join(' and ');
+  throw new ConfigError(
+    `${path} is a symbolic link to a file outside the project. forgeflow will not edit it: ` +
+      `add ${missing} to its "instructions" list by hand, and re-run.`
+  );
+}
+
 export function rulesState(root, wiring) {
+  const linked = wiring.kind === 'json' ? outsideText(root, wiring.path) : undefined;
+  if (linked !== undefined) return handWired(linked, wiring.entries) ? 'ok' : 'unreadable';
   try {
     const path = throughLink(root, wiring.path);
     const current = readText(root, path);

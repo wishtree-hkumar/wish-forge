@@ -88,7 +88,8 @@ describe('codex', () => {
     run('add', 'common', '--target', 'codex');
     writeFileSync(join(cwd, 'AGENTS.md'), `${read('AGENTS.md')}\nMine.\n`);
     expect(run('remove', 'common', '--target', 'codex').out).toMatch(/unwired\s+AGENTS\.md/);
-    expect(read('AGENTS.md')).toBe('\nMine.\n');
+    // The block was at the top, so the blank line after it goes with it.
+    expect(read('AGENTS.md')).toBe('Mine.\n');
   });
 
   it('reports unchanged when nothing in the block changes', () => {
