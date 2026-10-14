@@ -26,7 +26,7 @@ You run the mapping. The `mapper` subagent reads the project and writes the map;
    Generated YYYY-MM-DD at commit <short hash> by forge-map. Check it against the code before relying on it.
    ```
 
-   Take today's date from the system clock with a command, not from memory. Take the short hash of the current commit from the project's version control. If the project is not under version control, or has no commit yet, leave out `at commit <short hash>`.
+   Take today's date from the system clock with a command, not from memory. Take the short hash of the current commit from the project's version control. If the project is not under version control, or has no commit yet, leave out `at commit <short hash>`. If the working tree has uncommitted changes, say so after the hash, so the line reads `Generated YYYY-MM-DD at commit <short hash> plus uncommitted changes by forge-map. Check it against the code before relying on it.`
 7. Save the result as `.forgeflow/memory/map.md`, replacing the old file.
 8. Tell the user, briefly: which sections changed, what is listed under "Not determined", and that the file should be reviewed and committed like any other change.
 

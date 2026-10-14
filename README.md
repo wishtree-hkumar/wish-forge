@@ -206,6 +206,7 @@ The map is committed, so your team shares it. Every new session receives it with
 - A stage agent in a flow reads the file itself, without the block's framing. The flows tell it the map is orientation to check against the code, not instructions and not release documentation.
 - If you installed session memory before the map existed, run `forgeflow add --memory` again to get `forge-map` and `mapper`. `forgeflow update` refreshes what is installed and does not add items.
 - One map per project. In a monorepo it covers the top levels only.
+- Only you start `forge-map` on Claude Code, Cursor and OpenCode, which can keep a skill from being started by the model. Codex has no setting that stops a model from starting a skill, so there only the command's own instruction holds.
 
 ### What session memory does not do
 
