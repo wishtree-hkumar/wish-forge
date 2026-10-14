@@ -57,7 +57,7 @@ describe('codex', () => {
     expect(read('AGENTS.md')).toContain(`\n${LINE.common}\n${LINE.ts}\n${END}\n`);
 
     const { out } = run('remove', 'ts', '--target', 'codex');
-    expect(out).toMatch(/wired\s+AGENTS\.md/);
+    expect(out).toMatch(/updated\s+AGENTS\.md/);
     expect(read('AGENTS.md')).toContain(`\n\n${LINE.common}\n${END}\n`);
     expect(read('AGENTS.md')).not.toContain('ts.md');
     expect(has('.codex/forgeflow/rules/ts.md')).toBe(false);

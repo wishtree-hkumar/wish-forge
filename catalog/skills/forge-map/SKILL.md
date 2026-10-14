@@ -5,6 +5,7 @@ user-invocable-only: true
 group: memory
 requires:
   - agent:mapper
+  - hook:session-memory
 ---
 # forgeflow: map the project
 

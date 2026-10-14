@@ -25,7 +25,7 @@ describe('the memory group', () => {
   it.each(['forge-lesson', 'forge-handoff'])('%s may be followed without being asked', (name) => {
     const skill = catalog.get(`skill:${name}`);
     expect(skill.userInvocableOnly).toBe(false);
-    expect(skill.requires).toEqual([]);
+    expect(skill.requires).toEqual(['hook:session-memory']);
     expect(skill.description).toMatch(/\bUse when\b/);
     expect(skill.body).not.toMatch(HARNESS_TOOL);
   });

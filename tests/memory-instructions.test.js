@@ -135,7 +135,7 @@ describe('install and remove', () => {
     expect(instructions()).toEqual([...MEMORY, RULES]);
 
     expect(run('remove', 'session-memory', '--target', 'opencode').out).toMatch(
-      /wired\s+opencode\.json/
+      /updated\s+opencode\.json/
     );
     expect(instructions()).toEqual([RULES]);
 

@@ -266,7 +266,8 @@ export function planRulesWiring(root, wiring, rules, previous, { removing = fals
     const { text } = nextRulesText(wiring, current, rules, active);
     const created = current === undefined ? true : (previous?.created ?? false);
     return {
-      action: row(text === current ? 'skip' : 'wire', { content: text }),
+      // A removal that leaves something wanted updates the file; it does not wire it.
+      action: row(text === current ? 'skip' : removing ? 'rewire' : 'wire', { content: text }),
       record: { path: wiring.path, created },
     };
   }

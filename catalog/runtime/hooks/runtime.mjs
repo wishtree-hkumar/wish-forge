@@ -221,7 +221,11 @@ function stateStore(root) {
       try {
         mkdirSync(dir, { recursive: true });
         const ignore = join(dir, '.gitignore');
-        if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
+        const kept = existsSync(ignore) ? readFileSync(ignore, 'utf8') : '';
+        // The folder ignores itself; a .gitignore there that lost its "*" gets it back.
+        if (!kept.split(/\r?\n/).some((line) => line.trim() === '*')) {
+          writeFileSync(ignore, `*\n${kept}`);
+        }
         writeFileSync(file, JSON.stringify(value));
       } catch {
         // state is best effort

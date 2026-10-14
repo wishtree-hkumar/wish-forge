@@ -2,6 +2,8 @@
 name: forge-handoff
 description: Write a handoff note for the next session - what is done, what is in progress and what comes next. Use when the user asks for a handoff, before stopping work that is unfinished, or when told the conversation is being compacted.
 group: memory
+requires:
+  - hook:session-memory
 ---
 # forgeflow: write a handoff note
 

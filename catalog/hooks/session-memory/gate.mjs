@@ -1,7 +1,17 @@
 // forgeflow session-memory: keeps a record of what a session changed and was
 // asked, and gives a new or compacted session the project's memory. It only
 // records and informs; it never blocks.
-import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import {
+  closeSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 
 // The patterns secret-guard blocks on. A gate may import nothing from another
@@ -93,7 +103,10 @@ function touch({ current, previous }, ctx) {
   const now = new Date(ctx.now).toISOString();
   const same =
     current !== null &&
-    (ctx.session ? current.id === ctx.session : ctx.now - Date.parse(current.updated) <= IDLE);
+    (ctx.session
+      ? current.id === ctx.session
+      : // A clock that moved back counts as time passing too.
+        Math.abs(ctx.now - Date.parse(current.updated)) <= IDLE);
   if (same) {
     const next = { ...current, harness: ctx.harness, updated: now, branch: branchOf(ctx.root) };
     return { current: next, previous };
@@ -117,8 +130,11 @@ function lines(session) {
     `Started ${stamp(session.started)}, last active ${stamp(session.updated)}, ` +
       `in ${session.harness || 'an unknown harness'}${where}.`,
   ];
-  if (session.files.length > 0)
-    out.push('', 'Files changed:', ...session.files.map((f) => `- ${f}`));
+  // Recorded when the agent asks to write, so a write that was then refused is listed too.
+  if (session.files.length > 0) {
+    out.push('', 'Files the agent set out to change:', ...session.files.map((f) => `- ${f}`));
+    if (session.omitted > 0) out.push(`- and ${session.omitted} earlier files not listed`);
+  }
   if (session.prompts.length > 0) out.push('', 'Prompts:', ...session.prompts.map((p) => `- ${p}`));
   return out.join('\n');
 }
@@ -130,19 +146,72 @@ function readable({ current, previous }) {
   return `${parts.join('\n\n')}\n`;
 }
 
+// The folder ignores itself, so the project's own .gitignore is never edited.
+// A .gitignore there that lost its "*" line gets it back, ahead of the rest.
+function ignoreFolder(root) {
+  const ignore = join(root, LOCAL, '.gitignore');
+  let text;
+  try {
+    text = readFileSync(ignore, 'utf8');
+  } catch {
+    writeFileSync(ignore, '*\n');
+    return;
+  }
+  if (!text.split(/\r?\n/).some((line) => line.trim() === '*')) writeFileSync(ignore, `*\n${text}`);
+}
+
 function save(root, record) {
+  const tmp = join(root, `${RECORD}.tmp-${process.pid}`);
   try {
     mkdirSync(join(root, LOCAL), { recursive: true });
-    // The folder ignores itself, so the project's own .gitignore is never edited.
-    const ignore = join(root, LOCAL, '.gitignore');
-    if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
-    // Written whole and renamed: two tool calls at once must not leave half a file.
-    const tmp = join(root, `${RECORD}.tmp-${process.pid}`);
+    ignoreFolder(root);
+    // Written whole and renamed: a reader never sees half a file.
     writeFileSync(tmp, `${JSON.stringify(record, null, 2)}\n`);
     renameSync(tmp, join(root, RECORD));
     writeFileSync(join(root, READABLE), readable(record));
   } catch {
     // recording is best effort and must never stop the agent
+    try {
+      rmSync(tmp, { force: true, recursive: true });
+    } catch {
+      // nothing was left, or nothing can be removed there
+    }
+  }
+}
+
+const LOCK_WAIT = 2000;
+const LOCK_STALE = 5000;
+const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+// Read, change and save the record with no other hook process in between, so
+// two tool calls at once both land. Without the lock it still records.
+function locked(root, work) {
+  const lock = join(root, LOCAL, 'session.lock');
+  const deadline = Date.now() + LOCK_WAIT;
+  let fd;
+  try {
+    mkdirSync(join(root, LOCAL), { recursive: true });
+  } catch {
+    return work(); // no folder to lock in; save will fail quietly too
+  }
+  while (fd === undefined) {
+    try {
+      fd = openSync(lock, 'wx');
+    } catch (error) {
+      if (error.code !== 'EEXIST' || Date.now() > deadline) return work();
+      try {
+        if (Date.now() - statSync(lock).mtimeMs > LOCK_STALE) unlinkSync(lock);
+      } catch {
+        // another process took it away first
+      }
+      pause(5);
+    }
+  }
+  try {
+    return work();
+  } finally {
+    closeSync(fd);
+    rmSync(lock, { force: true });
   }
 }
 
@@ -245,7 +314,8 @@ function memoryBlock(ctx, source) {
   if (map) parts.push(map);
 
   const handoff = readText(root, HANDOFF);
-  if (handoff && now - handoff.modified <= STALE) {
+  // A note dated far in the future means a wrong clock: it is stale, not fresh.
+  if (handoff && Math.abs(now - handoff.modified) <= STALE) {
     const written = stamp(new Date(handoff.modified).toISOString());
     parts.push(
       `## Handoff note (from ${HANDOFF}, written ${written})\n` +
@@ -261,7 +331,7 @@ function memoryBlock(ctx, source) {
   const mine = current !== null && ctx.session !== '' && current.id === ctx.session;
   const last = mine ? previous : current;
   const shown = compacted ? ownSession(current, ctx) : last;
-  if (worked(shown) && now - Date.parse(shown.updated) <= STALE) {
+  if (worked(shown) && Math.abs(now - Date.parse(shown.updated)) <= STALE) {
     parts.push(activity(compacted ? 'this session so far' : 'last session', shown));
   }
 
@@ -285,21 +355,30 @@ const outside = (path) =>
 export function check(event, ctx) {
   if (event.kind === 'write') {
     if (outside(event.path)) return undefined;
-    const record = touch(readRecord(ctx.root), ctx);
-    const { files } = record.current;
     // One line per path, whatever characters the name holds.
     const path = event.path.replace(/\s+/g, ' ');
-    if (!files.includes(path)) record.current.files = [...files, path].slice(-MAX_FILES);
-    save(ctx.root, record);
+    locked(ctx.root, () => {
+      const record = touch(readRecord(ctx.root), ctx);
+      const { files } = record.current;
+      if (!files.includes(path)) {
+        const all = [...files, path];
+        const dropped = Math.max(0, all.length - MAX_FILES);
+        record.current.files = all.slice(dropped);
+        if (dropped > 0) record.current.omitted = (record.current.omitted ?? 0) + dropped;
+      }
+      save(ctx.root, record);
+    });
     return undefined;
   }
 
   if (event.kind === 'prompt') {
     const text = tidy(event.text);
     if (!text || APPROVAL.test(text)) return undefined;
-    const record = touch(readRecord(ctx.root), ctx);
-    record.current.prompts = [...record.current.prompts, text].slice(-MAX_PROMPTS);
-    save(ctx.root, record);
+    locked(ctx.root, () => {
+      const record = touch(readRecord(ctx.root), ctx);
+      record.current.prompts = [...record.current.prompts, text].slice(-MAX_PROMPTS);
+      save(ctx.root, record);
+    });
     return undefined;
   }
 

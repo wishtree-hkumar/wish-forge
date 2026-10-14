@@ -59,7 +59,7 @@ describe('forge-map', () => {
     expect(skill).toMatchObject({
       userInvocableOnly: true,
       group: 'memory',
-      requires: ['agent:mapper'],
+      requires: ['agent:mapper', 'hook:session-memory'],
     });
     expect(skill.body).not.toMatch(HARNESS_TOOL);
   });

@@ -2,6 +2,8 @@
 name: forge-lesson
 description: Add one durable fact about this project to the shared lessons file. Use when the user corrects you about the project, when you find something a later session will need to know, or when the user asks you to remember something about the project.
 group: memory
+requires:
+  - hook:session-memory
 ---
 # forgeflow: record a lesson
 
