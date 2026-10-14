@@ -13,7 +13,7 @@ wish-forge has not yet been checked in the harnesses themselves: the automated t
 Needs Node 20 or newer.
 
 ```bash
-git clone git@github.com:wishtree-hkumar/forgeflow.git wish-forge
+git clone git@github.com:wishtree-hkumar/wish-forge.git
 cd wish-forge && npm install && npm link   # puts `wishforge` on your PATH
 ```
 
