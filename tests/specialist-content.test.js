@@ -116,7 +116,7 @@ describe('the other specialists', () => {
     ['test-strategist', ['**Cases**', '**Gaps**', '**Not worth testing**']],
     ['dependency-auditor', ['Do not install, upgrade or remove', '**Could not check**']],
     ['debugger', ['**Root cause**', '**Evidence**', 'Do not apply the fix']],
-    ['docs-writer', ['Do not change code', 'by reading the code']],
+    ['docs-writer', ['Do not change executable code', 'by reading the code']],
     ['refactorer', ['before and after', 'stop and report', 'Do not add features']],
   ])('%s states its contract', (name, phrases) => {
     for (const phrase of phrases) expect(body(name), phrase).toContain(phrase);

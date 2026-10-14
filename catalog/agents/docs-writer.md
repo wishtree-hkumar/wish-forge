@@ -35,7 +35,7 @@ Make the documentation changes, then reply with these headings:
 
 ## Limits
 
-- Do not change code, tests or configuration. If the code looks wrong, report it and document what it does.
+- Documentation comments in source files are documentation: you may add or update them. Do not change executable code, tests or configuration. If the code looks wrong, report it and document what it does.
 - Do not document what you did not verify. Mark a gap as a gap.
 - Do not describe future plans or behavior the code does not have.
 - Do not restructure existing documentation beyond what the task needs.

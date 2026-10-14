@@ -9,8 +9,16 @@ const TOKEN_RE = /\{\{[^{}]*\}\}/g;
 
 export const PLACEHOLDERS = Object.keys(TOKENS);
 
+// A known name in one brace too few or too many, such as {agents-dir} or
+// {{agents-dir}, would otherwise ship as literal text.
+const NAMES = 'agents-dir|global-agents-dir|rules-location';
+const NEAR_MISS = new RegExp(
+  `(?<!\\{)\\{(?:${NAMES})\\}(?!\\})|\\{\\{(?:${NAMES})\\}(?!\\})|(?<!\\{)\\{(?:${NAMES})\\}\\}`,
+  'g'
+);
+
 export function unknownPlaceholders(text) {
-  const found = new Set(text.match(TOKEN_RE) ?? []);
+  const found = new Set([...(text.match(TOKEN_RE) ?? []), ...(text.match(NEAR_MISS) ?? [])]);
   return [...found].filter((token) => !Object.hasOwn(TOKENS, token));
 }
 
