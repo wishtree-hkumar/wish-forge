@@ -7,6 +7,7 @@ import { runDoctor } from './doctor.js';
 import { ConflictError, UsageError } from './errors.js';
 import { add, remove, status, update } from './ops.js';
 import { findId } from './resolve.js';
+import { estimateTokens, tokensOf } from './tokens.js';
 
 const VERSION = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8')
@@ -25,6 +26,7 @@ const USAGE = `Usage:
   forgeflow remove <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
   forgeflow update [<id...>] [--target <t>[,<t>...]] [--global] [--dry-run] [--force]
   forgeflow status [--global]
+  forgeflow tokens [--target <t>[,<t>...]] [--global] [--json]
   forgeflow doctor
 
 Targets: ${targetNames.join(', ')}
@@ -136,10 +138,48 @@ const LIST_GROUPS = [
   { title: 'Rules packs', has: (item) => item.type === 'rule', row: (item) => [applies(item)] },
 ];
 
-function printList(stdout, items) {
-  // In a terminal each line is cut to its width; piped output is left whole.
+// In a terminal each line is cut to its width; piped output is left whole.
+function fitter(stdout) {
   const width = stdout.isTTY && stdout.columns > 0 ? stdout.columns : Infinity;
-  const fit = (line) => (line.length > width ? `${line.slice(0, width - 1)}…` : line);
+  return (line) => (line.length > width ? `${line.slice(0, width - 1)}…` : line);
+}
+
+const number = (value) => value.toLocaleString('en-US');
+
+function printTokens(stdout, targets) {
+  if (targets.length === 0) {
+    stdout.write(NOTHING);
+    return;
+  }
+  const fit = fitter(stdout);
+  const labels = targets
+    .flatMap(({ always, onUse }) => [...always, ...onUse])
+    .map((row) => row.label);
+  const labelWidth = Math.max(28, ...labels.map((label) => label.length));
+  const line = (label, value) => fit(`    ${label.padEnd(labelWidth)}  ${value.padStart(8)}`);
+  for (const { target, root, always, onUse } of targets) {
+    stdout.write(`${target}  (${root})\n`);
+    stdout.write(
+      `${fit(`  ${'Every session'.padEnd(labelWidth + 2)}  ${'~ tokens'.padStart(8)}`)}\n`
+    );
+    for (const { label, chars } of always)
+      stdout.write(`${line(label, number(tokensOf(chars)))}\n`);
+    const total = always.reduce((all, { chars }) => all + tokensOf(chars), 0);
+    stdout.write(`${line('total', `~${number(total)}`)}\n`);
+    if (onUse.length > 0) {
+      stdout.write('  When used\n');
+      for (const { label, chars } of onUse)
+        stdout.write(`${line(label, number(tokensOf(chars)))}\n`);
+    }
+    stdout.write('\n');
+  }
+  stdout.write(
+    `${fit("Estimates at about 4 characters per token. The harness's own prompts and tools, and your own instruction files, are not included.")}\n`
+  );
+}
+
+function printList(stdout, items) {
+  const fit = fitter(stdout);
   const blocks = [];
   for (const group of LIST_GROUPS) {
     const members = items.filter(group.has).sort(group.order ?? byName);
@@ -362,6 +402,28 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
       const result = update(ctx, refs, parseTargets(values.target, false));
       if (result.plans.length === 0) stdout.write(NOTHING);
       else printResult(stdout, result, ctx.dryRun);
+      return 0;
+    }
+
+    case 'tokens': {
+      const targets = estimateTokens(ctx, parseTargets(values.target, false));
+      if (values.json) {
+        const rows = targets.flatMap(({ target, always, onUse }) =>
+          [
+            ...always.map((row) => ({ ...row, section: 'every session' })),
+            ...onUse.map((row) => ({ ...row, section: 'when used' })),
+          ].map(({ label, chars, section }) => ({
+            target,
+            section,
+            label,
+            chars,
+            tokens: tokensOf(chars),
+          }))
+        );
+        stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
+      } else {
+        printTokens(stdout, targets);
+      }
       return 0;
     }
 

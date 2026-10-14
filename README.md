@@ -36,6 +36,7 @@ forgeflow update                                 # rewrite installed files from 
 forgeflow remove reviewer --target cursor
 forgeflow remove --specialists --target claude   # bundle flags work with remove too
 forgeflow doctor                                 # check Node, the catalog and what is installed
+forgeflow tokens                                 # what the installed items add to context
 ```
 
 | Option      | Meaning                                                                                                                             |
@@ -276,6 +277,17 @@ Gates raise the bar. They are not a sandbox.
 - Agents can no longer edit the harness's hook config or `.forgeflow/config.json`. You make those changes.
 - Codex runs project hooks only after you trust them (`/hooks`), and needs the project to be a git repository.
 - On OpenCode, `test-reminder` does nothing. On OpenCode and Cursor, a gate's advisory notes are not shown to the agent; blocks are.
+
+## Context cost
+
+`forgeflow tokens` estimates what the installed items add to the model's context, for each harness installed in the project, or for your user account with `--global`. `--target` limits it to some harnesses, and `--json` gives the rows for a script.
+
+It splits the text into two parts:
+
+- **Every session**: what the harness gives the model whether or not the item is used. That is the list of agents and skills it can call, rules packs that always apply (every pack on OpenCode, and the `AGENTS.md` block on Codex), and the session memory block.
+- **When used**: what an item adds only once it runs. An agent's instructions go into that agent's own context; a flow's instructions come in when you start it; a scoped rules pack comes in when the agent works on a matching file, or on Codex when it reads the pack.
+
+The numbers are estimates, at about four characters per token: forgeflow never calls a model, so it has no tokenizer. They leave out the harness's own system prompt and tools, and your own instruction files such as `CLAUDE.md`. To see what a session actually spends, use the harness: `/context` and `/cost` in Claude Code, `/status` in Codex, the usage shown in OpenCode, and the usage dashboard for Cursor.
 
 ## Where files go
 

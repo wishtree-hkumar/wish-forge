@@ -185,3 +185,11 @@ Five more checks cover what the review of this phase could not confirm:
 | 63 | With lessons, a full-size map, a handoff note and a flow run in progress, a new session still receives the "Flow run in progress" section. This shows the block fits within the harness's limit on text a hook may add | Claude Code, Codex, Cursor |
 
 If check 63 fails, the harness cuts the block: lower the limits in the hook and record the harness's limit in the README.
+
+## Context cost
+
+| # | Check | Harness |
+|---|---|---|
+| 64 | With a flow, `common` and `typescript`, and session memory installed, compare `forgeflow tokens` with what `/context` reports for the agents, skills and memory files. Record the difference, and whether `forge-quick` and `forge-full` appear in the skills the model is offered | Claude Code; the same question about offered skills on Cursor and OpenCode |
+
+`forgeflow tokens` assumes that a skill only a person can start is not offered to the model on Claude Code, Cursor and OpenCode, and is on Codex. If check 64 shows otherwise, correct `offered` in `src/tokens.js`.
