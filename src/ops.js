@@ -145,6 +145,13 @@ function install(ctx, lock, perTarget) {
 export function add(ctx, refs, targets) {
   const lock = readLock(baseOf(ctx));
   const resolved = resolve(ctx.catalog, refs);
+  // The runtime is a requirement of the gates; installed alone it would never be swept.
+  const hidden = resolved.find(({ item, explicit }) => explicit && item.type === 'runtime');
+  if (hidden) {
+    throw new UsageError(
+      `${hidden.item.id} is installed with the quality gates that need it. Add a gate instead.`
+    );
+  }
   const perTarget = targets.map((target) => ({
     target,
     entries: resolved.map(({ item, explicit }) => ({
@@ -192,19 +199,31 @@ export function update(ctx, refs, targets) {
   return { plans: install(ctx, lock, perTarget), skipped };
 }
 
-export function remove(ctx, refs, targets) {
+// optional holds the items a bundle flag names: those installed are removed,
+// the rest ignored. flags are the bundle flags, for the message when none is.
+export function remove(ctx, refs, targets, { optional = [], flags = [] } = {}) {
   const lock = readLock(baseOf(ctx));
   // A full id is taken as given so items dropped from the catalog can still be removed.
-  const ids = refs.map((ref) => (ref.includes(':') ? ref : findId(ctx.catalog, ref)));
+  const named = refs.map((ref) => (ref.includes(':') ? ref : findId(ctx.catalog, ref)));
   const requiresOf = (id) => ctx.catalog.get(id)?.requires ?? [];
+  const installedFor = (target) => lock.targets[target]?.items ?? {};
+  if (
+    named.length === 0 &&
+    targets.every((target) => !optional.some((id) => installedFor(target)[id]))
+  ) {
+    throw new UsageError(
+      `nothing named by ${flags.join(' ')} is installed for ${targets.join(', ')}.`
+    );
+  }
 
   const plans = targets.map((target) => {
     const adapter = getAdapter(target);
     const root = adapter.root(ctx.scope, ctx);
-    const installed = lock.targets[target]?.items ?? {};
-    for (const id of ids) {
+    const installed = installedFor(target);
+    for (const id of named) {
       if (!installed[id]) throw new UsageError(`${id} is not installed for ${target}.`);
     }
+    const ids = [...new Set([...named, ...optional.filter((id) => installed[id])])];
 
     const going = new Set(ids);
     for (const id of Object.keys(installed)) {

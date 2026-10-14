@@ -1,5 +1,13 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { LockError } from './errors.js';
 
@@ -92,6 +100,12 @@ export function writeLock(base, lock, version) {
   );
   if (Object.keys(targets).length === 0) {
     rmSync(path, { force: true });
+    // An empty .forgeflow folder goes too; one holding runs or memory stays.
+    try {
+      rmdirSync(dirname(path));
+    } catch {
+      // not empty, or already gone
+    }
     return;
   }
   mkdirSync(dirname(path), { recursive: true });

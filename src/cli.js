@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { getAdapter, targetNames } from './adapters/index.js';
@@ -110,6 +110,38 @@ function printStatus(stdout, targets) {
   }
 }
 
+function samePlace(a, b) {
+  try {
+    return realpathSync(a) === realpathSync(b);
+  } catch {
+    return a === b;
+  }
+}
+
+// The items the bundle flags name, and the flags that were given.
+function bundles(values, catalog) {
+  const ids = [];
+  const flags = [];
+  const pick = (flag, test) => {
+    flags.push(flag);
+    const items = [...catalog.values()].filter(test);
+    ids.push(...items.map((item) => item.id).sort());
+  };
+  if (values.flow !== undefined) {
+    if (!['quick', 'full'].includes(values.flow)) {
+      throw new UsageError('--flow must be quick or full.');
+    }
+    pick(`--flow ${values.flow}`, (item) => item.id === `skill:forge-${values.flow}`);
+  }
+  // A hook in a group belongs to that group's bundle, not to the gates.
+  if (values.hooks) pick('--hooks', (item) => item.type === 'hook' && item.group === undefined);
+  if (values.specialists) {
+    pick('--specialists', (item) => item.type === 'agent' && item.stage === undefined);
+  }
+  if (values.memory) pick('--memory', (item) => item.group === 'memory');
+  return { ids, flags };
+}
+
 function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) {
   const { values, positionals } = parseArgs({
     args: argv,
@@ -149,6 +181,15 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
     force: Boolean(values.force),
     dryRun: Boolean(values['dry-run']),
   };
+
+  // Global installs live in the home folder, so it cannot also be a project.
+  const changes = ['add', 'remove', 'update'].includes(command);
+  if (changes && ctx.scope === 'project' && samePlace(cwd, home)) {
+    throw new UsageError(
+      'this is your home folder, where --global installs live. ' +
+        'Run forgeflow from a project folder, or add --global.'
+    );
+  }
 
   switch (command) {
     case 'list': {
@@ -224,30 +265,8 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
     }
 
     case 'add': {
-      const wanted = [...refs];
-      if (values.flow !== undefined) {
-        if (!['quick', 'full'].includes(values.flow)) {
-          throw new UsageError('--flow must be quick or full.');
-        }
-        wanted.push(`skill:forge-${values.flow}`);
-      }
-      if (values.hooks) {
-        // A hook in a group belongs to that group's bundle, not to the gates.
-        const gates = [...catalog.values()].filter(
-          (item) => item.type === 'hook' && item.group === undefined
-        );
-        wanted.push(...gates.map((item) => item.id).sort());
-      }
-      if (values.specialists) {
-        const specialists = [...catalog.values()].filter(
-          (item) => item.type === 'agent' && item.stage === undefined
-        );
-        wanted.push(...specialists.map((item) => item.id).sort());
-      }
-      if (values.memory) {
-        const memory = [...catalog.values()].filter((item) => item.group === 'memory');
-        wanted.push(...memory.map((item) => item.id).sort());
-      }
+      const { ids } = bundles(values, catalog);
+      const wanted = [...refs, ...ids];
       if (wanted.length === 0) {
         throw new UsageError(
           'name at least one item, or use --flow quick|full, --hooks, --specialists or --memory.'
@@ -258,12 +277,22 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
     }
 
     case 'remove': {
-      if (refs.length === 0) throw new UsageError('name at least one item to remove.');
-      printResult(stdout, remove(ctx, refs, parseTargets(values.target, true)), ctx.dryRun);
+      const { ids, flags } = bundles(values, catalog);
+      if (refs.length === 0 && ids.length === 0) {
+        throw new UsageError('name at least one item to remove.');
+      }
+      const targets = parseTargets(values.target, true);
+      const result = remove(ctx, refs, targets, { optional: ids, flags });
+      printResult(stdout, result, ctx.dryRun);
       return 0;
     }
 
     case 'update': {
+      if (bundles(values, catalog).flags.length > 0) {
+        throw new UsageError(
+          'update takes item names. Without names it updates everything installed.'
+        );
+      }
       const result = update(ctx, refs, parseTargets(values.target, false));
       if (result.plans.length === 0) stdout.write(NOTHING);
       else printResult(stdout, result, ctx.dryRun);

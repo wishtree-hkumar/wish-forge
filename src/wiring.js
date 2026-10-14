@@ -8,7 +8,10 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 export function parseConfig(text, path) {
   const refuse = (problem) =>
-    new ConfigError(`${path} ${problem}. forgeflow will not modify it: fix the file and re-run.`);
+    new ConfigError(
+      `${path} ${problem}. forgeflow will not modify it: fix the file and re-run. ` +
+        'If the file holds nothing you need, deleting it also works.'
+    );
   let config;
   try {
     config = JSON.parse(text);
