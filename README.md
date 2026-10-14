@@ -2,16 +2,18 @@
 
 Ready-to-use coding agents and development flows for Claude Code, Codex, OpenCode and Cursor.
 
-Each agent is written once and compiled into the native format of the harness you use. Install one agent, or a whole flow.
+Each item is written once and compiled into the native format of the harness you use: flow agents and the two flows that run them, specialist agents, rules packs of coding standards, quality-gate hooks, and session memory. Install one item, or a whole set.
 
-forgeflow does not call a model. Your harness runs the agents; forgeflow only installs their definitions.
+forgeflow does not call a model. Your harness runs the agents; forgeflow only installs their definitions and the small hook scripts.
+
+forgeflow has not yet been checked in the harnesses themselves: the automated tests prove the files it writes are well formed, not that each harness loads them as intended. `docs/verification.md` lists the checks to run in each harness.
 
 ## Install
 
 Needs Node 20 or newer.
 
 ```bash
-git clone <repository-url> forgeflow
+git clone git@github.com:wishtree-hkumar/forgeflow.git
 cd forgeflow && npm install && npm link    # puts `forgeflow` on your PATH
 ```
 
@@ -21,6 +23,7 @@ Run these from the root of the project you want the agents in.
 
 ```bash
 forgeflow list                                   # what is available
+forgeflow info reviewer                          # one item in detail
 forgeflow add reviewer --target cursor           # one agent
 forgeflow add --flow quick --target claude       # a flow and the agents it needs
 forgeflow add --flow full --target claude,codex  # several harnesses at once
@@ -31,16 +34,20 @@ forgeflow add --memory --target claude           # session memory
 forgeflow status                                 # what is installed here
 forgeflow update                                 # rewrite installed files from the current catalog
 forgeflow remove reviewer --target cursor
+forgeflow remove --specialists --target claude   # bundle flags work with remove too
+forgeflow doctor                                 # check Node, the catalog and what is installed
 ```
 
-| Option      | Meaning                                                                                                   |
-| ----------- | --------------------------------------------------------------------------------------------------------- |
-| `--target`  | `claude`, `codex`, `opencode` or `cursor`. Required for `add` and `remove`. Separate several with commas. |
-| `--global`  | Install for your user account instead of the current project.                                             |
-| `--dry-run` | Show what would change and write nothing.                                                                 |
-| `--force`   | Overwrite or delete files that you edited or that forgeflow did not install.                              |
+| Option      | Meaning                                                                                                                             |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `--target`  | `claude`, `codex`, `opencode` or `cursor`. Required for `add` and `remove`. Separate several with commas.                           |
+| `--global`  | Install for your user account instead of the current project. Not for gates, session memory or Cursor rules, which are per project. |
+| `--dry-run` | Show what would change and write nothing.                                                                                           |
+| `--force`   | Overwrite or delete files that you edited or that forgeflow did not install.                                                        |
 
-forgeflow treats the directory you run it in as the project root.
+forgeflow treats the directory you run it in as the project root. It will not treat your home folder as a project, since global installs live there: run it from a project folder, or add `--global`.
+
+`update` refreshes what is installed and does not add items. A file you edited is left alone unless you pass `--force`; a bundle member that something else installed still needs is kept by `remove`, which says so.
 
 ## The flows
 
@@ -142,7 +149,7 @@ In `AGENTS.md`, forgeflow owns only the text between `<!-- forgeflow:rules:start
 - Rules are guidance. A model can ignore them; `standards-reviewer` checks, and it is a model too.
 - On Codex the block asks the model to read the pack files. Nothing forces it to. An `AGENTS.override.md` in the repository root, or in `~/.codex/` for a global install, hides the block.
 - On OpenCode every installed pack is in context for every task.
-- forgeflow will not edit an `AGENTS.md` whose markers are damaged, an `opencode.json` it cannot parse, or a project that has only `opencode.jsonc`. It stops and prints the entry to add by hand, and carries on the next time it finds that entry there.
+- forgeflow will not edit an `AGENTS.md` whose markers are damaged, an `opencode.json` it cannot parse or that links to a file outside the project, or a project that has only `opencode.jsonc`. It stops and prints the entry to add by hand, and carries on the next time it finds that entry there.
 - Rules are not available with `--global` on Cursor, which keeps user-level rules in its settings.
 - Claude Code, Cursor and OpenCode also read `AGENTS.md` in some setups, so in a project that has Codex installed too they may see the Codex block as well as their own rules.
 
@@ -170,9 +177,9 @@ That installs one hook, three commands and the agent the map command uses:
 | `.forgeflow/local/session.md`  | the hook                                | no        | When the last two sessions ran, their branch, the files they changed and your last three prompts in each |
 | `.forgeflow/local/handoff.md`  | the agent, when you run `forge-handoff` | no        | The handoff note                                                                                         |
 
-`.forgeflow/local/` ignores itself with its own `.gitignore`, so nothing in it is committed and your `.gitignore` is not edited. forgeflow never deletes these files: removing the items leaves your memory where it is.
+Each of the three commands brings the `session-memory` hook with it, since the hook is what loads what they write. `.forgeflow/local/` ignores itself with its own `.gitignore`, so nothing in it is committed and your `.gitignore` is not edited. forgeflow never deletes these files: removing the items leaves your memory where it is.
 
-At session start the model receives the lessons, the handoff note and the last session's record, each capped in size, plus any flow run in progress. The handoff note and the record are skipped once they are a week old.
+At session start the model receives the lessons, the project map, the handoff note and the last session's record, each capped in size, plus any flow run in progress. The handoff note and the record are skipped once they are a week old.
 
 | Target     | At session start                                       | After compaction                                                                  |
 | ---------- | ------------------------------------------------------ | --------------------------------------------------------------------------------- |
@@ -236,10 +243,10 @@ forgeflow add secret-guard protected-paths --target cursor
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `approval-gate`   | During a flow run, blocks `git push`, publish and deploy commands until you type `approve` at the flow's approval step. It records the approval itself; agents cannot. |
 | `secret-guard`    | Blocks a file write whose new text contains a credential in a known format.                                                                                            |
-| `protected-paths` | Blocks agent writes to `.env` files, `*.pem`, `*.key`, and any paths you list.                                                                                         |
+| `protected-paths` | Blocks agent writes to `.env` files and `.envrc`, `*.pem`, `*.key`, private SSH keys, and any paths you list. Templates such as `.env.example` are allowed.            |
 | `test-reminder`   | Nudges the agent once when a turn ends with edits and no test run since.                                                                                               |
 
-Gates are installed per project, not with `--global`. forgeflow copies a small runner into the harness's folder and adds its entries to the harness's hook config (`.claude/settings.json`, `.codex/hooks.json`, `.cursor/hooks.json`, or a plugin file for OpenCode). Your own hook entries are left alone, and `forgeflow remove` takes out only what forgeflow added. Teammates need Node 20 and nothing else.
+Gates are installed per project, not with `--global`. forgeflow copies a small runner into the harness's folder and adds its entries to the harness's hook config (`.claude/settings.json`, `.codex/hooks.json`, `.cursor/hooks.json`, or a plugin file for OpenCode). Your own hook entries are left alone, and `forgeflow remove` takes out only what forgeflow added. If the hook config is a symbolic link, forgeflow edits the file it points to; if that file is outside the project, forgeflow will not edit it and tells you what to change by hand. Teammates need Node 20 and nothing else.
 
 ### Configuring gates
 
@@ -279,7 +286,17 @@ Gates raise the bar. They are not a sandbox.
 | `opencode` | `.opencode/agents/` | `.opencode/skills/` | `.opencode/forgeflow/`, `.opencode/plugins/forgeflow.js` |
 | `cursor`   | `.cursor/agents/`   | `.cursor/skills/`   | `.cursor/forgeflow/`, entries in `.cursor/hooks.json`    |
 
-With `--global` these live under your home directory (`~/.config/opencode/` for OpenCode).
+With `--global` these live under your home directory (`~/.config/opencode/` for OpenCode). Rules packs and memory files are described in their own sections above.
+
+`.forgeflow/` in the project holds forgeflow's own files:
+
+| Path                     | Holds                                               | Commit it                                    |
+| ------------------------ | --------------------------------------------------- | -------------------------------------------- |
+| `.forgeflow/lock.json`   | What forgeflow installed, for each harness          | yes, if your team shares the installed items |
+| `.forgeflow/config.json` | Your settings for the gates                         | yes                                          |
+| `.forgeflow/runs/`       | One folder per flow run                             | your choice                                  |
+| `.forgeflow/memory/`     | Lessons and the project map                         | yes                                          |
+| `.forgeflow/local/`      | The session record, the handoff note and gate state | no: it ignores itself                        |
 
 forgeflow records what it installed in `.forgeflow/lock.json`. It never overwrites or deletes a file you edited unless you pass `--force`. Commit the lockfile if your team shares the installed agents.
 
@@ -289,13 +306,13 @@ forgeflow records what it installed in `.forgeflow/lock.json`. It never overwrit
 - A skill is a folder, `catalog/skills/<name>/SKILL.md`.
 - A gate is a folder, `catalog/hooks/<name>/`, with `HOOK.md` and `gate.mjs`. `gate.mjs` exports `check(event, ctx)` and may import only `node:` built-ins.
 - An agent with no `stage` is a specialist. Add `joins: review` to a read-only specialist to mark it as one the flows run at REVIEW, and name it in both flow skills: a test fails if the two disagree.
-- A skill or agent body may use `{{agents-dir}}` and `{{global-agents-dir}}`. Each harness's installer replaces them with that harness's agents folders.
-- A rules pack is one file, `catalog/rules/<name>.md`, with an optional `paths` list of file patterns. Without `paths` it applies to all work. Keep it under 6,000 bytes.
-- An agent body may use the same placeholders as a skill body, plus `{{rules-location}}` for where that harness keeps its rules packs.
+- A rules pack is one file, `catalog/rules/<name>.md`, with an optional `paths` list of file patterns. Without `paths` it applies to all work. Keep it under 6,000 bytes, and list each pattern on its own: a pattern may not contain a comma or a backtick.
+- A hook or skill with `group: memory` belongs to the `--memory` bundle; `--hooks` installs only hooks without a group. Hook events are `shell`, `write`, `prompt`, `stop`, `start` and `compact`.
+- Agent and skill bodies may use `{{agents-dir}}`, `{{global-agents-dir}}` and `{{rules-location}}`. Each harness's installer replaces them with that harness's own folders. Any other `{{…}}` token, or one with a brace too few or too many, is a catalog error.
 
-The frontmatter fields are described in `docs/superpowers/specs/2026-10-13-forgeflow-core-design.md`, section 4. Run `forgeflow doctor` to validate the catalog, and `npm test` before committing.
+The frontmatter fields are described in the specs in `docs/superpowers/specs/`: the core spec, section 4, for agents and skills, and the later specs for hooks (`events`, `group`), specialists (`joins`) and rules (`paths`). Run `forgeflow doctor` to validate the catalog, and `npm test` before committing.
 
-To support another harness, add `src/adapters/<name>.js` exporting `name`, `root` and `render`, and register it in `src/adapters/index.js`.
+To support another harness, add `src/adapters/<name>.js` and register it in `src/adapters/index.js`. An adapter exports `name`, `root(scope, dirs)`, `render(item, ctx)`, `agentDirs`, `rulesLocation`, `places`, and `wiring` (its hook config, or `null`). It may also export `rulesWiring(scope, ids)` when the harness needs a file such as `AGENTS.md` edited to load rules, and `globalRules = false` when it has no user-level rule files.
 
 ## Development
 
