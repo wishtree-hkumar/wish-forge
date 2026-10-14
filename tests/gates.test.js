@@ -244,7 +244,6 @@ describe('protected-paths', () => {
     '.env.template',
     'api/.env.example',
     'src/env.js',
-    '.envrc',
     'README.md',
   ])('allows a write to %s', (path) => {
     expect(protectedPaths(write(path), context())).toBeUndefined();

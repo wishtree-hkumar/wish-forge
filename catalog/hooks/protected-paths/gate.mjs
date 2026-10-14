@@ -1,6 +1,16 @@
-const DEFAULTS = ['.env', '.env.*', '*.pem', '*.key'];
-// Committed templates that the .env.* default would otherwise catch.
-const TEMPLATES = new Set(['.env.example', '.env.sample', '.env.template']);
+const DEFAULTS = [
+  '.env',
+  '.env.*',
+  '.envrc',
+  '*.pem',
+  '*.key',
+  'id_rsa',
+  'id_dsa',
+  'id_ecdsa',
+  'id_ed25519',
+];
+// Committed templates, such as .env.local.example, that the .env.* default would otherwise catch.
+const TEMPLATE = /\.(example|sample|template)$/;
 
 export function check(event, ctx) {
   if (event.kind !== 'write') return undefined;
@@ -9,7 +19,7 @@ export function check(event, ctx) {
   const matches = (glob) => ctx.matchesGlob(event.path, glob);
   const pattern =
     ctx.config.protectedPaths.find(matches) ??
-    (TEMPLATES.has(name) ? undefined : DEFAULTS.find(matches));
+    (TEMPLATE.test(name) ? undefined : DEFAULTS.find(matches));
   if (!pattern) return undefined;
 
   return {

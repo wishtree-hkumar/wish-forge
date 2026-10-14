@@ -2,7 +2,7 @@ import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
 import { ConfigError } from './errors.js';
 import { sha256 } from './lock.js';
-import { isWired, mergeWiring, parseConfig, serialize, stripWiring } from './wiring.js';
+import { isBare, isWired, mergeWiring, parseConfig, serialize, stripWiring } from './wiring.js';
 import {
   RULES_ID,
   foundEntries,
@@ -68,31 +68,34 @@ function readConfig(root, path) {
 
 // previous is the lockfile's wiring record for this target, if there is one.
 export function planWire(root, wiring, previous) {
-  const current = readConfig(root, wiring.path);
+  // A config that is a symbolic link is edited through it, so the link stays.
+  const path = throughLink(root, wiring.path);
+  const current = readConfig(root, path);
   const merged = mergeWiring(current, wiring);
   const type = current !== undefined && same(current, merged) ? 'skip' : 'wire';
   const created = current === undefined ? true : (previous?.created ?? false);
   return {
-    action: { type, path: wiring.path, content: serialize(merged) },
+    action: { type, path, content: serialize(merged) },
     record: { path: wiring.path, created },
   };
 }
 
 // wiring is the adapter's wiring; without it there is nothing of ours to find.
 export function planUnwire(root, record, wiring) {
-  const { path } = record;
-  if (!wiring) return { type: 'skip', path };
+  if (!wiring) return { type: 'skip', path: record.path };
+  const path = throughLink(root, record.path);
   const current = readConfig(root, path);
   if (current === undefined) return { type: 'missing', path };
   const stripped = stripWiring(current, wiring);
   if (same(stripped, current)) return { type: 'skip', path };
-  if (record.created && same(stripped, wiring.skeleton)) return { type: 'delete', path };
+  const ours = record.created && path === record.path && isBare(stripped, wiring.skeleton);
+  if (ours) return { type: 'delete', path };
   return { type: 'unwire', path, content: serialize(stripped) };
 }
 
 export function wiringState(root, wiring) {
   try {
-    const current = readConfig(root, wiring.path);
+    const current = readConfig(root, throughLink(root, wiring.path));
     return current !== undefined && isWired(current, wiring) ? 'ok' : 'missing';
   } catch {
     return 'unreadable';

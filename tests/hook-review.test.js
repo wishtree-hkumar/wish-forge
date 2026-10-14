@@ -359,8 +359,9 @@ describe('wiring leaves the user entries alone', () => {
       version: 1,
       hooks: { stop: [mine], afterFileEdit: [mine] },
     });
-    expect(stripWiring(mergeWiring(undefined, cursor.wiring), cursor.wiring)).toEqual(
-      cursor.wiring.skeleton
-    );
+    // A hooks object forgeflow emptied is dropped; the file is still bare.
+    expect(stripWiring(mergeWiring(undefined, cursor.wiring), cursor.wiring)).toEqual({
+      version: 1,
+    });
   });
 });

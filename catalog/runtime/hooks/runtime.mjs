@@ -1,15 +1,14 @@
 // forgeflow hook runtime. Uses only node: built-ins, because it runs in
 // projects that have not installed forgeflow.
-import { createHash } from 'node:crypto';
 import {
   existsSync,
+  mkdirSync,
   readdirSync,
   readFileSync,
   realpathSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -205,9 +204,11 @@ export function findRun(root, now = Date.now()) {
   return findRuns(root, now)[0] ?? null;
 }
 
+// Small per-project state for gates, kept in the project's own folder that
+// ignores itself, not under a predictable name in the shared temp directory.
 function stateStore(root) {
-  const key = createHash('sha256').update(root).digest('hex').slice(0, 16);
-  const file = join(tmpdir(), `forgeflow-${key}.json`);
+  const dir = join(root, '.forgeflow', 'local');
+  const file = join(dir, 'gate-state.json');
   return {
     get() {
       try {
@@ -218,6 +219,9 @@ function stateStore(root) {
     },
     set(value) {
       try {
+        mkdirSync(dir, { recursive: true });
+        const ignore = join(dir, '.gitignore');
+        if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
         writeFileSync(file, JSON.stringify(value));
       } catch {
         // state is best effort

@@ -75,9 +75,19 @@ export function stripWiring(config, wiring) {
     if (rest.length > 0) base.hooks[event] = rest;
     else delete base.hooks[event];
   }
-  const emptiedByUs = removed && Object.keys(base.hooks).length === 0;
-  if (emptiedByUs && !('hooks' in wiring.skeleton)) delete base.hooks;
+  // A hooks object forgeflow emptied goes, even where the skeleton has one: the
+  // user's file may never have had it.
+  if (removed && Object.keys(base.hooks).length === 0) delete base.hooks;
   return base;
+}
+
+// True when nothing but the skeleton is left, an empty hooks object aside.
+export function isBare(config, skeleton) {
+  const trim = ({ hooks, ...rest }) =>
+    hooks === undefined || (isObject(hooks) && Object.keys(hooks).length === 0)
+      ? rest
+      : { ...rest, hooks };
+  return same(trim(config), trim(skeleton));
 }
 
 export function isWired(config, wiring) {

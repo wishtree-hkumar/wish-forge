@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { ConfigError } from '../src/errors.js';
-import { isWired, mergeWiring, parseConfig, serialize, stripWiring } from '../src/wiring.js';
+import {
+  isBare,
+  isWired,
+  mergeWiring,
+  parseConfig,
+  serialize,
+  stripWiring,
+} from '../src/wiring.js';
 
 const handler = {
   type: 'command',
@@ -83,8 +90,10 @@ describe('stripWiring', () => {
     expect(stripWiring(mergeWiring(undefined, claude), claude)).toEqual({});
   });
 
-  it('keeps an empty hooks object the skeleton had', () => {
-    expect(stripWiring(mergeWiring(undefined, cursor), cursor)).toEqual(cursor.skeleton);
+  it('drops a hooks object it emptied, even where the skeleton has one', () => {
+    expect(stripWiring(mergeWiring(undefined, cursor), cursor)).toEqual({ version: 1 });
+    expect(isBare({ version: 1 }, cursor.skeleton)).toBe(true);
+    expect(isBare({ version: 1, other: true }, cursor.skeleton)).toBe(false);
   });
 
   it('leaves a config without our entries unchanged', () => {
