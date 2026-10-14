@@ -31,10 +31,9 @@ describe('list and info', () => {
   it('lists hooks with their events and hides the runtime', () => {
     const { code, out } = run('list');
     expect(code).toBe(0);
-    const lines = out.trim().split('\n');
-    expect(lines).toHaveLength(3);
-    expect(lines[1]).toMatch(/^hook:g1\s+shell,write\s+-\s+Gate g1\.$/);
-    expect(out).not.toContain('runtime:hooks');
+    expect(out).toMatch(/^Quality gates\n {2}g1\s+Gate g1\.$/m);
+    expect(out).toContain('3 items.');
+    expect(out).not.toMatch(/runtime|Runs gates/);
   });
 
   it('filters to hooks', () => {

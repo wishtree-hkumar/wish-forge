@@ -38,14 +38,11 @@ beforeEach(() => {
 
 describe('list and info', () => {
   it('labels an agent with no stage as a specialist', () => {
-    const lines = run('list').out.trim().split('\n');
-    expect(lines.find((line) => line.startsWith('agent:alpha'))).toMatch(/^agent:alpha\s+review\s/);
-    expect(lines.find((line) => line.startsWith('agent:beta'))).toMatch(
-      /^agent:beta\s+specialist\s+read-only\s+Does beta things\.$/
-    );
-    expect(lines.find((line) => line.startsWith('skill:forge-quick'))).toMatch(
-      /^skill:forge-quick\s+-\s+-\s/
-    );
+    const { out } = run('list');
+    expect(out).toMatch(/^Flow agents\n {2}alpha\s+REVIEW\s/m);
+    expect(out).toMatch(/^Specialists\n {2}beta\s+read-only\s+Does beta things\.$/m);
+    expect(out).toMatch(/^ {2}gamma\s+reviewer\s+read-only\s/m);
+    expect(out).toMatch(/^Flows\n {2}forge-quick\s+Runs forge-quick\.$/m);
   });
 
   it('includes joins in JSON output only where it is set', () => {

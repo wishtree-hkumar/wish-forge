@@ -2,7 +2,7 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { getAdapter, targetNames } from './adapters/index.js';
-import { loadCatalog } from './catalog.js';
+import { STAGES, loadCatalog } from './catalog.js';
 import { runDoctor } from './doctor.js';
 import { ConflictError, UsageError } from './errors.js';
 import { add, remove, status, update } from './ops.js';
@@ -98,6 +98,71 @@ function printResult(stdout, { plans, skipped, kept = [] }, dryRun) {
     stdout.write(`[${target}] ${id} is no longer in the catalog; left as installed.\n`);
   }
   if (dryRun) stdout.write('Dry run: nothing was written.\n');
+}
+
+// The first sentence of a description, before any " - " list: enough to tell
+// items apart in a list.
+const summary = (text) => text.split(/(?<=\.)\s/)[0].split(' - ')[0];
+const byName = (a, b) => a.name.localeCompare(b.name);
+const stageOrder = (a, b) => STAGES.indexOf(a.stage) - STAGES.indexOf(b.stage) || byName(a, b);
+
+function applies(item) {
+  if (!item.paths) return 'all work';
+  const text = item.paths.map((pattern) => pattern.replace(/^\*\*\//, '')).join(' ');
+  return text.length > 18 ? `${text.slice(0, 17)}…` : text;
+}
+
+// Headings in the order they print, each with what belongs under it, its sort
+// order and the columns of one row.
+const LIST_GROUPS = [
+  {
+    title: 'Flow agents',
+    has: (item) => item.type === 'agent' && item.stage !== undefined,
+    order: stageOrder,
+    row: (item) => [item.stage.toUpperCase(), item.access],
+  },
+  {
+    title: 'Specialists',
+    has: (item) => item.type === 'agent' && item.stage === undefined,
+    row: (item) => [item.joins ? 'reviewer' : '', item.access],
+  },
+  { title: 'Flows', has: (item) => item.type === 'skill' && !item.group, row: () => [] },
+  { title: 'Quality gates', has: (item) => item.type === 'hook' && !item.group, row: () => [] },
+  {
+    title: 'Session memory',
+    has: (item) => item.group === 'memory',
+    row: (item) => [item.type === 'hook' ? 'hook' : 'command'],
+  },
+  { title: 'Rules packs', has: (item) => item.type === 'rule', row: (item) => [applies(item)] },
+];
+
+function printList(stdout, items) {
+  // In a terminal each line is cut to its width; piped output is left whole.
+  const width = stdout.isTTY && stdout.columns > 0 ? stdout.columns : Infinity;
+  const fit = (line) => (line.length > width ? `${line.slice(0, width - 1)}…` : line);
+  const blocks = [];
+  for (const group of LIST_GROUPS) {
+    const members = items.filter(group.has).sort(group.order ?? byName);
+    if (members.length === 0) continue;
+    const rows = members.map((item) => [item.name, ...group.row(item), summary(item.description)]);
+    const widths = rows[0].map((_, column) => Math.max(...rows.map((row) => row[column].length)));
+    const lines = rows.map((row) =>
+      fit(
+        `  ${row
+          .map((cell, column) => (column < row.length - 1 ? cell.padEnd(widths[column]) : cell))
+          .join('  ')}`.replace(/\s+$/, '')
+      )
+    );
+    blocks.push([group.title, ...lines].join('\n'));
+  }
+  if (blocks.length === 0) {
+    stdout.write('Nothing to list.\n');
+    return;
+  }
+  const count = `${items.length} item${items.length === 1 ? '' : 's'}`;
+  stdout.write(
+    `${blocks.join('\n\n')}\n\n${fit(`${count}. Run "forgeflow info <name>" for the full description.`)}\n`
+  );
 }
 
 function printStatus(stdout, targets) {
@@ -239,12 +304,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
         );
         stdout.write(`${JSON.stringify(rows, null, 2)}\n`);
       } else {
-        for (const item of items) {
-          const none = { agent: 'specialist', rule: 'rule' }[item.type] ?? '-';
-          const stage = (item.stage ?? item.events?.join(',') ?? none).padEnd(13);
-          const access = (item.access ?? '-').padEnd(10);
-          stdout.write(`${item.id.padEnd(28)} ${stage} ${access} ${item.description}\n`);
-        }
+        printList(stdout, items);
       }
       return 0;
     }

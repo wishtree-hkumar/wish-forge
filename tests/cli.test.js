@@ -58,13 +58,12 @@ describe('general', () => {
 });
 
 describe('list and info', () => {
-  it('lists every item with stage and access', () => {
+  it('lists every item under its kind, with stage and access', () => {
     const { code, out } = run('list');
     expect(code).toBe(0);
-    const lines = out.trim().split('\n');
-    expect(lines).toHaveLength(4);
-    expect(lines[0]).toMatch(/^agent:alpha\s+review\s+read-only\s+Does alpha things\.$/);
-    expect(lines[2]).toMatch(/^skill:forge-full\s+-\s+-\s+Runs forge-full\.$/);
+    expect(out).toMatch(/^Flow agents\n {2}alpha\s+REVIEW\s+read-only\s+Does alpha things\.$/m);
+    expect(out).toMatch(/^ {2}forge-full\s+Runs forge-full\.$/m);
+    expect(out).toContain('4 items.');
   });
 
   it('filters by type and prints JSON', () => {

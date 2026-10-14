@@ -80,9 +80,11 @@ describe('cli', () => {
   });
 
   it('lists rules with the rule label', () => {
-    const lines = run('list').out.trim().split('\n');
-    expect(lines).toHaveLength(3);
-    expect(lines[2]).toMatch(/^rule:ts\s+rule\s+-\s+ts standards\.$/);
+    const { out } = run('list');
+    expect(out).toMatch(
+      /^Rules packs\n {2}common\s+all work\s+common standards\.\n {2}ts\s+\*\.ts \*\.tsx\s+ts standards\.$/m
+    );
+    expect(out).toContain('3 items.');
   });
 
   it('filters to rules and shows paths in JSON', () => {
