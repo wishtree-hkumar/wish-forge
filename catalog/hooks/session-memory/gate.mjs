@@ -9,7 +9,6 @@ import {
   renameSync,
   rmSync,
   statSync,
-  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { join } from 'node:path';
@@ -133,7 +132,8 @@ function lines(session) {
   // Recorded when the agent asks to write, so a write that was then refused is listed too.
   if (session.files.length > 0) {
     out.push('', 'Files the agent set out to change:', ...session.files.map((f) => `- ${f}`));
-    if (session.omitted > 0) out.push(`- and ${session.omitted} earlier files not listed`);
+    // No count: a file written again after it left the list would be counted twice.
+    if (session.more) out.push('- and more files written earlier, not listed');
   }
   if (session.prompts.length > 0) out.push('', 'Prompts:', ...session.prompts.map((p) => `- ${p}`));
   return out.join('\n');
@@ -179,7 +179,9 @@ function save(root, record) {
   }
 }
 
-const LOCK_WAIT = 2000;
+// The work under the lock takes milliseconds; a lock older than LOCK_STALE was
+// left by a hook the harness killed.
+const LOCK_WAIT = 500;
 const LOCK_STALE = 5000;
 const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
@@ -194,15 +196,23 @@ function locked(root, work) {
   } catch {
     return work(); // no folder to lock in; save will fail quietly too
   }
+  // The lock holds a token, so a process only ever removes its own lock.
+  const token = `${process.pid}-${Date.now()}-${Math.random()}`;
   while (fd === undefined) {
     try {
       fd = openSync(lock, 'wx');
+      writeFileSync(fd, token);
     } catch (error) {
       if (error.code !== 'EEXIST' || Date.now() > deadline) return work();
       try {
-        if (Date.now() - statSync(lock).mtimeMs > LOCK_STALE) unlinkSync(lock);
+        // A stale lock is renamed away first: only one waiter can win that.
+        if (Date.now() - statSync(lock).mtimeMs > LOCK_STALE) {
+          const aside = `${lock}.stale-${token}`;
+          renameSync(lock, aside);
+          rmSync(aside, { force: true });
+        }
       } catch {
-        // another process took it away first
+        // another process dealt with it first
       }
       pause(5);
     }
@@ -211,7 +221,11 @@ function locked(root, work) {
     return work();
   } finally {
     closeSync(fd);
-    rmSync(lock, { force: true });
+    try {
+      if (readFileSync(lock, 'utf8') === token) rmSync(lock, { force: true });
+    } catch {
+      // already gone
+    }
   }
 }
 
@@ -364,7 +378,7 @@ export function check(event, ctx) {
         const all = [...files, path];
         const dropped = Math.max(0, all.length - MAX_FILES);
         record.current.files = all.slice(dropped);
-        if (dropped > 0) record.current.omitted = (record.current.omitted ?? 0) + dropped;
+        if (dropped > 0) record.current.more = true;
       }
       save(ctx.root, record);
     });

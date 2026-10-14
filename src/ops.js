@@ -1,3 +1,5 @@
+import { readdirSync, rmdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { getAdapter } from './adapters/index.js';
 import { appliesTo } from './adapters/shared.js';
 import { applyActions, checkWritable } from './apply.js';
@@ -79,7 +81,15 @@ function commit(ctx, lock, plans, record) {
 function install(ctx, lock, perTarget) {
   const plans = perTarget.map(({ target, entries }) => {
     if (ctx.scope === 'global' && entries.some(({ item }) => isHookItem(item))) {
-      throw new UsageError('quality gates are installed per project. Run this without --global.');
+      // When the hook only comes in as a requirement, name what asked for it.
+      const hook = entries.find(({ item, explicit }) => item.type === 'hook' && !explicit);
+      const by = hook && entries.find(({ item }) => item.requires.includes(hook.item.id));
+      throw new UsageError(
+        by
+          ? `${by.item.id} requires ${hook.item.id}, which is installed per project only. ` +
+              'Run this without --global.'
+          : 'quality gates are installed per project. Run this without --global.'
+      );
     }
     const adapter = getAdapter(target);
     const hasRule = entries.some(({ item }) => item.type === 'rule');
@@ -190,13 +200,29 @@ export function update(ctx, refs, targets) {
       if (ctx.catalog.has(id)) current.push(id);
       else skipped.push({ target, id });
     }
-    const entries = resolve(ctx.catalog, current).map(({ item }) => ({
-      item,
-      explicit: installed[item.id]?.explicit ?? false,
-    }));
+    // Update refreshes what is installed. A requirement the catalog added since
+    // is not installed by it: that is what add is for.
+    const entries = resolve(ctx.catalog, current)
+      .filter(({ item }) => installed[item.id])
+      .map(({ item }) => ({ item, explicit: installed[item.id]?.explicit ?? false }));
     return [{ target, entries }];
   });
   return { plans: install(ctx, lock, perTarget), skipped };
+}
+
+// Gate state belongs to the runtime. When no target keeps the runtime, it goes,
+// and so do .forgeflow/local and .forgeflow if nothing else is left in them.
+function dropGateState(ctx, lock) {
+  if (Object.values(lock.targets).some((target) => target.items[RUNTIME_ID])) return;
+  const local = join(ctx.cwd, '.forgeflow', 'local');
+  rmSync(join(local, 'gate-state.json'), { force: true });
+  try {
+    const left = readdirSync(local);
+    if (left.length === 1 && left[0] === '.gitignore') rmSync(local, { recursive: true });
+    rmdirSync(join(ctx.cwd, '.forgeflow'));
+  } catch {
+    // something else lives there
+  }
 }
 
 // optional holds the items a bundle flag names: those installed are removed,
@@ -216,6 +242,7 @@ export function remove(ctx, refs, targets, { optional = [], flags = [] } = {}) {
     );
   }
 
+  const kept = [];
   const plans = targets.map((target) => {
     const adapter = getAdapter(target);
     const root = adapter.root(ctx.scope, ctx);
@@ -223,7 +250,23 @@ export function remove(ctx, refs, targets, { optional = [], flags = [] } = {}) {
     for (const id of named) {
       if (!installed[id]) throw new UsageError(`${id} is not installed for ${target}.`);
     }
-    const ids = [...new Set([...named, ...optional.filter((id) => installed[id])])];
+    // A bundle member that something staying installed requires is kept.
+    const members = optional.filter((id) => installed[id] && !named.includes(id));
+    const ids = [...new Set([...named, ...members])];
+    for (let changed = true; changed;) {
+      changed = false;
+      for (const id of [...ids]) {
+        if (!members.includes(id)) continue;
+        const by = Object.keys(installed).find(
+          (other) => !ids.includes(other) && requiresOf(other).includes(id)
+        );
+        if (by) {
+          ids.splice(ids.indexOf(id), 1);
+          kept.push({ target, id, by });
+          changed = true;
+        }
+      }
+    }
 
     const going = new Set(ids);
     for (const id of Object.keys(installed)) {
@@ -287,7 +330,8 @@ export function remove(ctx, refs, targets, { optional = [], flags = [] } = {}) {
   commit(ctx, lock, plans, (items, entry) => {
     delete items[entry.id];
   });
-  return { plans: report(plans), skipped: [] };
+  if (!ctx.dryRun && ctx.scope === 'project') dropGateState(ctx, lock);
+  return { plans: report(plans), skipped: [], kept };
 }
 
 export function status(ctx) {

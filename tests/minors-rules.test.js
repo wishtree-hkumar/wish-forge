@@ -108,8 +108,8 @@ describe('the shipped packs', () => {
     expect(real.get('rule:react').paths).toEqual([
       '**/*.tsx',
       '**/*.jsx',
-      '**/use*.ts',
-      '**/use*.js',
+      '**/use[A-Z]*.ts',
+      '**/use[A-Z]*.js',
     ]);
   });
 

@@ -109,18 +109,18 @@ forgeflow add common typescript --target claude,codex
 forgeflow list --type rule
 ```
 
-| Pack         | Covers                                                                              | Applies to                                                  |
-| ------------ | ----------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| `common`     | Naming, functions, errors, tests, security, comments, dependencies, version control | all work                                                    |
-| `typescript` | TypeScript and JavaScript, Node                                                     | `.ts`, `.tsx`, `.js`, `.jsx` and the module variants        |
-| `python`     | Typing, functions, errors, packaging, pytest                                        | `.py`, `.pyi`                                               |
-| `php`        | PHP, with a Laravel section                                                         | `.php`                                                      |
-| `java`       | Java, with a Spring section                                                         | `.java`                                                     |
-| `csharp`     | C#, with an ASP.NET Core section                                                    | `.cs`, `.cshtml`, `.razor`                                  |
-| `go`         | Errors, interfaces, concurrency, packages, tests                                    | `.go`                                                       |
-| `react`      | Components, state, effects, performance                                             | `.tsx`, `.jsx`, and hook files named `use*.ts` or `use*.js` |
-| `vue`        | Single-file components, reactivity, composables                                     | `.vue`                                                      |
-| `angular`    | Components, signals and RxJS, templates, dependency injection                       | `.ts`, `.html` in an Angular project                        |
+| Pack         | Covers                                                                              | Applies to                                           |
+| ------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `common`     | Naming, functions, errors, tests, security, comments, dependencies, version control | all work                                             |
+| `typescript` | TypeScript and JavaScript, Node                                                     | `.ts`, `.tsx`, `.js`, `.jsx` and the module variants |
+| `python`     | Typing, functions, errors, packaging, pytest                                        | `.py`, `.pyi`                                        |
+| `php`        | PHP, with a Laravel section                                                         | `.php`                                               |
+| `java`       | Java, with a Spring section                                                         | `.java`                                              |
+| `csharp`     | C#, with an ASP.NET Core section                                                    | `.cs`, `.cshtml`, `.razor`                           |
+| `go`         | Errors, interfaces, concurrency, packages, tests                                    | `.go`                                                |
+| `react`      | Components, state, effects, performance                                             | `.tsx`, `.jsx`, and hook files such as `useCart.ts`  |
+| `vue`        | Single-file components, reactivity, composables                                     | `.vue`                                               |
+| `angular`    | Components, signals and RxJS, templates, dependency injection                       | `.ts`, `.html` in an Angular project                 |
 
 The packs are a generic baseline. Where a pack and your project's established convention disagree, the pack itself says your convention wins. To make a rule your team's own, change it in the catalog; an edit to an installed copy is kept by `forgeflow update` but is not shared.
 

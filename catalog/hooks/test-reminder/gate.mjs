@@ -1,35 +1,69 @@
-// A test command is recognized where a command starts: after any environment
-// settings, and after a runner such as npx or "python -m". A test tool named
-// anywhere else, as in "cat jest.config.js" or "npm install jest", is not a run.
+// A test command is recognized where a command starts: after environment
+// settings, after wrappers such as sudo or timeout, and after a runner such as
+// npx or "python -m". A test tool named anywhere else, as in
+// "cat jest.config.js" or "npm install jest", is not a run.
 const TEST_START = [
-  /^(npm|pnpm|yarn|bun)\s+(run\s+)?test\b/,
-  /^(vitest|jest|pytest|phpunit|rspec|mocha|ava)(\s|$)/,
-  /^(go|cargo|dotnet|swift)\s+test\b/,
-  /^(mvn|mvnw|gradle|gradlew)\b.*\btest\b/,
+  // npm, pnpm, yarn and bun, with options or a workspace before the script name.
+  /^(?:npm|pnpm|yarn|bun)(?:\s+(?:workspace|--filter|--prefix|-C|--dir)\s+\S+|\s+-\S+)*\s+(?:run\s+)?(?:test|t)\b/,
+  /^(?:vitest|jest|pytest|phpunit|rspec|mocha|ava|tox)(?:\s|$)/,
+  /^(?:playwright|cypress)\s+(?:test|run)\b/,
+  /^(?:go|cargo|dotnet|swift|deno|bun|rails|mix)\s+test\b/,
+  /^(?:artisan|rake)\s+test\b/,
+  /^(?:turbo|nx)\s+(?:run\s+)?test\b/,
+  /^(?:mvn|mvnw|gradle|gradlew)\b.*\btest\b/,
   /^make\s+test\b/,
 ];
-const RUNNER =
-  /^(?:(?:npx|bunx|pnpx)\s+|(?:pnpm|yarn)\s+(?:exec\s+|dlx\s+)?|bundle\s+exec\s+|(?:uv|poetry|pipenv|hatch)\s+run\s+|python3?\s+-m\s+|\.?\/?node_modules\/\.bin\/|(?:\.\/)?vendor\/bin\/|\.\/)/;
-const SETTINGS = /^(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)+/;
+// One wrapper or runner at the start of a command; stripped one at a time.
+const PREFIX = new RegExp(
+  '^(?:' +
+    [
+      '[A-Za-z_][A-Za-z0-9_]*=\\S*\\s+',
+      '(?:env|sudo|time|nice|nohup|exec)\\s+(?:-\\S+\\s+(?:\\d+\\s+)?)*',
+      'timeout\\s+(?:-\\S+\\s+)*\\S+\\s+',
+      'cross-env\\s+',
+      '(?:npx|bunx|pnpx)\\s+(?:(?:-y|--yes|--no-install)\\s+|(?:-p|--package)[=\\s]\\S+\\s+)*',
+      '(?:pnpm|yarn)\\s+(?:exec\\s+|dlx\\s+)?',
+      'npm\\s+exec\\s+(?:--\\s+)?',
+      'bundle\\s+exec\\s+',
+      '(?:uv|poetry|pipenv|hatch|pdm)\\s+run\\s+',
+      'uvx\\s+',
+      '(?:python[\\d.]*|py)\\s+-m\\s+',
+      'docker(?:\\s+compose|-compose)?\\s+(?:run|exec)\\s+(?:-\\S+\\s+)*\\S+\\s+',
+      'php\\s+',
+      '(?:\\.\\/)?\\.?venv\\/bin\\/',
+      '\\.?\\/?node_modules\\/\\.bin\\/',
+      '(?:\\.\\/)?vendor\\/bin\\/',
+      '\\.\\/',
+    ].join('|') +
+    ')'
+);
+// The body of `sh -c "..."` or `bash -lc '...'` is a command of its own.
+const SHELL_BODY = /\b(?:ba|z)?sh\s+-l?c\s+(["'])(.*?)\1/g;
 const NUDGE =
   'forgeflow test-reminder: files were changed and no test command has run since. ' +
   "Run the project's tests now, or tell the user why you did not.";
 
 const isSource = (path) => !path.startsWith('.forgeflow/') && !path.endsWith('.md');
 
+function startsWithTest(part) {
+  let rest = part.trim();
+  for (let step = 0; step < 8; step += 1) {
+    if (TEST_START.some((pattern) => pattern.test(rest))) return true;
+    const next = rest.replace(PREFIX, '');
+    if (next === rest) return false;
+    rest = next;
+  }
+  return false;
+}
+
 function ranTests(command, extra) {
   if (extra.some((pattern) => pattern.test(command))) return true;
-  return command.split(/&&|\|\||[;|\n]/).some((part) => {
-    let rest = part.trim().replace(SETTINGS, '');
-    // Each runner is stripped in turn, and the command checked before and after.
-    for (let step = 0; step < 4; step += 1) {
-      if (TEST_START.some((pattern) => pattern.test(rest))) return true;
-      const next = rest.replace(RUNNER, '');
-      if (next === rest) return false;
-      rest = next;
-    }
-    return false;
-  });
+  const bodies = [...command.matchAll(SHELL_BODY)].map((match) => match[2]);
+  // Quoted text is an argument, not a command: "fix | pytest flake" runs nothing.
+  return [command, ...bodies]
+    .map((text) => text.replace(/"[^"]*"|'[^']*'/g, '""'))
+    .flatMap((text) => text.split(/&&|\|\||[;|\n]/))
+    .some(startsWithTest);
 }
 
 export function check(event, ctx) {

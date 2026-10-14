@@ -70,11 +70,11 @@ describe('hook calls at the same moment', () => {
 });
 
 describe('the record', () => {
-  it('says how many earlier files were left out', () => {
+  it('says when earlier files were left out', () => {
     const root = tmpDir();
     for (let i = 1; i <= 33; i += 1) check(write(`src/f${i}.js`), ctx(root));
-    expect(record(root).current.omitted).toBe(3);
-    expect(readable(root)).toContain('- and 3 earlier files not listed');
+    expect(record(root).current.more).toBe(true);
+    expect(readable(root)).toContain('- and more files written earlier, not listed');
   });
 
   it('says the files are those the agent set out to change', () => {

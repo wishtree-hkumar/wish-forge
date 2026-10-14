@@ -81,13 +81,18 @@ function parseTargets(value, required) {
   return names;
 }
 
-function printResult(stdout, { plans, skipped }, dryRun) {
+function printResult(stdout, { plans, skipped, kept = [] }, dryRun) {
   for (const { target, root, actions } of plans) {
+    // A target a bundle flag found nothing for has nothing to show.
+    if (actions.length === 0) continue;
     stdout.write(`${target}  (${root})\n`);
     for (const { type, path, reason } of actions) {
       const label = (LABELS[type] ?? type).padEnd(12);
       stdout.write(`  ${label} ${path}${reason ? `  (${reason})` : ''}\n`);
     }
+  }
+  for (const { target, id, by } of kept) {
+    stdout.write(`[${target}] ${id} is kept: ${by} requires it.\n`);
   }
   for (const { target, id } of skipped) {
     stdout.write(`[${target}] ${id} is no longer in the catalog; left as installed.\n`);

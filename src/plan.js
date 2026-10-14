@@ -83,7 +83,15 @@ export function planWire(root, wiring, previous) {
 // wiring is the adapter's wiring; without it there is nothing of ours to find.
 export function planUnwire(root, record, wiring) {
   if (!wiring) return { type: 'skip', path: record.path };
-  const path = throughLink(root, record.path);
+  // Removal is never stopped by the link: a broken one has nothing to strip, and
+  // a file outside the project is left for the person, who is told what to take out.
+  const link = linkOf(root, record.path);
+  if (link.kind === 'broken') return { type: 'missing', path: record.path };
+  if (link.kind === 'outside') {
+    const reason = `take out the hook entries that run ${wiring.runner}`;
+    return { type: 'manual', path: record.path, reason };
+  }
+  const { path } = link;
   const current = readConfig(root, path);
   if (current === undefined) return { type: 'missing', path };
   const stripped = stripWiring(current, wiring);
@@ -95,6 +103,8 @@ export function planUnwire(root, record, wiring) {
 
 export function wiringState(root, wiring) {
   try {
+    const link = linkOf(root, wiring.path);
+    if (link.kind === 'broken') return 'missing';
     const current = readConfig(root, throughLink(root, wiring.path));
     return current !== undefined && isWired(current, wiring) ? 'ok' : 'missing';
   } catch {
@@ -104,32 +114,43 @@ export function wiringState(root, wiring) {
 
 // A user file that is a symbolic link is edited through the link, so the link
 // survives. Returns the path to read and write, relative to root.
-function throughLink(root, path) {
+// What a path is: a plain path, a link inside the project (with its target),
+// a link to a file outside the project, or a link that leads nowhere.
+function linkOf(root, path) {
   const full = join(root, path);
   let stat;
   try {
     stat = lstatSync(full);
   } catch {
-    return path;
+    return { kind: 'plain', path };
   }
-  if (!stat.isSymbolicLink()) return path;
-  const refuse = (problem, next = '') =>
-    new ConfigError(`${path} is ${problem}. forgeflow will not modify it${next}.`);
+  if (!stat.isSymbolicLink()) return { kind: 'plain', path };
   let target;
   try {
     target = realpathSync(full);
   } catch {
-    throw refuse('a broken symbolic link');
+    return { kind: 'broken', path };
   }
   const inside = relative(realpathSync(root), target);
   if (inside === '' || inside.startsWith('..') || isAbsolute(inside)) {
+    return { kind: 'outside', path };
+  }
+  return { kind: 'inside', path: inside.split(sep).join('/') };
+}
+
+function throughLink(root, path) {
+  const link = linkOf(root, path);
+  const refuse = (problem, next = '') =>
+    new ConfigError(`${path} is ${problem}. forgeflow will not modify it${next}.`);
+  if (link.kind === 'broken') throw refuse('a broken symbolic link');
+  if (link.kind === 'outside') {
     throw refuse(
       'a symbolic link to a file outside the project',
       ': forgeflow edits only files inside the project. Replace the link with a regular file, ' +
         'or point it at a file inside the project'
     );
   }
-  return inside.split(sep).join('/');
+  return link.path;
 }
 
 function readText(root, path) {
@@ -317,7 +338,8 @@ function planOutside(wiring, text, active, previous, removing) {
 
 export function rulesState(root, wiring) {
   const linked = wiring.kind === 'json' ? outsideText(root, wiring.path) : undefined;
-  if (linked !== undefined) return handWired(linked, wiring.entries) ? 'ok' : 'unreadable';
+  // It was read: lacking the entries makes it missing, not unreadable.
+  if (linked !== undefined) return handWired(linked, wiring.entries) ? 'ok' : 'missing';
   try {
     const path = throughLink(root, wiring.path);
     const current = readText(root, path);

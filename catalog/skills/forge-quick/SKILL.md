@@ -52,7 +52,7 @@ At REVIEW, after `reviewer`:
 
 1. List the files in `{{agents-dir}}` in the project and in `{{global-agents-dir}}`. A specialist is installed when a file named for it, with any extension, is in either folder. A folder that does not exist has no specialists. If you cannot read a folder, tell the user which one in one line, treat it as having none, and carry on.
 2. Delegate to each installed specialist, in the order above, giving it the run directory path. Save each full reply as `07-review-<agent name>.md`, for example `07-review-security-reviewer.md`.
-3. Skip a specialist that is not installed. Do not mention it, and do not ask the user to install it. Before the first specialist runs, delete any `07-review-<agent name>.md` in the run directory whose specialist is not installed now, so a report from an earlier round cannot hold up the release gate, and record it in the `stages` list as `<agent name>: not installed, earlier report removed`.
+3. Skip a specialist that is not installed. Do not mention it, and do not ask the user to install it. Before running specialists, even when none is installed now, delete any `07-review-<agent name>.md` in the run directory whose specialist is not installed now, so a report from an earlier round cannot hold up the release gate, and record it in the `stages` list as `<agent name>: not installed, earlier report removed`. This record is not mentioning a skipped specialist to the user.
 4. Record each verdict in the `stages` list in `state.md`, for example `security-reviewer: APPROVE`.
 
 Collect every verdict before you apply rule 3.
