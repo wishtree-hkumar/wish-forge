@@ -44,7 +44,7 @@ describe('claude', () => {
           'model: opus\n' +
           '---\n\n' +
           'You review code.\n\n' +
-          '<!-- managed by forgeflow: agent:reviewer@0.1.0 -->\n',
+          '<!-- managed by wishforge: agent:reviewer@0.1.0 -->\n',
       },
     ]);
   });
@@ -74,7 +74,7 @@ describe('claude', () => {
       'disable-model-invocation': true,
     });
     expect(body).toBe(
-      'Follow the steps.\n\n<!-- managed by forgeflow: skill:forge-quick@0.1.0 -->'
+      'Follow the steps.\n\n<!-- managed by wishforge: skill:forge-quick@0.1.0 -->'
     );
   });
 
@@ -95,7 +95,7 @@ describe('codex', () => {
   it('renders an agent as TOML', () => {
     const [file] = codex.render(reader, ctx);
     expect(file.path).toBe('.codex/agents/reviewer.toml');
-    expect(file.content.split('\n')[0]).toBe('# managed by forgeflow: agent:reviewer@0.1.0');
+    expect(file.content.split('\n')[0]).toBe('# managed by wishforge: agent:reviewer@0.1.0');
     expect(parseToml(file.content)).toEqual({
       name: 'reviewer',
       description: 'Reviews a change.',

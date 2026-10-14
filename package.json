@@ -1,5 +1,5 @@
 {
-  "name": "forgeflow",
+  "name": "wish-forge",
   "version": "0.1.0",
   "description": "Ready-to-use coding agents and development flows for Claude Code, Codex, OpenCode and Cursor.",
   "private": true,
@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "bin": {
-    "forgeflow": "./bin/forgeflow.js"
+    "wishforge": "./bin/wishforge.js"
   },
   "files": [
     "bin",

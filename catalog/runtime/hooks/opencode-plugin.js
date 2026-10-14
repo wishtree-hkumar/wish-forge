@@ -1,13 +1,13 @@
-// OpenCode plugin: runs forgeflow hooks before tool calls, on user messages and before compaction.
-// Lives in .opencode/plugins/; the runtime and gates live in .opencode/forgeflow/.
+// OpenCode plugin: runs wishforge hooks before tool calls, on user messages and before compaction.
+// Lives in .opencode/plugins/; the runtime and gates live in .opencode/wishforge/.
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const dir = resolve(here, '..', 'forgeflow');
+const dir = resolve(here, '..', 'wishforge');
 const root = resolve(here, '..', '..');
 
-export const ForgeflowGates = async () => {
+export const WishforgeGates = async () => {
   let runtime;
   let gates;
   try {

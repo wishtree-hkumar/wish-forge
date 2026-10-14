@@ -20,7 +20,7 @@ function run(...argv) {
 }
 const read = (path) => readFileSync(join(cwd, path), 'utf8');
 const mode = (path) => statSync(join(cwd, path)).mode & 0o777;
-const ENTRY = '.opencode/forgeflow/rules/*.md';
+const ENTRY = '.opencode/wishforge/rules/*.md';
 
 beforeEach(() => {
   catalogDir = writeTree(tmpDir(), {
@@ -63,7 +63,7 @@ describe('an OpenCode config wired by hand', () => {
   });
 
   it('is accepted with comments and trailing commas, and shown as by hand', () => {
-    const text = `{\n  /* mine */\n  "model": "x", // why\n  "instructions": [\n    "a.md",\n    "${ENTRY}", // forgeflow\n  ],\n}\n`;
+    const text = `{\n  /* mine */\n  "model": "x", // why\n  "instructions": [\n    "a.md",\n    "${ENTRY}", // wishforge\n  ],\n}\n`;
     expect(handWired(text, [ENTRY])).toBe(true);
     writeFileSync(join(cwd, 'opencode.jsonc'), text);
 
@@ -126,13 +126,13 @@ describe('removing rules after the config stopped parsing', () => {
 
 describe('markers the user only mentions', () => {
   it('are not taken for the block', () => {
-    const mine = `# Notes\n\nforgeflow writes between \`${START}\` and \`${END}\`.\n`;
+    const mine = `# Notes\n\nwishforge writes between \`${START}\` and \`${END}\`.\n`;
     writeFileSync(join(cwd, 'AGENTS.md'), mine);
 
     expect(run('add', 'common', '--target', 'codex').code).toBe(0);
     const text = read('AGENTS.md');
     expect(text.startsWith(`${mine}\n${START}\n`)).toBe(true);
-    expect(text).toContain('- `.codex/forgeflow/rules/common.md`: all work');
+    expect(text).toContain('- `.codex/wishforge/rules/common.md`: all work');
 
     expect(run('remove', 'common', '--target', 'codex').code).toBe(0);
     expect(read('AGENTS.md')).toBe(mine);

@@ -25,18 +25,18 @@ const multiline = (text) => escapeControl(text.replace(/\\/g, '\\\\').replace(/"
 export const name = 'codex';
 export const agentDirs = { project: '.codex/agents', global: '~/.codex/agents' };
 export const rulesLocation =
-  '`.codex/forgeflow/rules` in the project and `~/.codex/forgeflow/rules`';
+  '`.codex/wishforge/rules` in the project and `~/.codex/wishforge/rules`';
 export const places = { agentDirs, rulesLocation };
 
 const RULES_INTRO =
-  'These standards are installed by forgeflow. Before you write or review code, ' +
+  'These standards are installed by wishforge. Before you write or review code, ' +
   'read each file below that applies to the files you are working on, and follow it.';
 
 // Codex reads only AGENTS.md, so the rule files are listed there. rules is
 // [{ name, applies }] in name order; applies is unknown for a rule that has
 // left the catalog.
 export function rulesWiring(scope) {
-  const dir = scope === 'global' ? '~/.codex/forgeflow/rules' : '.codex/forgeflow/rules';
+  const dir = scope === 'global' ? '~/.codex/wishforge/rules' : '.codex/wishforge/rules';
   return {
     kind: 'block',
     path: scope === 'global' ? '.codex/AGENTS.md' : 'AGENTS.md',
@@ -59,8 +59,8 @@ export function rulesWiring(scope) {
 // located through git rather than a relative path.
 export const wiring = commandWiring(
   '.codex/hooks.json',
-  '.codex/forgeflow/run.mjs',
-  'node "$(git rev-parse --show-toplevel)/.codex/forgeflow/run.mjs" codex',
+  '.codex/wishforge/run.mjs',
+  'node "$(git rev-parse --show-toplevel)/.codex/wishforge/run.mjs" codex',
   'Bash|apply_patch|Edit|Write'
 );
 
@@ -69,9 +69,9 @@ export function root(scope, { cwd, home }) {
 }
 
 export function render(item, { version }) {
-  if (isHookItem(item)) return hookFiles('.codex/forgeflow', item, version);
+  if (isHookItem(item)) return hookFiles('.codex/wishforge', item, version);
   if (item.type === 'rule') {
-    return ruleFile(`.codex/forgeflow/rules/${item.name}.md`, item, version, {
+    return ruleFile(`.codex/wishforge/rules/${item.name}.md`, item, version, {
       header: appliesHeader(item),
     });
   }

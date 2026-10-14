@@ -98,7 +98,7 @@ describe('flow skills', () => {
     expect(body).toContain('VERDICT: NO_GO');
     expect(body).toContain('09-approval.md');
     expect(body).toContain('state.md');
-    expect(body).toMatch(/forgeflow add/);
+    expect(body).toMatch(/wishforge add/);
     expect(body).not.toMatch(HARNESS_TOOL);
   });
 

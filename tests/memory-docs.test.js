@@ -10,13 +10,13 @@ describe('README', () => {
   it('explains session memory, how to install it and what it stores', () => {
     for (const phrase of [
       '## Session memory',
-      'forgeflow add --memory --target',
+      'wishforge add --memory --target',
       '`session-memory`',
       '`forge-handoff`',
       '`forge-lesson`',
-      '.forgeflow/memory/lessons.md',
-      '.forgeflow/local/session.md',
-      '.forgeflow/local/handoff.md',
+      '.wishforge/memory/lessons.md',
+      '.wishforge/local/session.md',
+      '.wishforge/local/handoff.md',
     ]) {
       expect(readme, phrase).toContain(phrase);
     }
@@ -27,7 +27,7 @@ describe('README', () => {
       'last three prompts',
       '[redacted]',
       'Cursor cannot',
-      'forgeflow update',
+      'wishforge update',
       'never deletes',
       'per project',
     ]) {

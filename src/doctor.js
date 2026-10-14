@@ -50,7 +50,7 @@ export function runDoctor({ catalogDir, cwd, home, nodeVersion = process.version
     checks.push({
       name: 'codex hooks need trusting',
       ok: true,
-      detail: 'forgeflow cannot check this: run /hooks in Codex to review and trust them',
+      detail: 'wishforge cannot check this: run /hooks in Codex to review and trust them',
     });
   }
   return checks;

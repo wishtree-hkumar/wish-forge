@@ -13,21 +13,21 @@ export const name = 'opencode';
 // The global folder has no ".opencode/" prefix: see root().
 export const agentDirs = { project: '.opencode/agents', global: '~/.config/opencode/agents' };
 export const rulesLocation =
-  '`.opencode/forgeflow/rules` in the project and `~/.config/opencode/forgeflow/rules`';
+  '`.opencode/wishforge/rules` in the project and `~/.config/opencode/wishforge/rules`';
 export const places = { agentDirs, rulesLocation };
 
 const MEMORY_HOOK = 'hook:session-memory';
 
 // OpenCode loads every file its "instructions" list names. Which entries
-// forgeflow wants there depends on what is installed: ids is every item the
+// wishforge wants there depends on what is installed: ids is every item the
 // target will have after the operation.
 export function rulesWiring(scope, ids = []) {
   const rules =
     scope === 'global'
-      ? '~/.config/opencode/forgeflow/rules/*.md'
-      : '.opencode/forgeflow/rules/*.md';
+      ? '~/.config/opencode/wishforge/rules/*.md'
+      : '.opencode/wishforge/rules/*.md';
   // Hooks are per project, so memory is too.
-  const memory = scope === 'global' ? [] : ['.forgeflow/memory/*.md', '.forgeflow/local/*.md'];
+  const memory = scope === 'global' ? [] : ['.wishforge/memory/*.md', '.wishforge/local/*.md'];
   const entries = [];
   if (ids.some((id) => id.startsWith('rule:'))) entries.push(rules);
   if (ids.includes(MEMORY_HOOK)) entries.push(...memory);
@@ -49,22 +49,22 @@ export function root(scope, { cwd, home }) {
 }
 
 export function render(item, { scope, version }) {
-  if (item.type === 'hook') return hookFiles('.opencode/forgeflow', item, version);
+  if (item.type === 'hook') return hookFiles('.opencode/wishforge', item, version);
   if (item.type === 'runtime') {
     return [
       {
-        path: '.opencode/forgeflow/runtime.mjs',
+        path: '.opencode/wishforge/runtime.mjs',
         content: stamp(item.sources['runtime.mjs'], item, version),
       },
       {
-        path: '.opencode/plugins/forgeflow.js',
+        path: '.opencode/plugins/wishforge.js',
         content: stamp(item.sources['opencode-plugin.js'], item, version),
       },
     ];
   }
   const prefix = scope === 'global' ? '' : '.opencode/';
   if (item.type === 'rule') {
-    return ruleFile(`${prefix}forgeflow/rules/${item.name}.md`, item, version, {
+    return ruleFile(`${prefix}wishforge/rules/${item.name}.md`, item, version, {
       header: appliesHeader(item),
     });
   }

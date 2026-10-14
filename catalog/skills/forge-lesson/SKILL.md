@@ -5,9 +5,9 @@ group: memory
 requires:
   - hook:session-memory
 ---
-# forgeflow: record a lesson
+# wishforge: record a lesson
 
-A lesson is one fact about this project that a later session, or a teammate's session, needs and could not easily work out again. Lessons live in `.forgeflow/memory/lessons.md`. That file is committed and is given to every new session.
+A lesson is one fact about this project that a later session, or a teammate's session, needs and could not easily work out again. Lessons live in `.wishforge/memory/lessons.md`. That file is committed and is given to every new session.
 
 ## Is it a lesson?
 
@@ -23,7 +23,7 @@ If it fails any of these, do not record it. If the user asked you to, tell them 
 
 ## Steps
 
-1. Read `.forgeflow/memory/lessons.md`. If it does not exist, create it with exactly this header:
+1. Read `.wishforge/memory/lessons.md`. If it does not exist, create it with exactly this header:
 
    ```
    # Project lessons

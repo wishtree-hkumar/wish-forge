@@ -13,8 +13,8 @@ import {
 import { capture, ruleMd, tmpDir, writeTree } from './helpers.js';
 import { hookTree, runtimeTree } from './hook-helpers.js';
 
-const RULES = '.opencode/forgeflow/rules/*.md';
-const MEMORY = ['.forgeflow/memory/*.md', '.forgeflow/local/*.md'];
+const RULES = '.opencode/wishforge/rules/*.md';
+const MEMORY = ['.wishforge/memory/*.md', '.wishforge/local/*.md'];
 const known = [RULES, ...MEMORY];
 const skeleton = { $schema: 'https://opencode.ai/config.json' };
 
@@ -34,8 +34,8 @@ describe('opencode.rulesWiring', () => {
 
   it('wants only the rules entry at global scope', () => {
     const wiring = opencode.rulesWiring('global', ['rule:common', 'hook:session-memory']);
-    expect(wiring.entries).toEqual(['~/.config/opencode/forgeflow/rules/*.md']);
-    expect(wiring.known).toEqual(['~/.config/opencode/forgeflow/rules/*.md']);
+    expect(wiring.entries).toEqual(['~/.config/opencode/wishforge/rules/*.md']);
+    expect(wiring.known).toEqual(['~/.config/opencode/wishforge/rules/*.md']);
   });
 
   it('wants nothing when called without ids', () => {
@@ -73,7 +73,7 @@ describe('mergeInstructions with several entries', () => {
 });
 
 describe('stripInstructions with several entries', () => {
-  it('removes every forgeflow entry and nothing else', () => {
+  it('removes every wishforge entry and nothing else', () => {
     expect(
       stripInstructions({ instructions: [RULES, 'a.md', ...MEMORY], model: 'x' }, known)
     ).toEqual({

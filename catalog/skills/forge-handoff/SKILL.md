@@ -5,15 +5,15 @@ group: memory
 requires:
   - hook:session-memory
 ---
-# forgeflow: write a handoff note
+# wishforge: write a handoff note
 
-The note is for whoever continues this work in a new session that has none of this conversation. It is saved as `.forgeflow/local/handoff.md`, which is not committed, and is given to the next session if it is less than a week old.
+The note is for whoever continues this work in a new session that has none of this conversation. It is saved as `.wishforge/local/handoff.md`, which is not committed, and is given to the next session if it is less than a week old.
 
 ## Steps
 
-1. If `.forgeflow/local/.gitignore` does not exist, create it containing the single line `*`.
+1. If `.wishforge/local/.gitignore` does not exist, create it containing the single line `*`.
 2. Establish what actually happened. Look at the files changed in this session with the project's version control, at the tests that were run and their results, and at what the user decided.
-3. Replace `.forgeflow/local/handoff.md` with a note of at most 40 lines, under the headings below. Leave out a heading that has nothing under it.
+3. Replace `.wishforge/local/handoff.md` with a note of at most 40 lines, under the headings below. Leave out a heading that has nothing under it.
 4. Tell the user the note is saved, and repeat its "Next" section in a line or two.
 
 ## The note
@@ -38,4 +38,4 @@ The note is for whoever continues this work in a new session that has none of th
 - Name files, commands and branches exactly.
 - No secrets, tokens or personal data.
 - Replace the whole note. Do not append to the old one.
-- A durable fact about the project belongs in `.forgeflow/memory/lessons.md`, not here.
+- A durable fact about the project belongs in `.wishforge/memory/lessons.md`, not here.

@@ -28,7 +28,7 @@ function project(targets, items = ['session-memory']) {
 }
 
 function fire(cwd, harness, payload) {
-  const runner = join(cwd, DIRS[harness], 'forgeflow/run.mjs');
+  const runner = join(cwd, DIRS[harness], 'wishforge/run.mjs');
   const result = spawnSync(process.execPath, [runner, harness], {
     input: JSON.stringify(payload),
     encoding: 'utf8',
@@ -37,7 +37,7 @@ function fire(cwd, harness, payload) {
   return { code: result.status, out: result.stdout, err: result.stderr };
 }
 const record = (cwd) =>
-  JSON.parse(readFileSync(join(cwd, '.forgeflow/local/session.json'), 'utf8'));
+  JSON.parse(readFileSync(join(cwd, '.wishforge/local/session.json'), 'utf8'));
 const writeTool = (cwd, session, path) => ({
   hook_event_name: 'PreToolUse',
   tool_name: 'Write',
@@ -65,13 +65,13 @@ describe.each(['claude', 'codex'])('installed runner on %s', (harness) => {
       files: ['src/a.js'],
       prompts: ['deploy with [redacted]'],
     });
-    expect(readFileSync(join(cwd, '.forgeflow/local/.gitignore'), 'utf8')).toBe('*\n');
-    expect(readFileSync(join(cwd, '.forgeflow/local/session.md'), 'utf8')).toContain('- src/a.js');
+    expect(readFileSync(join(cwd, '.wishforge/local/.gitignore'), 'utf8')).toBe('*\n');
+    expect(readFileSync(join(cwd, '.wishforge/local/session.md'), 'utf8')).toContain('- src/a.js');
   });
 
   it('gives a new session the lessons and the last session, and a resumed one nothing', () => {
     const cwd = project([harness]);
-    writeTree(cwd, { '.forgeflow/memory/lessons.md': LESSONS });
+    writeTree(cwd, { '.wishforge/memory/lessons.md': LESSONS });
     fire(cwd, harness, writeTool(cwd, 's-1', 'src/a.js'));
 
     const started = fire(cwd, harness, {
@@ -82,7 +82,7 @@ describe.each(['claude', 'codex'])('installed runner on %s', (harness) => {
     expect(started.code).toBe(0);
     const { hookSpecificOutput } = JSON.parse(started.out);
     expect(hookSpecificOutput.hookEventName).toBe('SessionStart');
-    expect(hookSpecificOutput.additionalContext).toContain('# forgeflow memory');
+    expect(hookSpecificOutput.additionalContext).toContain('# wishforge memory');
     expect(hookSpecificOutput.additionalContext).toContain('Run tests with npm test.');
     expect(hookSpecificOutput.additionalContext).toContain('## Recent activity (last session)');
     expect(hookSpecificOutput.additionalContext).toContain('- src/a.js');
@@ -114,11 +114,11 @@ describe.each(['claude', 'codex'])('installed runner on %s', (harness) => {
 
   it('never fails a tool call when the record cannot be written or is damaged', () => {
     const blocked = project([harness]);
-    writeTree(blocked, { '.forgeflow/local': 'not a folder' });
+    writeTree(blocked, { '.wishforge/local': 'not a folder' });
     expect(fire(blocked, harness, writeTool(blocked, 's-1', 'src/a.js'))).toEqual(QUIET);
 
     const damaged = project([harness]);
-    writeTree(damaged, { '.forgeflow/local/session.json': '{ half' });
+    writeTree(damaged, { '.wishforge/local/session.json': '{ half' });
     expect(fire(damaged, harness, writeTool(damaged, 's-1', 'src/a.js'))).toEqual(QUIET);
     expect(record(damaged).current.files).toEqual(['src/a.js']);
   });
@@ -127,7 +127,7 @@ describe.each(['claude', 'codex'])('installed runner on %s', (harness) => {
 describe('installed runner on Cursor', () => {
   it('adds the memory at session start in its own field', () => {
     const cwd = project(['cursor']);
-    writeTree(cwd, { '.forgeflow/memory/lessons.md': LESSONS });
+    writeTree(cwd, { '.wishforge/memory/lessons.md': LESSONS });
     const { code, out } = fire(cwd, 'cursor', {
       hook_event_name: 'sessionStart',
       session_id: 'c-1',
@@ -151,7 +151,7 @@ describe('installed runner on Cursor', () => {
     });
 
     const { out } = fire(cwd, 'cursor', { hook_event_name: 'preCompact', trigger: 'auto' });
-    expect(JSON.parse(out).user_message).toContain('.forgeflow/local/session.md');
+    expect(JSON.parse(out).user_message).toContain('.wishforge/local/session.md');
   });
 });
 
@@ -159,12 +159,12 @@ describe('OpenCode', () => {
   it('lists the memory files in opencode.json and adds the record to the compaction prompt', async () => {
     const cwd = project(['opencode']);
     expect(JSON.parse(readFileSync(join(cwd, 'opencode.json'), 'utf8')).instructions).toEqual([
-      '.forgeflow/memory/*.md',
-      '.forgeflow/local/*.md',
+      '.wishforge/memory/*.md',
+      '.wishforge/local/*.md',
     ]);
 
-    const url = pathToFileURL(join(cwd, '.opencode/plugins/forgeflow.js')).href;
-    const hooks = await (await import(url)).ForgeflowGates({ directory: cwd });
+    const url = pathToFileURL(join(cwd, '.opencode/plugins/wishforge.js')).href;
+    const hooks = await (await import(url)).WishforgeGates({ directory: cwd });
     await hooks['tool.execute.before'](
       { tool: 'write', sessionID: 'o-1' },
       { args: { filePath: join(cwd, 'src/a.js'), content: 'x' } }
@@ -192,19 +192,19 @@ describe('beside the gates', () => {
     const cwd = project(['claude'], ['session-memory', 'protected-paths']);
     const blocked = fire(cwd, 'claude', writeTool(cwd, 's-1', '.env'));
     expect(blocked.code).toBe(2);
-    expect(existsSync(join(cwd, '.forgeflow/local/session.json'))).toBe(false);
+    expect(existsSync(join(cwd, '.wishforge/local/session.json'))).toBe(false);
   });
 
   it('leaves the memory files in place when it is removed', () => {
     const cwd = project(['claude']);
-    writeTree(cwd, { '.forgeflow/memory/lessons.md': LESSONS });
+    writeTree(cwd, { '.wishforge/memory/lessons.md': LESSONS });
     fire(cwd, 'claude', writeTool(cwd, 's-1', 'src/a.js'));
 
     const ctx = { catalog, version: '0.1.0', scope: 'project', cwd, home: tmpDir(), force: false };
     remove({ ...ctx, dryRun: false }, ['session-memory'], ['claude']);
 
     expect(existsSync(join(cwd, '.claude'))).toBe(false);
-    expect(readFileSync(join(cwd, '.forgeflow/memory/lessons.md'), 'utf8')).toBe(LESSONS);
+    expect(readFileSync(join(cwd, '.wishforge/memory/lessons.md'), 'utf8')).toBe(LESSONS);
     expect(record(cwd).current.files).toEqual(['src/a.js']);
   });
 });

@@ -18,7 +18,7 @@ const run = (...argv) => {
   return { code, out: stdout.text, err: stderr.text };
 };
 const read = (path, base = cwd) => readFileSync(join(base, path), 'utf8');
-const ENTRY = '.opencode/forgeflow/rules/*.md';
+const ENTRY = '.opencode/wishforge/rules/*.md';
 
 beforeEach(() => {
   catalogDir = writeTree(tmpDir(), { 'rules/common.md': ruleMd('common') });
@@ -26,7 +26,7 @@ beforeEach(() => {
   home = tmpDir();
 });
 
-describe('an AGENTS.md forgeflow cannot read', () => {
+describe('an AGENTS.md wishforge cannot read', () => {
   it('is named in a clear message, with nothing written', () => {
     mkdirSync(join(cwd, 'AGENTS.md'));
     const { code, err } = run('add', 'common', '--target', 'codex');
@@ -78,7 +78,7 @@ describe('an OpenCode config linked from outside the project', () => {
 
 describe('a block the user moved to the top of AGENTS.md', () => {
   it('leaves no blank line behind when it is removed', () => {
-    const block = `${START}\n- x\n<!-- forgeflow:rules:end -->`;
+    const block = `${START}\n- x\n<!-- wishforge:rules:end -->`;
     expect(stripBlock(`${block}\n\n# Mine\n`, 'AGENTS.md')).toBe('# Mine\n');
     expect(stripBlock(`\uFEFF${block}\n\n# Mine\n`, 'AGENTS.md')).toBe('\uFEFF# Mine\n');
     expect(stripBlock(mergeBlock(undefined, block, 'AGENTS.md'), 'AGENTS.md')).toBe('');
@@ -130,7 +130,7 @@ describe('ops level', () => {
   it('keeps a byte-order mark through add and remove', () => {
     writeFileSync(join(cwd, 'AGENTS.md'), '\uFEFF# Mine\n');
     run('add', 'common', '--target', 'codex');
-    expect(read('AGENTS.md').startsWith('\uFEFF# Mine\n\n<!-- forgeflow')).toBe(true);
+    expect(read('AGENTS.md').startsWith('\uFEFF# Mine\n\n<!-- wishforge')).toBe(true);
     run('remove', 'common', '--target', 'codex');
     expect(read('AGENTS.md')).toBe('\uFEFF# Mine\n');
   });
@@ -138,7 +138,7 @@ describe('ops level', () => {
   it('removes the global Codex block and the global record', () => {
     writeTree(home, { '.codex/AGENTS.md': '# Mine\n' });
     run('add', 'common', '--target', 'codex', '--global');
-    expect(read('.codex/AGENTS.md', home)).toContain('~/.codex/forgeflow/rules/common.md');
+    expect(read('.codex/AGENTS.md', home)).toContain('~/.codex/wishforge/rules/common.md');
     expect(run('remove', 'common', '--target', 'codex', '--global').code).toBe(0);
     expect(read('.codex/AGENTS.md', home)).toBe('# Mine\n');
     expect(readLock(home).targets.codex).toBeUndefined();

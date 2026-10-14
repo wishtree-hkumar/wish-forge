@@ -34,7 +34,7 @@ describe.each([
   ['cursor', '.cursor', { hook_event_name: 'sessionStart', session_id: 'c-1' }],
 ])('installed runner on %s', (harness, dir, payload) => {
   it('hands a new session the map', () => {
-    const cwd = writeTree(tmpDir(), { '.forgeflow/memory/map.md': MAP });
+    const cwd = writeTree(tmpDir(), { '.wishforge/memory/map.md': MAP });
     add(
       {
         catalog,
@@ -48,7 +48,7 @@ describe.each([
       ['session-memory'],
       [harness]
     );
-    const result = spawnSync(process.execPath, [join(cwd, dir, 'forgeflow/run.mjs'), harness], {
+    const result = spawnSync(process.execPath, [join(cwd, dir, 'wishforge/run.mjs'), harness], {
       input: JSON.stringify(payload),
       encoding: 'utf8',
       cwd,
@@ -57,7 +57,7 @@ describe.each([
     const out = JSON.parse(result.stdout);
     const context =
       harness === 'cursor' ? out.additional_context : out.hookSpecificOutput.additionalContext;
-    expect(context).toContain('## Project map (from .forgeflow/memory/map.md)');
+    expect(context).toContain('## Project map (from .wishforge/memory/map.md)');
     expect(context).toContain('> A CLI that installs agents.');
   });
 });

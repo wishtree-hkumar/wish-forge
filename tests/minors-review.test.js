@@ -18,7 +18,7 @@ const run = (...argv) => {
   const code = main(argv, { cwd, home, stdout, stderr });
   return { code, out: stdout.text, err: stderr.text };
 };
-const lockOf = (base) => JSON.parse(readFileSync(join(base, '.forgeflow/lock.json'), 'utf8'));
+const lockOf = (base) => JSON.parse(readFileSync(join(base, '.wishforge/lock.json'), 'utf8'));
 
 beforeEach(() => {
   cwd = tmpDir();
@@ -32,9 +32,9 @@ describe('update', () => {
     run('remove', 'forge-lesson', '--target', 'claude');
     writeTree(cwd, {
       '.claude/skills/forge-lesson/SKILL.md': 'old\n',
-      '.forgeflow/lock.json': JSON.stringify({
+      '.wishforge/lock.json': JSON.stringify({
         version: 1,
-        forgeflow: '0.1.0',
+        wishforge: '0.1.0',
         targets: {
           claude: {
             items: {
@@ -50,7 +50,7 @@ describe('update', () => {
     const { code, err } = run('update', '--force');
     expect(err).toBe('');
     expect(code).toBe(0);
-    expect(existsSync(join(cwd, '.claude/forgeflow'))).toBe(false);
+    expect(existsSync(join(cwd, '.claude/wishforge'))).toBe(false);
     expect(existsSync(join(cwd, '.claude/settings.json'))).toBe(false);
     expect(Object.keys(lockOf(cwd).targets.claude.items)).toEqual(['skill:forge-lesson']);
   });
@@ -58,9 +58,9 @@ describe('update', () => {
   it('still works on a global install of a memory command made before it required the hook', () => {
     writeTree(home, {
       '.claude/skills/forge-lesson/SKILL.md': 'old\n',
-      '.forgeflow/lock.json': JSON.stringify({
+      '.wishforge/lock.json': JSON.stringify({
         version: 1,
-        forgeflow: '0.1.0',
+        wishforge: '0.1.0',
         targets: {
           claude: {
             items: {
@@ -98,7 +98,7 @@ describe('a hook config link', () => {
     symlinkSync('/nonexistent/x.json', settings);
     expect(run('status').out).toMatch(/wiring missing/);
     expect(run('remove', '--hooks', '--target', 'claude').code).toBe(0);
-    expect(existsSync(join(cwd, '.claude/forgeflow'))).toBe(false);
+    expect(existsSync(join(cwd, '.claude/wishforge'))).toBe(false);
   });
 
   it('to a file outside the project is left alone on removal, with what to take out', () => {
@@ -110,7 +110,7 @@ describe('a hook config link', () => {
     const { code, out } = run('remove', '--hooks', '--target', 'claude');
     expect(code).toBe(0);
     expect(out).toMatch(/by hand\s+\.claude\/settings\.json/);
-    expect(out).toContain('.claude/forgeflow/run.mjs');
+    expect(out).toContain('.claude/wishforge/run.mjs');
   });
 });
 
@@ -222,17 +222,17 @@ describe('the session record', () => {
     for (let i = 1; i <= 31; i += 1)
       memory({ kind: 'write', path: `src/f${i}.js`, content: '' }, ctx(root));
     memory({ kind: 'write', path: 'src/f1.js', content: '' }, ctx(root));
-    const text = readFileSync(join(root, '.forgeflow/local/session.md'), 'utf8');
+    const text = readFileSync(join(root, '.wishforge/local/session.md'), 'utf8');
     expect(text).toContain('- and more files written earlier, not listed');
     expect(text).not.toMatch(/and \d+ earlier files/);
   });
 });
 
 describe('a full uninstall after the gates have run', () => {
-  it('leaves no .forgeflow folder behind', async () => {
+  it('leaves no .wishforge folder behind', async () => {
     run('add', 'test-reminder', '--target', 'claude');
-    const { evaluate, loadGates } = await import(join(cwd, '.claude/forgeflow/runtime.mjs'));
-    const gates = await loadGates(join(cwd, '.claude/forgeflow/gates'));
+    const { evaluate, loadGates } = await import(join(cwd, '.claude/wishforge/runtime.mjs'));
+    const gates = await loadGates(join(cwd, '.claude/wishforge/gates'));
     evaluate({
       harness: 'claude',
       payload: {
@@ -244,9 +244,9 @@ describe('a full uninstall after the gates have run', () => {
       root: cwd,
       gates,
     });
-    expect(existsSync(join(cwd, '.forgeflow/local/gate-state.json'))).toBe(true);
+    expect(existsSync(join(cwd, '.wishforge/local/gate-state.json'))).toBe(true);
     expect(run('remove', 'test-reminder', '--target', 'claude').code).toBe(0);
-    expect(existsSync(join(cwd, '.forgeflow'))).toBe(false);
+    expect(existsSync(join(cwd, '.wishforge'))).toBe(false);
   });
 });
 
@@ -276,7 +276,7 @@ describe('the flows', () => {
 describe('status of an OpenCode config linked from outside', () => {
   it('says missing, not unreadable, when it was read and lacks the entries', () => {
     const target = join(tmpDir(), 'opencode.json');
-    writeFileSync(target, `{\n  "instructions": [".opencode/forgeflow/rules/*.md"]\n}\n`);
+    writeFileSync(target, `{\n  "instructions": [".opencode/wishforge/rules/*.md"]\n}\n`);
     symlinkSync(target, join(cwd, 'opencode.json'));
     run('add', 'common', '--target', 'opencode');
     writeFileSync(target, '{\n  "instructions": []\n}\n');

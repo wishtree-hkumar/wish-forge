@@ -28,7 +28,7 @@ const prompt = (text) => ({ kind: 'prompt', text });
 
 describe('approval-gate', () => {
   const activeRun = (overrides = {}) => {
-    const dir = join(tmpDir(), '.forgeflow/runs/20261013-add-login');
+    const dir = join(tmpDir(), '.wishforge/runs/20261013-add-login');
     mkdirSync(dir, { recursive: true });
     return {
       dir,
@@ -44,16 +44,16 @@ describe('approval-gate', () => {
 
   it('never lets an agent write the approval record', () => {
     for (const ctx of [context(), context({ run: waiting() })]) {
-      const result = approval(write('.forgeflow/runs/r/09-approval.md', 'decision: approved'), ctx);
+      const result = approval(write('.wishforge/runs/r/09-approval.md', 'decision: approved'), ctx);
       expect(result.block).toContain('09-approval.md');
     }
-    expect(approval(write('.forgeflow/runs/r/05-build.md'), context())).toBeUndefined();
+    expect(approval(write('.wishforge/runs/r/05-build.md'), context())).toBeUndefined();
     expect(approval(write('docs/09-approval.md'), context())).toBeUndefined();
   });
 
   it('never lets a shell command touch the approval record', () => {
     const result = approval(
-      shell('echo "decision: approved" > .forgeflow/runs/r/09-approval.md'),
+      shell('echo "decision: approved" > .wishforge/runs/r/09-approval.md'),
       context()
     );
     expect(result.block).toContain('09-approval.md');
@@ -115,7 +115,7 @@ describe('approval-gate', () => {
       expect(result.note).toContain('20261013-add-login');
       const record = readFileSync(join(run.dir, '09-approval.md'), 'utf8').split('\n');
       expect(record[0]).toBe('decision: approved');
-      expect(record[1]).toBe('recorded-by: forgeflow approval-gate (codex prompt hook)');
+      expect(record[1]).toBe('recorded-by: wishforge approval-gate (codex prompt hook)');
       expect(record[2]).toBe('date: 2026-10-13T12:00:00.000Z');
       expect(record[3]).toBe(`user-message: ${text.trim().replace(/\s+/g, ' ')}`);
     }
@@ -204,8 +204,8 @@ describe('secret-guard', () => {
     expect(secretGuard(write('a.js', content), context()).block).toContain('GitHub token');
   });
 
-  it('skips a line marked forgeflow-allow-secret', () => {
-    const line = `const fixture = "ghp_${alnum(36)}"; // forgeflow-allow-secret`;
+  it('skips a line marked wishforge-allow-secret', () => {
+    const line = `const fixture = "ghp_${alnum(36)}"; // wishforge-allow-secret`;
     expect(secretGuard(write('test/fixtures.js', line), context())).toBeUndefined();
     const two = `${line}\nconst real = "ghp_${alnum(36)}";`;
     expect(secretGuard(write('a.js', two), context()).block).toContain('GitHub token');
@@ -339,8 +339,8 @@ describe('test-reminder', () => {
   it('ignores edits to documentation and run files', () => {
     const ctx = context();
     testReminder(write('README.md'), ctx);
-    testReminder(write('.forgeflow/runs/r/state.md'), ctx);
-    testReminder(write('.forgeflow/runs/r/notes.txt'), ctx);
+    testReminder(write('.wishforge/runs/r/state.md'), ctx);
+    testReminder(write('.wishforge/runs/r/notes.txt'), ctx);
     expect(testReminder(stop, ctx)).toBeUndefined();
   });
 

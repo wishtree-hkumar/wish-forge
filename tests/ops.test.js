@@ -86,7 +86,7 @@ describe('add', () => {
       {
         target: 'cursor',
         path: '.cursor/agents/alpha.md',
-        reason: 'exists and was not installed by forgeflow',
+        reason: 'exists and was not installed by wishforge',
       },
     ]);
     expect(readFileSync(at('.cursor/agents/alpha.md'), 'utf8')).toBe('mine');

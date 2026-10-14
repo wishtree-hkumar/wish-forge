@@ -13,15 +13,15 @@ describe('lockfile', () => {
   });
 
   it('returns an empty lock when the file is missing', () => {
-    expect(readLock(tmpDir())).toEqual({ version: 1, forgeflow: null, targets: {} });
+    expect(readLock(tmpDir())).toEqual({ version: 1, wishforge: null, targets: {} });
   });
 
-  it('round-trips and stamps the forgeflow version', () => {
+  it('round-trips and stamps the wishforge version', () => {
     const base = tmpDir();
     writeLock(base, { version: 1, targets: { cursor: { items: { 'agent:a': entry } } } }, '0.1.0');
     expect(readLock(base)).toEqual({
       version: 1,
-      forgeflow: '0.1.0',
+      wishforge: '0.1.0',
       targets: { cursor: { items: { 'agent:a': entry } } },
     });
     expect(readFileSync(lockPath(base), 'utf8').endsWith('}\n')).toBe(true);
@@ -41,21 +41,21 @@ describe('lockfile', () => {
   });
 
   it('refuses invalid JSON and leaves the file alone', () => {
-    const base = writeTree(tmpDir(), { '.forgeflow/lock.json': '{ broken' });
+    const base = writeTree(tmpDir(), { '.wishforge/lock.json': '{ broken' });
     expect(() => readLock(base)).toThrow(LockError);
     expect(() => readLock(base)).toThrow('is not valid JSON');
     expect(readFileSync(lockPath(base), 'utf8')).toBe('{ broken');
   });
 
   it('refuses a lockfile from another format version', () => {
-    const base = writeTree(tmpDir(), { '.forgeflow/lock.json': '{"version":2,"targets":{}}' });
+    const base = writeTree(tmpDir(), { '.wishforge/lock.json': '{"version":2,"targets":{}}' });
     expect(() => readLock(base)).toThrow('unsupported format (version 2)');
   });
 });
 
 describe('lockfile validation', () => {
   const lockWith = (targets) =>
-    writeTree(tmpDir(), { '.forgeflow/lock.json': JSON.stringify({ version: 1, targets }) });
+    writeTree(tmpDir(), { '.wishforge/lock.json': JSON.stringify({ version: 1, targets }) });
   const withPath = (path) =>
     lockWith({
       cursor: { items: { 'agent:a': { explicit: true, files: [{ path, sha256: 'abc' }] } } },

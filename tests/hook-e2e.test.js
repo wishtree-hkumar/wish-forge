@@ -29,14 +29,14 @@ function project(targets, gates = GATES) {
 }
 
 function fire(cwd, harness, payload) {
-  const runner = join(cwd, DIRS[harness], 'forgeflow/run.mjs');
+  const runner = join(cwd, DIRS[harness], 'wishforge/run.mjs');
   const input = typeof payload === 'string' ? payload : JSON.stringify(payload);
   const result = spawnSync(process.execPath, [runner, harness], { input, encoding: 'utf8', cwd });
   return { code: result.status, out: result.stdout, err: result.stderr };
 }
 
 function startRun(cwd, state) {
-  const dir = join(cwd, '.forgeflow/runs/20261013-1200-add-login');
+  const dir = join(cwd, '.wishforge/runs/20261013-1200-add-login');
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'state.md'), state);
   return dir;
@@ -76,7 +76,7 @@ describe('installed runner on Claude Code', () => {
   it('blocks a write to a protected path, including one from project config', () => {
     const cwd = project(['claude']);
     writeFileSync(
-      join(cwd, '.forgeflow/config.json'),
+      join(cwd, '.wishforge/config.json'),
       JSON.stringify({ protectedPaths: ['migrations/**'] })
     );
     const env = fire(
@@ -100,8 +100,8 @@ describe('installed runner on Claude Code', () => {
     const cwd = project(['claude']);
     for (const path of [
       '.claude/settings.json',
-      '.claude/forgeflow/gates/secret-guard.mjs',
-      '.forgeflow/config.json',
+      '.claude/wishforge/gates/secret-guard.mjs',
+      '.wishforge/config.json',
     ]) {
       const result = fire(
         cwd,
@@ -112,7 +112,7 @@ describe('installed runner on Claude Code', () => {
       expect(result.err, path).toContain('is protected');
     }
     const removal = claudeTool(cwd, 'Bash', {
-      command: 'forgeflow remove approval-gate --target claude',
+      command: 'wishforge remove approval-gate --target claude',
     });
     expect(fire(cwd, 'claude', removal).code).toBe(2);
   });
@@ -155,12 +155,12 @@ describe('installed runner on Claude Code', () => {
     expect(JSON.parse(approved.out).hookSpecificOutput).toEqual({
       hookEventName: 'UserPromptSubmit',
       additionalContext:
-        'forgeflow: human approval recorded for run 20261013-1200-add-login in 09-approval.md.',
+        'wishforge: human approval recorded for run 20261013-1200-add-login in 09-approval.md.',
     });
     const record = readFileSync(join(dir, '09-approval.md'), 'utf8');
     expect(
       record.startsWith(
-        'decision: approved\nrecorded-by: forgeflow approval-gate (claude prompt hook)\n'
+        'decision: approved\nrecorded-by: wishforge approval-gate (claude prompt hook)\n'
       )
     ).toBe(true);
 
@@ -211,7 +211,7 @@ describe('installed runner failure modes', () => {
     const cwd = project(['claude']);
     const result = fire(cwd, 'claude', input);
     expect(result.code).toBe(1);
-    expect(result.err).toContain('forgeflow hook failed and was skipped');
+    expect(result.err).toContain('wishforge hook failed and was skipped');
     expect(result.out).toBe('');
   });
 
@@ -227,7 +227,7 @@ describe('installed runner failure modes', () => {
 
   it('keeps working when one gate file is broken', () => {
     const cwd = project(['claude']);
-    writeFileSync(join(cwd, '.claude/forgeflow/gates/broken.mjs'), 'export function check( {');
+    writeFileSync(join(cwd, '.claude/wishforge/gates/broken.mjs'), 'export function check( {');
     expect(fire(cwd, 'claude', claudeTool(cwd, 'Bash', { command: 'ls' })).code).toBe(0);
     const secret = claudeTool(cwd, 'Write', { file_path: 'a.js', content: TOKEN });
     expect(fire(cwd, 'claude', secret).code).toBe(2);
@@ -235,15 +235,15 @@ describe('installed runner failure modes', () => {
 
   it('fails open when the runtime is missing', () => {
     const cwd = project(['claude']);
-    writeFileSync(join(cwd, '.claude/forgeflow/runtime.mjs'), 'this is not javascript (');
+    writeFileSync(join(cwd, '.claude/wishforge/runtime.mjs'), 'this is not javascript (');
     const result = fire(cwd, 'claude', claudeTool(cwd, 'Bash', { command: 'git push' }));
     expect(result.code).toBe(1);
-    expect(result.err).toContain('forgeflow hook failed and was skipped');
+    expect(result.err).toContain('wishforge hook failed and was skipped');
   });
 
   it('ignores a broken project config and says so on the next prompt', () => {
     const cwd = project(['claude']);
-    writeFileSync(join(cwd, '.forgeflow/config.json'), '{ broken');
+    writeFileSync(join(cwd, '.wishforge/config.json'), '{ broken');
     expect(fire(cwd, 'claude', claudeTool(cwd, 'Bash', { command: 'ls' }))).toEqual({
       code: 0,
       out: '',
@@ -255,7 +255,7 @@ describe('installed runner failure modes', () => {
       cwd,
     });
     expect(JSON.parse(prompt.out).hookSpecificOutput.additionalContext).toContain(
-      '.forgeflow/config.json'
+      '.wishforge/config.json'
     );
   });
 });
@@ -332,8 +332,8 @@ describe('installed runner on Codex and Cursor', () => {
 
 describe('installed OpenCode plugin', () => {
   async function plugin(cwd) {
-    const module = await import(pathToFileURL(join(cwd, '.opencode/plugins/forgeflow.js')).href);
-    return module.ForgeflowGates({ directory: cwd });
+    const module = await import(pathToFileURL(join(cwd, '.opencode/plugins/wishforge.js')).href);
+    return module.WishforgeGates({ directory: cwd });
   }
   const before = (hooks, tool, args) =>
     hooks['tool.execute.before']({ tool, sessionID: 's', callID: 'c' }, { args });
@@ -365,7 +365,7 @@ describe('installed OpenCode plugin', () => {
 
   it('returns no hooks when the runtime cannot be loaded', async () => {
     const cwd = project(['opencode']);
-    writeFileSync(join(cwd, '.opencode/forgeflow/runtime.mjs'), 'this is not javascript (');
+    writeFileSync(join(cwd, '.opencode/wishforge/runtime.mjs'), 'this is not javascript (');
     expect(await plugin(cwd)).toEqual({});
   });
 });

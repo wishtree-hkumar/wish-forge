@@ -87,13 +87,13 @@ describe('cli', () => {
     const { code, err } = run('add', '--memory', '--target', 'claude');
     expect(err).toBe('');
     expect(code).toBe(0);
-    expect(readdirSync(join(cwd, '.claude/forgeflow/gates'))).toEqual(['mem.mjs']);
+    expect(readdirSync(join(cwd, '.claude/wishforge/gates'))).toEqual(['mem.mjs']);
     expect(readdirSync(join(cwd, '.claude/skills'))).toEqual(['note']);
   });
 
   it('--hooks installs the gates and leaves the memory hook out', () => {
     expect(run('add', '--hooks', '--target', 'claude').code).toBe(0);
-    expect(readdirSync(join(cwd, '.claude/forgeflow/gates'))).toEqual(['gate.mjs']);
+    expect(readdirSync(join(cwd, '.claude/wishforge/gates'))).toEqual(['gate.mjs']);
     expect(existsSync(join(cwd, '.claude/skills'))).toBe(false);
   });
 
@@ -113,7 +113,7 @@ describe('cli', () => {
   });
 
   it('is mentioned in the usage text and offered when add has nothing to install', () => {
-    expect(run('--help').out).toContain('forgeflow add --memory --target');
+    expect(run('--help').out).toContain('wishforge add --memory --target');
     expect(run('add', '--target', 'claude').err).toContain('--memory');
   });
 });

@@ -13,7 +13,7 @@ export const PATTERNS = [
   ],
   ['private key', /-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----/],
 ];
-const ALLOW_MARK = 'forgeflow-allow-secret';
+const ALLOW_MARK = 'wishforge-allow-secret';
 // Vendors publish these as documentation samples.
 const DOCUMENTED_EXAMPLE = /EXAMPLE$/;
 
@@ -29,7 +29,7 @@ export function check(event, ctx) {
       if (ctx.config.secretAllow.some((allow) => allow.test(match[0]))) continue;
       return {
         block:
-          `forgeflow secret-guard: the text being written to ${event.path} looks like it ` +
+          `wishforge secret-guard: the text being written to ${event.path} looks like it ` +
           `contains a ${kind}. Read it from an environment variable or a secret store instead. ` +
           `If this is a false positive, a person can add ${ALLOW_MARK} to that line.`,
       };

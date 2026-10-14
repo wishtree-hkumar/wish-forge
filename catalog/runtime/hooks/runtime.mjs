@@ -1,5 +1,5 @@
-// forgeflow hook runtime. Uses only node: built-ins, because it runs in
-// projects that have not installed forgeflow.
+// wishforge hook runtime. Uses only node: built-ins, because it runs in
+// projects that have not installed wishforge.
 import {
   existsSync,
   mkdirSync,
@@ -14,12 +14,12 @@ import { pathToFileURL } from 'node:url';
 
 const DAY = 24 * 60 * 60 * 1000;
 const CONFIG_KEYS = ['releaseCommands', 'protectedPaths', 'secretAllow', 'testCommands'];
-// Harness folder → the file that wires forgeflow's hooks into that harness.
+// Harness folder → the file that wires wishforge's hooks into that harness.
 const WIRING_FILES = {
   '.claude': '.claude/settings.json',
   '.codex': '.codex/hooks.json',
   '.cursor': '.cursor/hooks.json',
-  '.opencode': '.opencode/plugins/forgeflow.js',
+  '.opencode': '.opencode/plugins/wishforge.js',
 };
 
 const text = (value) => (typeof value === 'string' ? value : '');
@@ -39,7 +39,7 @@ const CURSOR_WRITE_TOOLS = new Set([
 const OPENCODE_WRITE_TOOLS = new Set(['write', 'edit', 'multiedit']);
 // A resumed or forked session already holds what its first start was given.
 const START_SOURCES = new Set(['startup', 'clear', 'compact']);
-const HOOK_DIR = /\.(claude|codex|cursor|opencode)\/forgeflow\b/i;
+const HOOK_DIR = /\.(claude|codex|cursor|opencode)\/wishforge\b/i;
 const SHELL_CHANGE =
   /(^|[\s;&|(])(rm|mv|cp|sed|tee|chmod|chown|truncate|ln|dd|install|rmdir|unlink|touch|rsync)\b|>/;
 
@@ -103,8 +103,8 @@ export function matchesGlob(path, glob) {
 export function loadConfig(root) {
   const config = Object.fromEntries(CONFIG_KEYS.map((key) => [key, []]));
   const warnings = [];
-  const warn = (problem) => warnings.push(`forgeflow: .forgeflow/config.json ${problem}`);
-  const path = join(root, '.forgeflow', 'config.json');
+  const warn = (problem) => warnings.push(`wishforge: .wishforge/config.json ${problem}`);
+  const path = join(root, '.wishforge', 'config.json');
   if (!existsSync(path)) return { config, warnings };
 
   let raw;
@@ -166,7 +166,7 @@ function isApproved(dir) {
 
 // Every active run, most recently updated first.
 export function findRuns(root, now = Date.now()) {
-  const runs = join(root, '.forgeflow', 'runs');
+  const runs = join(root, '.wishforge', 'runs');
   if (!existsSync(runs)) return [];
 
   const active = [];
@@ -207,7 +207,7 @@ export function findRun(root, now = Date.now()) {
 // Small per-project state for gates, kept in the project's own folder that
 // ignores itself, not under a predictable name in the shared temp directory.
 function stateStore(root) {
-  const dir = join(root, '.forgeflow', 'local');
+  const dir = join(root, '.wishforge', 'local');
   const file = join(dir, 'gate-state.json');
   return {
     get() {
@@ -236,25 +236,25 @@ function stateStore(root) {
 
 export function selfProtect(event, root) {
   const refuse = (what) =>
-    `forgeflow: ${what} is protected while quality gates are installed. A person must make this change.`;
+    `wishforge: ${what} is protected while quality gates are installed. A person must make this change.`;
 
   if (event.kind === 'write') {
     // Compared in lower case: on macOS and Windows .Claude and .claude are one folder.
     const path = event.path.toLowerCase();
-    if (path === '.forgeflow/config.json' || path === '.forgeflow/lock.json') {
+    if (path === '.wishforge/config.json' || path === '.wishforge/lock.json') {
       return refuse(event.path);
     }
     for (const [dir, wiring] of Object.entries(WIRING_FILES)) {
-      if (path.startsWith(`${dir}/forgeflow/`)) return refuse(event.path);
-      if (path === wiring && existsSync(join(root, dir, 'forgeflow'))) return refuse(event.path);
+      if (path.startsWith(`${dir}/wishforge/`)) return refuse(event.path);
+      if (path === wiring && existsSync(join(root, dir, 'wishforge'))) return refuse(event.path);
     }
   }
   if (event.kind === 'shell') {
     // Reading or staging the hook files is fine; changing them is not.
     if (HOOK_DIR.test(event.command) && SHELL_CHANGE.test(event.command)) {
-      return refuse('the forgeflow hook runner');
+      return refuse('the wishforge hook runner');
     }
-    if (/\bforgeflow(\.js)?\s+remove\b/.test(event.command)) return refuse('"forgeflow remove"');
+    if (/\bwishforge(\.js)?\s+remove\b/.test(event.command)) return refuse('"wishforge remove"');
   }
   return undefined;
 }
@@ -358,7 +358,7 @@ export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
       try {
         result = gate.check(event, ctx);
       } catch (error) {
-        warnings.push(`forgeflow: gate ${gate.name} failed (${error.message}) and was skipped.`);
+        warnings.push(`wishforge: gate ${gate.name} failed (${error.message}) and was skipped.`);
         continue;
       }
       if (result?.block) return { events, block: result.block, ...said, warnings };

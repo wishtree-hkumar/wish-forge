@@ -132,7 +132,7 @@ describe('session memory', () => {
 
   it('estimates the block a new session would get now', () => {
     run(['add', 'session-memory', '--target', 'claude']);
-    writeTree(cwd, { '.forgeflow/memory/lessons.md': lessons });
+    writeTree(cwd, { '.wishforge/memory/lessons.md': lessons });
     const memory = row(rows(), 'claude', 'memory block');
     expect(memory.section).toBe('every session');
     expect(memory.chars).toBeGreaterThan(5 * 24);
@@ -143,12 +143,12 @@ describe('session memory', () => {
     run(['add', 'session-memory', '--target', 'claude']);
     const huge = 'z'.repeat(50000);
     writeTree(cwd, {
-      '.forgeflow/memory/lessons.md': `# Project lessons\n\n${huge}\n`,
-      '.forgeflow/memory/map.md': `# Project map\n\n${huge}\n`,
-      '.forgeflow/local/handoff.md': huge,
+      '.wishforge/memory/lessons.md': `# Project lessons\n\n${huge}\n`,
+      '.wishforge/memory/map.md': `# Project map\n\n${huge}\n`,
+      '.wishforge/local/handoff.md': huge,
     });
     const old = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
-    utimesSync(join(cwd, '.forgeflow/local/handoff.md'), old, old);
+    utimesSync(join(cwd, '.wishforge/local/handoff.md'), old, old);
     const memory = row(rows(), 'claude', 'memory block');
     const { lessons: l, map: m } = MEMORY_LIMITS.parts;
     expect(memory.chars).toBeGreaterThanOrEqual(l + m);
@@ -159,8 +159,8 @@ describe('session memory', () => {
   it('on OpenCode counts the memory files as they are', () => {
     run(['add', 'session-memory', '--target', 'opencode']);
     writeTree(cwd, {
-      '.forgeflow/memory/lessons.md': lessons,
-      '.forgeflow/local/handoff.md': 'abc',
+      '.wishforge/memory/lessons.md': lessons,
+      '.wishforge/local/handoff.md': 'abc',
     });
     expect(row(rows(), 'opencode', 'memory files')).toMatchObject({
       section: 'every session',

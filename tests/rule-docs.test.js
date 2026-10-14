@@ -16,12 +16,12 @@ describe('README', () => {
 
   it('says how to install a pack and where each harness keeps it', () => {
     expect(readme).toContain('## Rules packs');
-    expect(readme).toContain('forgeflow add common typescript --target');
+    expect(readme).toContain('wishforge add common typescript --target');
     for (const path of [
-      '.claude/rules/forgeflow/',
-      '.cursor/rules/forgeflow-',
-      '.codex/forgeflow/rules/',
-      '.opencode/forgeflow/rules/',
+      '.claude/rules/wishforge/',
+      '.cursor/rules/wishforge-',
+      '.codex/wishforge/rules/',
+      '.opencode/wishforge/rules/',
       'AGENTS.md',
       'opencode.json',
     ]) {
@@ -33,7 +33,7 @@ describe('README', () => {
     for (const phrase of [
       'AGENTS.override.md',
       'opencode.jsonc',
-      'forgeflow:rules:start',
+      'wishforge:rules:start',
       'not available with `--global` on Cursor',
     ]) {
       expect(readme, phrase).toContain(phrase);

@@ -20,10 +20,10 @@ function run(...argv) {
 const read = (path, base = cwd) => readFileSync(join(base, path), 'utf8');
 const has = (path, base = cwd) => existsSync(join(base, path));
 const TS = ruleMd('ts', 'paths:\n  - "**/*.ts"\n');
-const ENTRY = '.opencode/forgeflow/rules/*.md';
+const ENTRY = '.opencode/wishforge/rules/*.md';
 const LINE = {
-  common: '- `.codex/forgeflow/rules/common.md`: all work',
-  ts: '- `.codex/forgeflow/rules/ts.md`: files matching `**/*.ts`',
+  common: '- `.codex/wishforge/rules/common.md`: all work',
+  ts: '- `.codex/wishforge/rules/ts.md`: files matching `**/*.ts`',
 };
 
 beforeEach(() => {
@@ -41,7 +41,7 @@ describe('codex', () => {
     const { code, out, err } = run('add', 'common', '--target', 'codex');
     expect(err).toBe('');
     expect(code).toBe(0);
-    expect(out).toMatch(/create\s+\.codex\/forgeflow\/rules\/common\.md/);
+    expect(out).toMatch(/create\s+\.codex\/wishforge\/rules\/common\.md/);
     expect(out).toMatch(/wired\s+AGENTS\.md/);
 
     const text = read('AGENTS.md');
@@ -60,7 +60,7 @@ describe('codex', () => {
     expect(out).toMatch(/updated\s+AGENTS\.md/);
     expect(read('AGENTS.md')).toContain(`\n\n${LINE.common}\n${END}\n`);
     expect(read('AGENTS.md')).not.toContain('ts.md');
-    expect(has('.codex/forgeflow/rules/ts.md')).toBe(false);
+    expect(has('.codex/wishforge/rules/ts.md')).toBe(false);
     expect(readLock(cwd).targets.codex.rules).toEqual({ path: 'AGENTS.md', created: true });
   });
 
@@ -70,7 +70,7 @@ describe('codex', () => {
     expect(code).toBe(0);
     expect(out).toMatch(/delete\s+AGENTS\.md/);
     expect(has('AGENTS.md')).toBe(false);
-    expect(has('.forgeflow/lock.json')).toBe(false);
+    expect(has('.wishforge/lock.json')).toBe(false);
   });
 
   it('keeps the user text byte for byte through add and remove', () => {
@@ -112,15 +112,15 @@ describe('codex', () => {
 
     expect(run('add', 'ts', '--target', 'codex').code).toBe(0);
     const text = read('AGENTS.md');
-    expect(text).toContain(`${LINE.common}\n- \`.codex/forgeflow/rules/old.md\`\n${LINE.ts}\n`);
-    expect(has('.codex/forgeflow/rules/old.md')).toBe(true);
+    expect(text).toContain(`${LINE.common}\n- \`.codex/wishforge/rules/old.md\`\n${LINE.ts}\n`);
+    expect(has('.codex/wishforge/rules/old.md')).toBe(true);
   });
 
   it('installs under ~/.codex with --global and names the files from the home folder', () => {
     expect(run('add', 'common', '--target', 'codex', '--global').code).toBe(0);
-    expect(has('.codex/forgeflow/rules/common.md', home)).toBe(true);
+    expect(has('.codex/wishforge/rules/common.md', home)).toBe(true);
     expect(read('.codex/AGENTS.md', home)).toContain(
-      '- `~/.codex/forgeflow/rules/common.md`: all work'
+      '- `~/.codex/wishforge/rules/common.md`: all work'
     );
     expect(has('AGENTS.md')).toBe(false);
   });
@@ -142,7 +142,7 @@ describe('opencode', () => {
       $schema: 'https://opencode.ai/config.json',
       instructions: [ENTRY],
     });
-    expect(has('.opencode/forgeflow/rules/common.md')).toBe(true);
+    expect(has('.opencode/wishforge/rules/common.md')).toBe(true);
 
     expect(run('add', 'ts', '--target', 'opencode').out).toMatch(/unchanged\s+opencode\.json/);
     expect(run('remove', 'ts', '--target', 'opencode').out).toMatch(/unchanged\s+opencode\.json/);
@@ -168,9 +168,9 @@ describe('opencode', () => {
 
   it('uses the home-relative entry with --global', () => {
     expect(run('add', 'common', '--target', 'opencode', '--global').code).toBe(0);
-    expect(has('.config/opencode/forgeflow/rules/common.md', home)).toBe(true);
+    expect(has('.config/opencode/wishforge/rules/common.md', home)).toBe(true);
     expect(JSON.parse(read('.config/opencode/opencode.json', home)).instructions).toEqual([
-      '~/.config/opencode/forgeflow/rules/*.md',
+      '~/.config/opencode/wishforge/rules/*.md',
     ]);
   });
 
@@ -188,7 +188,7 @@ describe('opencode', () => {
     const accepted = run('add', 'common', '--target', 'opencode');
     expect(accepted.code).toBe(0);
     expect(accepted.out).toMatch(/by hand\s+opencode\.jsonc/);
-    expect(has('.opencode/forgeflow/rules/common.md')).toBe(true);
+    expect(has('.opencode/wishforge/rules/common.md')).toBe(true);
     expect(has('opencode.json')).toBe(false);
     expect(read('opencode.jsonc')).toBe(byHand);
     expect(readLock(cwd).targets.opencode.rules).toMatchObject({
@@ -217,8 +217,8 @@ describe('claude and cursor', () => {
     const { code, out } = run('add', 'common', 'ts', '--target', 'claude,cursor');
     expect(code).toBe(0);
     expect(out).not.toMatch(/wired/);
-    expect(has('.claude/rules/forgeflow/ts.md')).toBe(true);
-    expect(has('.cursor/rules/forgeflow-common.mdc')).toBe(true);
+    expect(has('.claude/rules/wishforge/ts.md')).toBe(true);
+    expect(has('.cursor/rules/wishforge-common.mdc')).toBe(true);
     expect(has('AGENTS.md')).toBe(false);
     expect(has('opencode.json')).toBe(false);
     expect(readLock(cwd).targets.claude.rules).toBeUndefined();
@@ -245,8 +245,8 @@ describe('several targets', () => {
     writeFileSync(join(cwd, 'AGENTS.md'), `# Mine\n${START}\nhalf a block\n`);
     const { code, err } = run('add', 'common', '--target', 'claude,codex,opencode');
     expect(code).toBe(1);
-    expect(err).toContain('AGENTS.md has damaged forgeflow markers');
-    for (const path of ['.claude', '.codex', '.opencode', 'opencode.json', '.forgeflow']) {
+    expect(err).toContain('AGENTS.md has damaged wishforge markers');
+    for (const path of ['.claude', '.codex', '.opencode', 'opencode.json', '.wishforge']) {
       expect(has(path), path).toBe(false);
     }
     expect(run('add', 'common', '--target', 'codex', '--force').code).toBe(1);
@@ -314,7 +314,7 @@ describe('status', () => {
 describe('lockfile', () => {
   it('rejects a rules record with an unsafe path or a missing flag', () => {
     run('add', 'common', '--target', 'codex');
-    const path = join(cwd, '.forgeflow/lock.json');
+    const path = join(cwd, '.wishforge/lock.json');
     const lock = JSON.parse(readFileSync(path, 'utf8'));
 
     lock.targets.codex.rules = { path: '../AGENTS.md', created: true };

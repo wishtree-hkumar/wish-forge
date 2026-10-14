@@ -14,7 +14,7 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-// wire and unwire rewrite a harness config with only forgeflow's entries
+// wire and unwire rewrite a harness config with only wishforge's entries
 // changed, so they are never conflicts and do not depend on force.
 const ALWAYS = new Set(['create', 'update', 'delete', 'wire', 'rewire', 'unwire']);
 const WITH_FORCE = new Set(['conflict', 'keep']);
@@ -39,7 +39,7 @@ export function checkWritable(root, actions, force = false) {
 
 function writeAtomic(full, content) {
   mkdirSync(dirname(full), { recursive: true });
-  const tmp = `${full}.forgeflow-tmp-${process.pid}`;
+  const tmp = `${full}.wishforge-tmp-${process.pid}`;
   // A file being replaced keeps its permissions: a harness config may hold secrets.
   let mode;
   try {

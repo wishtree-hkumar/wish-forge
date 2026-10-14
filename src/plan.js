@@ -16,7 +16,7 @@ import {
 } from './rules-wiring.js';
 
 const EDITED = 'was edited after install';
-const FOREIGN = 'exists and was not installed by forgeflow';
+const FOREIGN = 'exists and was not installed by wishforge';
 
 function diskHash(root, path) {
   const full = join(root, path);
@@ -141,12 +141,12 @@ function linkOf(root, path) {
 function throughLink(root, path) {
   const link = linkOf(root, path);
   const refuse = (problem, next = '') =>
-    new ConfigError(`${path} is ${problem}. forgeflow will not modify it${next}.`);
+    new ConfigError(`${path} is ${problem}. wishforge will not modify it${next}.`);
   if (link.kind === 'broken') throw refuse('a broken symbolic link');
   if (link.kind === 'outside') {
     throw refuse(
       'a symbolic link to a file outside the project',
-      ': forgeflow edits only files inside the project. Replace the link with a regular file, ' +
+      ': wishforge edits only files inside the project. Replace the link with a regular file, ' +
         'or point it at a file inside the project'
     );
   }
@@ -160,7 +160,7 @@ function readText(root, path) {
     return readFileSync(full, 'utf8');
   } catch (error) {
     throw new ConfigError(
-      `${path} cannot be read (${error.code ?? error.message}). forgeflow will not change it: ` +
+      `${path} cannot be read (${error.code ?? error.message}). wishforge will not change it: ` +
         'make it a readable file, or remove it, and re-run.'
     );
   }
@@ -181,7 +181,7 @@ function outsideText(root, path) {
   }
 }
 
-// The file's next text, and whether nothing but forgeflow's skeleton is left.
+// The file's next text, and whether nothing but wishforge's skeleton is left.
 function nextRulesText(wiring, current, rules, active) {
   if (wiring.kind === 'block') {
     if (active) {
@@ -198,7 +198,7 @@ function nextRulesText(wiring, current, rules, active) {
   return { text, bare: same(next, wiring.skeleton) };
 }
 
-const BY_HAND = 'forgeflow leaves this file alone; the entry is already there';
+const BY_HAND = 'wishforge leaves this file alone; the entry is already there';
 const takeOut = (entries) =>
   `remove ${entries.map((entry) => JSON.stringify(entry)).join(' and ')} from its "instructions" list`;
 
@@ -211,8 +211,8 @@ function parses(wiring, text) {
   }
 }
 
-// A config forgeflow will not edit is still fine when the user has put the
-// entry in by hand. Returns the path of that file, or undefined when forgeflow
+// A config wishforge will not edit is still fine when the user has put the
+// entry in by hand. Returns the path of that file, or undefined when wishforge
 // can edit the config itself. Throws when neither holds.
 function wiredByHand(root, wiring, path, current) {
   if (wiring.kind !== 'json') return undefined;
@@ -233,14 +233,14 @@ function wiredByHand(root, wiring, path, current) {
     .map((entry) => JSON.stringify(entry))
     .join(' and ');
   throw new ConfigError(
-    `${wiring.alternative} exists and ${wiring.path} does not. forgeflow will not create a ` +
+    `${wiring.alternative} exists and ${wiring.path} does not. wishforge will not create a ` +
       `second OpenCode config: add ${wanted} to its "instructions" list ` +
       `in ${wiring.alternative} by hand, and re-run.`
   );
 }
 
-// The config forgeflow cannot edit, if that is the state of things: the file
-// to name, whether every wanted entry is in it, and which of forgeflow's
+// The config wishforge cannot edit, if that is the state of things: the file
+// to name, whether every wanted entry is in it, and which of wishforge's
 // entries it holds at all.
 function uneditable(root, wiring, path, current) {
   if (wiring.kind !== 'json') return undefined;
@@ -256,7 +256,7 @@ function uneditable(root, wiring, path, current) {
 
 // rules is every rule the target will have after the operation: [{ name, applies }].
 // The wiring is active while something wants it: a rule for the AGENTS.md
-// block, a wanted entry for OpenCode. When it is not active, forgeflow's part
+// block, a wanted entry for OpenCode. When it is not active, wishforge's part
 // is taken out again. previous is the lockfile record. removing is true when
 // the operation takes items away: a config that cannot be edited then never
 // stops it.
@@ -275,7 +275,7 @@ export function planRulesWiring(root, wiring, rules, previous, { removing = fals
     }
     const byHand = wiredByHand(root, wiring, path, current);
     if (byHand) {
-      // Entries of forgeflow's that are in the file and no longer wanted stay
+      // Entries of wishforge's that are in the file and no longer wanted stay
       // there until the person takes them out: say which.
       const extra = stuck.left.filter((entry) => !wiring.entries.includes(entry));
       const reason = extra.length > 0 ? takeOut(extra) : BY_HAND;
@@ -331,7 +331,7 @@ function planOutside(wiring, text, active, previous, removing) {
     .map((entry) => JSON.stringify(entry))
     .join(' and ');
   throw new ConfigError(
-    `${path} is a symbolic link to a file outside the project. forgeflow will not edit it: ` +
+    `${path} is a symbolic link to a file outside the project. wishforge will not edit it: ` +
       `add ${missing} to its "instructions" list by hand, and re-run.`
   );
 }

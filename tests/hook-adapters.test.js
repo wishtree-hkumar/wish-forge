@@ -37,11 +37,11 @@ describe.each([
   ['codex', codex, '.codex'],
   ['cursor', cursor, '.cursor'],
 ])('%s', (_name, adapter, dir) => {
-  it('renders a gate into its forgeflow folder with a marker line', () => {
+  it('renders a gate into its wishforge folder with a marker line', () => {
     expect(adapter.render(hook, ctx)).toEqual([
       {
-        path: `${dir}/forgeflow/gates/secret-guard.mjs`,
-        content: '// managed by forgeflow: hook:secret-guard@0.2.0\nexport function check() {}\n',
+        path: `${dir}/wishforge/gates/secret-guard.mjs`,
+        content: '// managed by wishforge: hook:secret-guard@0.2.0\nexport function check() {}\n',
       },
     ]);
   });
@@ -49,12 +49,12 @@ describe.each([
   it('renders the runner and runtime', () => {
     expect(adapter.render(runtime, ctx)).toEqual([
       {
-        path: `${dir}/forgeflow/run.mjs`,
-        content: '// managed by forgeflow: runtime:hooks@0.2.0\n// run\n',
+        path: `${dir}/wishforge/run.mjs`,
+        content: '// managed by wishforge: runtime:hooks@0.2.0\n// run\n',
       },
       {
-        path: `${dir}/forgeflow/runtime.mjs`,
-        content: '// managed by forgeflow: runtime:hooks@0.2.0\n// runtime\n',
+        path: `${dir}/wishforge/runtime.mjs`,
+        content: '// managed by wishforge: runtime:hooks@0.2.0\n// runtime\n',
       },
     ]);
   });
@@ -64,7 +64,7 @@ describe.each([
     expect(wiring.path.startsWith(`${dir}/`)).toBe(true);
     for (const entry of Object.values(wiring.entries)) {
       const text = JSON.stringify(entry);
-      expect(text).toContain(`${dir}/forgeflow/run.mjs`);
+      expect(text).toContain(`${dir}/wishforge/run.mjs`);
       expect(text).toContain('"timeout":10');
     }
     expect(isWired(mergeWiring(undefined, wiring), wiring)).toBe(true);
@@ -78,7 +78,7 @@ describe('wiring details', () => {
     expect(wiring.skeleton).toEqual({});
     const handler = {
       type: 'command',
-      command: 'node "$CLAUDE_PROJECT_DIR/.claude/forgeflow/run.mjs" claude',
+      command: 'node "$CLAUDE_PROJECT_DIR/.claude/wishforge/run.mjs" claude',
       timeout: 10,
     };
     expect(wiring.entries).toEqual({
@@ -101,7 +101,7 @@ describe('wiring details', () => {
     ]);
     expect(wiring.entries.PreToolUse.matcher).toBe('Bash|apply_patch|Edit|Write');
     expect(wiring.entries.Stop.hooks[0].command).toBe(
-      'node "$(git rev-parse --show-toplevel)/.codex/forgeflow/run.mjs" codex'
+      'node "$(git rev-parse --show-toplevel)/.codex/wishforge/run.mjs" codex'
     );
   });
 
@@ -109,7 +109,7 @@ describe('wiring details', () => {
     const { wiring } = cursor;
     expect(wiring.path).toBe('.cursor/hooks.json');
     expect(wiring.skeleton).toEqual({ version: 1, hooks: {} });
-    const entry = { command: 'node .cursor/forgeflow/run.mjs cursor', timeout: 10 };
+    const entry = { command: 'node .cursor/wishforge/run.mjs cursor', timeout: 10 };
     expect(wiring.entries).toEqual({
       preToolUse: entry,
       beforeSubmitPrompt: entry,
@@ -122,18 +122,18 @@ describe('wiring details', () => {
 
 describe('opencode', () => {
   it('renders a gate beside the runtime', () => {
-    expect(opencode.render(hook, ctx)[0].path).toBe('.opencode/forgeflow/gates/secret-guard.mjs');
+    expect(opencode.render(hook, ctx)[0].path).toBe('.opencode/wishforge/gates/secret-guard.mjs');
   });
 
   it('renders the runtime and a plugin, and no runner', () => {
     expect(opencode.render(runtime, ctx)).toEqual([
       {
-        path: '.opencode/forgeflow/runtime.mjs',
-        content: '// managed by forgeflow: runtime:hooks@0.2.0\n// runtime\n',
+        path: '.opencode/wishforge/runtime.mjs',
+        content: '// managed by wishforge: runtime:hooks@0.2.0\n// runtime\n',
       },
       {
-        path: '.opencode/plugins/forgeflow.js',
-        content: '// managed by forgeflow: runtime:hooks@0.2.0\n// plugin\n',
+        path: '.opencode/plugins/wishforge.js',
+        content: '// managed by wishforge: runtime:hooks@0.2.0\n// plugin\n',
       },
     ]);
   });

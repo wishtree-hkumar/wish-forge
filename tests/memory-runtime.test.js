@@ -167,9 +167,9 @@ describe('OpenCode plugin', () => {
       dryRun: false,
     };
     add(ctx, ['protected-paths'], ['opencode']);
-    writeFileSync(join(cwd, '.opencode/forgeflow/gates/zz-probe.mjs'), probe);
-    const url = pathToFileURL(join(cwd, '.opencode/plugins/forgeflow.js')).href;
-    return (await import(url)).ForgeflowGates({ directory: cwd });
+    writeFileSync(join(cwd, '.opencode/wishforge/gates/zz-probe.mjs'), probe);
+    const url = pathToFileURL(join(cwd, '.opencode/plugins/wishforge.js')).href;
+    return (await import(url)).WishforgeGates({ directory: cwd });
   }
 
   it('adds a gate context to the compaction prompt, with the session id', async () => {

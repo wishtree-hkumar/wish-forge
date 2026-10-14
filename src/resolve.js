@@ -2,7 +2,7 @@ import { UsageError } from './errors.js';
 
 const TYPES = ['agent', 'skill', 'hook', 'rule'];
 const unknown = (ref) =>
-  new UsageError(`unknown item "${ref}". Run "forgeflow list" to see available items.`);
+  new UsageError(`unknown item "${ref}". Run "wishforge list" to see available items.`);
 
 export function findId(catalog, ref) {
   if (ref.includes(':')) {

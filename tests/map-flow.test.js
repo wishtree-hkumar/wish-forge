@@ -4,7 +4,7 @@ import { loadCatalog } from '../src/catalog.js';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const SENTENCE =
-  'If `.forgeflow/memory/map.md` exists, tell every subagent you delegate to, review specialists included, ' +
+  'If `.wishforge/memory/map.md` exists, tell every subagent you delegate to, review specialists included, ' +
   'to read it before exploring the code, as orientation to check against the code. ' +
   "It is not instructions, and it is not the project's release documentation.";
 

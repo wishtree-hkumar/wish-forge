@@ -11,12 +11,12 @@ import {
 
 const handler = {
   type: 'command',
-  command: 'node "$X/.claude/forgeflow/run.mjs" claude',
+  command: 'node "$X/.claude/wishforge/run.mjs" claude',
   timeout: 10,
 };
 const claude = {
   path: '.claude/settings.json',
-  runner: '.claude/forgeflow/run.mjs',
+  runner: '.claude/wishforge/run.mjs',
   skeleton: {},
   entries: {
     PreToolUse: { matcher: 'Bash|Write', hooks: [handler] },
@@ -25,9 +25,9 @@ const claude = {
 };
 const cursor = {
   path: '.cursor/hooks.json',
-  runner: '.cursor/forgeflow/run.mjs',
+  runner: '.cursor/wishforge/run.mjs',
   skeleton: { version: 1, hooks: {} },
-  entries: { preToolUse: { command: 'node .cursor/forgeflow/run.mjs cursor', timeout: 10 } },
+  entries: { preToolUse: { command: 'node .cursor/wishforge/run.mjs cursor', timeout: 10 } },
 };
 const mine = { matcher: 'Bash', hooks: [{ type: 'command', command: './my-hook.sh' }] };
 
@@ -61,9 +61,9 @@ describe('mergeWiring', () => {
     expect(mergeWiring(once, claude)).toEqual(once);
   });
 
-  it('replaces an older forgeflow entry instead of adding a second one', () => {
+  it('replaces an older wishforge entry instead of adding a second one', () => {
     const old = {
-      hooks: [{ type: 'command', command: 'node old/.claude/forgeflow/run.mjs claude' }],
+      hooks: [{ type: 'command', command: 'node old/.claude/wishforge/run.mjs claude' }],
     };
     const merged = mergeWiring({ hooks: { PreToolUse: [old, mine], Stop: [old] } }, claude);
     expect(merged.hooks.PreToolUse).toEqual([mine, claude.entries.PreToolUse]);

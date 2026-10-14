@@ -14,7 +14,7 @@ import { LockError } from './errors.js';
 export const LOCK_VERSION = 1;
 
 export function lockPath(base) {
-  return join(base, '.forgeflow', 'lock.json');
+  return join(base, '.wishforge', 'lock.json');
 }
 
 export function sha256(content) {
@@ -73,7 +73,7 @@ function validate(path, lock) {
 
 export function readLock(base) {
   const path = lockPath(base);
-  if (!existsSync(path)) return { version: LOCK_VERSION, forgeflow: null, targets: {} };
+  if (!existsSync(path)) return { version: LOCK_VERSION, wishforge: null, targets: {} };
 
   let lock;
   try {
@@ -86,7 +86,7 @@ export function readLock(base) {
   if (lock?.version !== LOCK_VERSION) {
     throw new LockError(
       `${path} has an unsupported format (version ${lock?.version}). ` +
-        `This forgeflow reads version ${LOCK_VERSION}. Upgrade forgeflow or delete the file.`
+        `This wishforge reads version ${LOCK_VERSION}. Upgrade wishforge or delete the file.`
     );
   }
   validate(path, lock);
@@ -100,7 +100,7 @@ export function writeLock(base, lock, version) {
   );
   if (Object.keys(targets).length === 0) {
     rmSync(path, { force: true });
-    // An empty .forgeflow folder goes too; one holding runs or memory stays.
+    // An empty .wishforge folder goes too; one holding runs or memory stays.
     try {
       rmdirSync(dirname(path));
     } catch {
@@ -110,7 +110,7 @@ export function writeLock(base, lock, version) {
   }
   mkdirSync(dirname(path), { recursive: true });
   const tmp = `${path}.tmp-${process.pid}`;
-  const data = { version: LOCK_VERSION, forgeflow: version, targets };
+  const data = { version: LOCK_VERSION, wishforge: version, targets };
   writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`);
   renameSync(tmp, path);
 }

@@ -14,13 +14,13 @@ const MODELS = { fast: 'haiku', balanced: 'sonnet', strong: 'opus' };
 export const name = 'claude';
 export const agentDirs = { project: '.claude/agents', global: '~/.claude/agents' };
 export const rulesLocation =
-  '`.claude/rules/forgeflow` in the project and `~/.claude/rules/forgeflow`';
+  '`.claude/rules/wishforge` in the project and `~/.claude/rules/wishforge`';
 export const places = { agentDirs, rulesLocation };
 
 export const wiring = commandWiring(
   '.claude/settings.json',
-  '.claude/forgeflow/run.mjs',
-  'node "$CLAUDE_PROJECT_DIR/.claude/forgeflow/run.mjs" claude',
+  '.claude/wishforge/run.mjs',
+  'node "$CLAUDE_PROJECT_DIR/.claude/wishforge/run.mjs" claude',
   'Bash|Write|Edit|MultiEdit|NotebookEdit'
 );
 
@@ -29,11 +29,11 @@ export function root(scope, { cwd, home }) {
 }
 
 export function render(item, { version }) {
-  if (isHookItem(item)) return hookFiles('.claude/forgeflow', item, version);
+  if (isHookItem(item)) return hookFiles('.claude/wishforge', item, version);
   if (item.type === 'rule') {
     // A rule without paths loads for every session, so it gets no frontmatter.
     const frontmatter = item.paths ? stringify({ paths: item.paths }, { lineWidth: 0 }) : '';
-    return ruleFile(`.claude/rules/forgeflow/${item.name}.md`, item, version, { frontmatter });
+    return ruleFile(`.claude/rules/wishforge/${item.name}.md`, item, version, { frontmatter });
   }
   if (item.type === 'skill') {
     const extra = item.userInvocableOnly ? { 'disable-model-invocation': true } : {};

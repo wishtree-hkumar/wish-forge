@@ -49,13 +49,13 @@ describe('adding a gate', () => {
   it('installs the gate, the runner and the wiring, and records them', () => {
     const result = add(ctx(), ['g1'], ['claude']);
     expect(rows(result)).toEqual([
-      [RUNTIME, 'create', '.claude/forgeflow/run.mjs'],
-      [RUNTIME, 'create', '.claude/forgeflow/runtime.mjs'],
-      ['hook:g1', 'create', '.claude/forgeflow/gates/g1.mjs'],
+      [RUNTIME, 'create', '.claude/wishforge/run.mjs'],
+      [RUNTIME, 'create', '.claude/wishforge/runtime.mjs'],
+      ['hook:g1', 'create', '.claude/wishforge/gates/g1.mjs'],
       [RUNTIME, 'wire', '.claude/settings.json'],
     ]);
-    expect(readFileSync(at('.claude/forgeflow/gates/g1.mjs'), 'utf8')).toBe(
-      '// managed by forgeflow: hook:g1@0.1.0\nexport function check() {}\n// g1\n'
+    expect(readFileSync(at('.claude/wishforge/gates/g1.mjs'), 'utf8')).toBe(
+      '// managed by wishforge: hook:g1@0.1.0\nexport function check() {}\n// g1\n'
     );
     expect(isWired(json('.claude/settings.json'), claudeAdapter.wiring)).toBe(true);
 
@@ -98,15 +98,15 @@ describe('adding a gate', () => {
     const config = json('.cursor/hooks.json');
     expect(config.version).toBe(1);
     expect(isWired(config, cursorAdapter.wiring)).toBe(true);
-    expect(existsSync(at('.cursor/forgeflow/run.mjs'))).toBe(true);
+    expect(existsSync(at('.cursor/wishforge/run.mjs'))).toBe(true);
   });
 
   it('installs a plugin and no config wiring for OpenCode', () => {
     const result = add(ctx(), ['g1'], ['opencode']);
     expect(rows(result)).toEqual([
-      [RUNTIME, 'create', '.opencode/forgeflow/runtime.mjs'],
-      [RUNTIME, 'create', '.opencode/plugins/forgeflow.js'],
-      ['hook:g1', 'create', '.opencode/forgeflow/gates/g1.mjs'],
+      [RUNTIME, 'create', '.opencode/wishforge/runtime.mjs'],
+      [RUNTIME, 'create', '.opencode/plugins/wishforge.js'],
+      ['hook:g1', 'create', '.opencode/wishforge/gates/g1.mjs'],
     ]);
     expect(readLock(cwd).targets.opencode.items[RUNTIME].wiring).toBeUndefined();
   });
@@ -114,7 +114,7 @@ describe('adding a gate', () => {
   it('does not wire when only agents are installed', () => {
     add(ctx(), ['alpha'], ['claude']);
     expect(existsSync(at('.claude/settings.json'))).toBe(false);
-    expect(existsSync(at('.claude/forgeflow'))).toBe(false);
+    expect(existsSync(at('.claude/wishforge'))).toBe(false);
   });
 
   it('writes nothing on a dry run', () => {
@@ -137,7 +137,7 @@ describe('adding a gate', () => {
     }
     expect(readFileSync(at('.claude/settings.json'), 'utf8')).toBe(text);
     expect(existsSync(at('.cursor'))).toBe(false);
-    expect(existsSync(at('.claude/forgeflow'))).toBe(false);
+    expect(existsSync(at('.claude/wishforge'))).toBe(false);
     expect(existsSync(lockPath(cwd))).toBe(false);
   });
 
@@ -154,8 +154,8 @@ describe('removing a gate', () => {
   it('keeps the runner and wiring while another gate remains', () => {
     add(ctx(), ['g1', 'g2'], ['claude']);
     const result = remove(ctx(), ['g1'], ['claude']);
-    expect(rows(result)).toEqual([['hook:g1', 'delete', '.claude/forgeflow/gates/g1.mjs']]);
-    expect(existsSync(at('.claude/forgeflow/run.mjs'))).toBe(true);
+    expect(rows(result)).toEqual([['hook:g1', 'delete', '.claude/wishforge/gates/g1.mjs']]);
+    expect(existsSync(at('.claude/wishforge/run.mjs'))).toBe(true);
     expect(isWired(json('.claude/settings.json'), claudeAdapter.wiring)).toBe(true);
   });
 
@@ -173,7 +173,7 @@ describe('removing a gate', () => {
     const result = remove(ctx(), ['g1'], ['claude']);
     expect(rows(result)[0]).toEqual([RUNTIME, 'unwire', '.claude/settings.json']);
     expect(json('.claude/settings.json')).toEqual(userSettings);
-    expect(existsSync(at('.claude/forgeflow'))).toBe(false);
+    expect(existsSync(at('.claude/wishforge'))).toBe(false);
   });
 
   it('keeps a created config the user has since added to', () => {
@@ -212,7 +212,7 @@ describe('removing a gate', () => {
     const before = readFileSync(at('.claude/settings.json'), 'utf8');
     remove(ctx({ dryRun: true }), ['g1'], ['claude']);
     expect(readFileSync(at('.claude/settings.json'), 'utf8')).toBe(before);
-    expect(existsSync(at('.claude/forgeflow/gates/g1.mjs'))).toBe(true);
+    expect(existsSync(at('.claude/wishforge/gates/g1.mjs'))).toBe(true);
   });
 });
 

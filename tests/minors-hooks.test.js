@@ -51,7 +51,7 @@ describe('a Cursor hooks file the user wrote without a hooks key', () => {
     expect(json('.cursor/hooks.json')).toEqual({ version: 1 });
   });
 
-  it('still deletes a hooks file forgeflow created', () => {
+  it('still deletes a hooks file wishforge created', () => {
     run('add', 'guard', '--target', 'cursor');
     run('remove', 'guard', '--target', 'cursor');
     expect(existsSync(join(cwd, '.cursor/hooks.json'))).toBe(false);
@@ -164,16 +164,16 @@ describe('gate state', () => {
       gates: [gate],
     });
     expect(
-      JSON.parse(readFileSync(join(root, '.forgeflow/local/gate-state.json'), 'utf8'))
+      JSON.parse(readFileSync(join(root, '.wishforge/local/gate-state.json'), 'utf8'))
     ).toEqual({
       seen: true,
     });
-    expect(readFileSync(join(root, '.forgeflow/local/.gitignore'), 'utf8')).toBe('*\n');
+    expect(readFileSync(join(root, '.wishforge/local/.gitignore'), 'utf8')).toBe('*\n');
   });
 
   it('never fails a hook when it cannot be written', () => {
     const root = tmpDir();
-    writeFileSync(join(root, '.forgeflow'), 'a file');
+    writeFileSync(join(root, '.wishforge'), 'a file');
     const gate = { name: 'probe', check: (_event, ctx) => ctx.state.set({ x: 1 }) };
     const result = evaluate({
       harness: 'claude',

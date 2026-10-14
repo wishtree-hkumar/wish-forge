@@ -9,7 +9,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 export function parseConfig(text, path) {
   const refuse = (problem) =>
     new ConfigError(
-      `${path} ${problem}. forgeflow will not modify it: fix the file and re-run. ` +
+      `${path} ${problem}. wishforge will not modify it: fix the file and re-run. ` +
         'If the file holds nothing you need, deleting it also works.'
     );
   let config;
@@ -28,8 +28,8 @@ export function parseConfig(text, path) {
   return config;
 }
 
-// A hook handler is forgeflow's when its command runs this target's runner
-// (wiring.runner, such as ".claude/forgeflow/run.mjs"). Everything else is the user's.
+// A hook handler is wishforge's when its command runs this target's runner
+// (wiring.runner, such as ".claude/wishforge/run.mjs"). Everything else is the user's.
 const isOurs = (handler, wiring) =>
   isObject(handler) &&
   typeof handler.command === 'string' &&
@@ -52,7 +52,7 @@ function withoutOurs(list, wiring) {
   return kept;
 }
 
-// Only the events forgeflow wires are touched.
+// Only the events wishforge wires are touched.
 export function mergeWiring(config, wiring) {
   const base = clone(config ?? wiring.skeleton);
   const hooks = { ...base.hooks };
@@ -75,7 +75,7 @@ export function stripWiring(config, wiring) {
     if (rest.length > 0) base.hooks[event] = rest;
     else delete base.hooks[event];
   }
-  // A hooks object forgeflow emptied goes, even where the skeleton has one: the
+  // A hooks object wishforge emptied goes, even where the skeleton has one: the
   // user's file may never have had it.
   if (removed && Object.keys(base.hooks).length === 0) delete base.hooks;
   return base;

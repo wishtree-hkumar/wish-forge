@@ -39,21 +39,21 @@ function quotedLength(text, limit) {
 
 // The memory block a new session would be given now, by size.
 function memoryBlock(root, now) {
-  const memory = (name) => readText(join(root, '.forgeflow', 'memory', name));
+  const memory = (name) => readText(join(root, '.wishforge', 'memory', name));
   const withoutTitle = (text) => text?.replace(/^# .*(\n+|$)/, '');
   const { parts } = MEMORY_LIMITS;
   let chars = 0;
   chars += quotedLength(withoutTitle(memory('lessons.md')), parts.lessons);
   chars += quotedLength(withoutTitle(memory('map.md')), parts.map);
 
-  const handoff = join(root, '.forgeflow', 'local', 'handoff.md');
+  const handoff = join(root, '.wishforge', 'local', 'handoff.md');
   if (
     existsSync(handoff) &&
     Math.abs(now - statSync(handoff).mtimeMs) <= MEMORY_LIMITS.staleDays * DAY
   ) {
     chars += quotedLength(readText(handoff), parts.handoff);
   }
-  const record = readText(join(root, '.forgeflow', 'local', 'session.md'));
+  const record = readText(join(root, '.wishforge', 'local', 'session.md'));
   const latest = record?.split(/^## /m)[1];
   if (latest) chars += Math.min(latest.length, parts.activity) + HEADING_CHARS;
 
@@ -66,7 +66,7 @@ function memoryBlock(root, now) {
 function memoryFiles(root) {
   let chars = 0;
   for (const dir of ['memory', 'local']) {
-    const folder = join(root, '.forgeflow', dir);
+    const folder = join(root, '.wishforge', dir);
     if (!existsSync(folder)) continue;
     for (const name of readdirSync(folder)) {
       if (name.endsWith('.md')) chars += readText(join(folder, name))?.length ?? 0;

@@ -7,7 +7,7 @@ import { main } from '../src/cli.js';
 import { agentMd, capture, skillMd, tmpDir, writeTree } from './helpers.js';
 import { hookTree, runtimeTree } from './hook-helpers.js';
 
-const BIN = fileURLToPath(new URL('../bin/forgeflow.js', import.meta.url));
+const BIN = fileURLToPath(new URL('../bin/wishforge.js', import.meta.url));
 
 describe('a closed output pipe', () => {
   it('ends the command quietly, without a stack trace', async () => {
@@ -56,17 +56,17 @@ describe('the hidden runtime item', () => {
 });
 
 describe('the last item removed', () => {
-  it('leaves no empty .forgeflow folder behind', () => {
+  it('leaves no empty .wishforge folder behind', () => {
     run('add', 'beta', '--target', 'cursor');
     expect(run('remove', 'beta', '--target', 'cursor').code).toBe(0);
-    expect(existsSync(join(cwd, '.forgeflow'))).toBe(false);
+    expect(existsSync(join(cwd, '.wishforge'))).toBe(false);
   });
 
-  it('keeps a .forgeflow folder that holds anything else', () => {
+  it('keeps a .wishforge folder that holds anything else', () => {
     run('add', 'beta', '--target', 'cursor');
-    writeTree(cwd, { '.forgeflow/runs/r/state.md': 'status: complete\n' });
+    writeTree(cwd, { '.wishforge/runs/r/state.md': 'status: complete\n' });
     run('remove', 'beta', '--target', 'cursor');
-    expect(existsSync(join(cwd, '.forgeflow/runs/r/state.md'))).toBe(true);
+    expect(existsSync(join(cwd, '.wishforge/runs/r/state.md'))).toBe(true);
   });
 });
 
@@ -124,7 +124,7 @@ describe('the home folder', () => {
   });
 });
 
-describe('a harness config forgeflow cannot read', () => {
+describe('a harness config wishforge cannot read', () => {
   it('says that deleting a file that holds nothing of yours also works', () => {
     run('add', 'guard', '--target', 'claude');
     writeTree(cwd, { '.claude/settings.json': '{ broken' });

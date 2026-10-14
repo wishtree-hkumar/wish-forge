@@ -65,7 +65,7 @@ describe('forge-map', () => {
   });
 
   it.each([
-    '`.forgeflow/memory/map.md`',
+    '`.wishforge/memory/map.md`',
     'Delegate to `mapper`',
     'as the existing map',
     'Generated YYYY-MM-DD at commit <short hash> by forge-map. Check it against the code before relying on it.',
@@ -73,7 +73,7 @@ describe('forge-map', () => {
     'over 3,200 bytes',
     'ask `mapper` once to shorten it',
     'Do not write or correct the map yourself',
-    'forgeflow add --memory --target',
+    'wishforge add --memory --target',
     'reviewed and committed',
     'Not determined',
   ])('says: %s', (phrase) => {

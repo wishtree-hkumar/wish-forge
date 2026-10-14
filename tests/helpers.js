@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 export function tmpDir() {
-  return mkdtempSync(join(tmpdir(), 'forgeflow-'));
+  return mkdtempSync(join(tmpdir(), 'wishforge-'));
 }
 
 export function writeTree(root, tree) {

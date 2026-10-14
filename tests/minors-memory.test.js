@@ -25,8 +25,8 @@ const ctx = (root, extra = {}) => ({
 });
 const write = (path) => ({ kind: 'write', path, content: 'x' });
 const record = (root) =>
-  JSON.parse(readFileSync(join(root, '.forgeflow/local/session.json'), 'utf8'));
-const readable = (root) => readFileSync(join(root, '.forgeflow/local/session.md'), 'utf8');
+  JSON.parse(readFileSync(join(root, '.wishforge/local/session.json'), 'utf8'));
+const readable = (root) => readFileSync(join(root, '.wishforge/local/session.md'), 'utf8');
 
 describe('hook calls at the same moment', () => {
   it('all land in the record', async () => {
@@ -44,7 +44,7 @@ describe('hook calls at the same moment', () => {
       ['session-memory'],
       ['claude']
     );
-    const runner = join(cwd, '.claude/forgeflow/run.mjs');
+    const runner = join(cwd, '.claude/wishforge/run.mjs');
     const fire = (i) =>
       new Promise((done) => {
         const child = spawn(process.execPath, [runner, 'claude'], { cwd });
@@ -61,7 +61,7 @@ describe('hook calls at the same moment', () => {
       });
     await Promise.all(Array.from({ length: 12 }, (_, i) => fire(i)));
     expect(record(cwd).current.files).toHaveLength(12);
-    expect(readdirSync(join(cwd, '.forgeflow/local')).sort()).toEqual([
+    expect(readdirSync(join(cwd, '.wishforge/local')).sort()).toEqual([
       '.gitignore',
       'session.json',
       'session.md',
@@ -96,25 +96,25 @@ describe('the record', () => {
 
   it('treats a handoff note dated in the future as stale', () => {
     const root = tmpDir();
-    writeTree(root, { '.forgeflow/local/handoff.md': 'note\n' });
+    writeTree(root, { '.wishforge/local/handoff.md': 'note\n' });
     const later = new Date(T0 + 30 * 24 * HOUR);
-    utimesSync(join(root, '.forgeflow/local/handoff.md'), later, later);
+    utimesSync(join(root, '.wishforge/local/handoff.md'), later, later);
     expect(check({ kind: 'start', source: 'startup' }, ctx(root))).toBeUndefined();
   });
 
   it('puts the ignore rule back when the folder’s .gitignore lost it', () => {
     const root = tmpDir();
-    writeTree(root, { '.forgeflow/local/.gitignore': '!keep.md\n' });
+    writeTree(root, { '.wishforge/local/.gitignore': '!keep.md\n' });
     check(write('src/a.js'), ctx(root));
-    expect(readFileSync(join(root, '.forgeflow/local/.gitignore'), 'utf8')).toBe('*\n!keep.md\n');
+    expect(readFileSync(join(root, '.wishforge/local/.gitignore'), 'utf8')).toBe('*\n!keep.md\n');
   });
 
   it('leaves no temporary file behind when it cannot save', () => {
     const root = tmpDir();
-    writeTree(root, { '.forgeflow/local/session.json/x': '' });
+    writeTree(root, { '.wishforge/local/session.json/x': '' });
     check(write('src/a.js'), ctx(root));
     check(write('src/b.js'), ctx(root));
-    expect(readdirSync(join(root, '.forgeflow/local')).filter((f) => f.includes('tmp'))).toEqual(
+    expect(readdirSync(join(root, '.wishforge/local')).filter((f) => f.includes('tmp'))).toEqual(
       []
     );
   });
@@ -147,7 +147,7 @@ describe('the memory commands', () => {
       expect(catalog.get(`skill:${name}`).requires).toContain('hook:session-memory');
       const io = { cwd: tmpDir(), home: tmpDir(), stdout: capture(), stderr: capture() };
       expect(main(['add', name, '--target', 'claude'], io)).toBe(0);
-      expect(existsSync(join(io.cwd, '.claude/forgeflow/gates/session-memory.mjs'))).toBe(true);
+      expect(existsSync(join(io.cwd, '.claude/wishforge/gates/session-memory.mjs'))).toBe(true);
     }
   );
 

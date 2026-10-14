@@ -98,7 +98,7 @@ describe('loadConfig', () => {
 
   it('compiles patterns case-insensitively and keeps globs as text', () => {
     const root = writeTree(tmpDir(), {
-      '.forgeflow/config.json': JSON.stringify({
+      '.wishforge/config.json': JSON.stringify({
         releaseCommands: ['\\bmake\\s+deploy\\b'],
         protectedPaths: ['migrations/**'],
       }),
@@ -111,7 +111,7 @@ describe('loadConfig', () => {
 
   it('ignores bad entries one by one and warns about each', () => {
     const root = writeTree(tmpDir(), {
-      '.forgeflow/config.json': JSON.stringify({
+      '.wishforge/config.json': JSON.stringify({
         releaseCommands: ['ok', '(unclosed', 7],
         protectedPaths: 'not-a-list',
         testCommands: ['fine'],
@@ -129,7 +129,7 @@ describe('loadConfig', () => {
 
   it('ignores a config that is not a JSON object', () => {
     for (const text of ['{ broken', '[]']) {
-      const root = writeTree(tmpDir(), { '.forgeflow/config.json': text });
+      const root = writeTree(tmpDir(), { '.wishforge/config.json': text });
       const { config, warnings } = loadConfig(root);
       expect(config.releaseCommands).toEqual([]);
       expect(warnings).toHaveLength(1);
@@ -140,7 +140,7 @@ describe('loadConfig', () => {
 describe('findRun', () => {
   const NOW = Date.UTC(2026, 9, 13, 12);
   const runIn = (root, name, state, ageHours = 0) => {
-    const dir = join(root, '.forgeflow/runs', name);
+    const dir = join(root, '.wishforge/runs', name);
     mkdirSync(dir, { recursive: true });
     const file = join(dir, 'state.md');
     writeFileSync(file, state);
@@ -215,23 +215,23 @@ describe('findRun', () => {
 
   it('skips run folders without a readable state.md', () => {
     const root = tmpDir();
-    mkdirSync(join(root, '.forgeflow/runs/empty'), { recursive: true });
-    writeTree(root, { '.forgeflow/runs/stray.txt': 'x' });
+    mkdirSync(join(root, '.wishforge/runs/empty'), { recursive: true });
+    writeTree(root, { '.wishforge/runs/stray.txt': 'x' });
     expect(findRun(root, NOW)).toBeNull();
   });
 });
 
 describe('selfProtect', () => {
-  const root = writeTree(tmpDir(), { '.claude/forgeflow/run.mjs': '' });
+  const root = writeTree(tmpDir(), { '.claude/wishforge/run.mjs': '' });
   const write = (path) => selfProtect({ kind: 'write', path, content: '' }, root);
   const shell = (command) => selfProtect({ kind: 'shell', command }, root);
 
-  it('blocks writes to forgeflow hook files, config and lockfile', () => {
+  it('blocks writes to wishforge hook files, config and lockfile', () => {
     for (const path of [
-      '.claude/forgeflow/run.mjs',
-      '.cursor/forgeflow/gates/secret-guard.mjs',
-      '.forgeflow/config.json',
-      '.forgeflow/lock.json',
+      '.claude/wishforge/run.mjs',
+      '.cursor/wishforge/gates/secret-guard.mjs',
+      '.wishforge/config.json',
+      '.wishforge/lock.json',
     ]) {
       expect(write(path), path).toContain('is protected');
     }
@@ -245,20 +245,20 @@ describe('selfProtect', () => {
 
   it('allows ordinary writes', () => {
     expect(write('src/a.js')).toBeUndefined();
-    expect(write('.forgeflow/runs/r/state.md')).toBeUndefined();
+    expect(write('.wishforge/runs/r/state.md')).toBeUndefined();
     expect(write('.claude/agents/reviewer.md')).toBeUndefined();
   });
 
   it('blocks shell commands that touch the runner or remove gates', () => {
-    expect(shell('rm -rf .claude/forgeflow/gates')).toContain('is protected');
-    expect(shell('echo "" > .codex/forgeflow/run.mjs')).toContain('is protected');
-    expect(shell('npx forgeflow remove approval-gate --target claude')).toContain('is protected');
+    expect(shell('rm -rf .claude/wishforge/gates')).toContain('is protected');
+    expect(shell('echo "" > .codex/wishforge/run.mjs')).toContain('is protected');
+    expect(shell('npx wishforge remove approval-gate --target claude')).toContain('is protected');
   });
 
-  it('allows other shell commands, including other forgeflow commands', () => {
+  it('allows other shell commands, including other wishforge commands', () => {
     expect(shell('npm test')).toBeUndefined();
-    expect(shell('forgeflow status')).toBeUndefined();
-    expect(shell('forgeflow list && git remote remove origin')).toBeUndefined();
+    expect(shell('wishforge status')).toBeUndefined();
+    expect(shell('wishforge list && git remote remove origin')).toBeUndefined();
   });
 });
 
@@ -445,7 +445,7 @@ describe('evaluate', () => {
     const payload = {
       hook_event_name: 'PreToolUse',
       tool_name: 'Write',
-      tool_input: { file_path: join(root, '.forgeflow/config.json'), content: '{}' },
+      tool_input: { file_path: join(root, '.wishforge/config.json'), content: '{}' },
     };
     const result = run([gate('a', () => calls.push('a'))], payload);
     expect(result.block).toContain('is protected');
@@ -466,7 +466,7 @@ describe('evaluate', () => {
   });
 
   it('reports config problems as warnings', () => {
-    const bad = writeTree(tmpDir(), { '.forgeflow/config.json': '{ broken' });
+    const bad = writeTree(tmpDir(), { '.wishforge/config.json': '{ broken' });
     const result = evaluate({ harness: 'claude', payload: shellPayload, root: bad, gates: [] });
     expect(result.warnings).toHaveLength(1);
   });

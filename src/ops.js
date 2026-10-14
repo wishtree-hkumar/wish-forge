@@ -181,7 +181,7 @@ export function update(ctx, refs, targets) {
   if (everywhere) {
     for (const id of named) {
       if (!Object.values(lock.targets).some((target) => target.items[id])) {
-        throw new UsageError(`${id} is not installed. Run "forgeflow status" to see what is.`);
+        throw new UsageError(`${id} is not installed. Run "wishforge status" to see what is.`);
       }
     }
   }
@@ -194,7 +194,7 @@ export function update(ctx, refs, targets) {
     for (const id of ids) {
       if (!installed[id]) {
         throw new UsageError(
-          `${id} is not installed for ${target}. Run "forgeflow status" to see what is.`
+          `${id} is not installed for ${target}. Run "wishforge status" to see what is.`
         );
       }
       if (ctx.catalog.has(id)) current.push(id);
@@ -211,15 +211,15 @@ export function update(ctx, refs, targets) {
 }
 
 // Gate state belongs to the runtime. When no target keeps the runtime, it goes,
-// and so do .forgeflow/local and .forgeflow if nothing else is left in them.
+// and so do .wishforge/local and .wishforge if nothing else is left in them.
 function dropGateState(ctx, lock) {
   if (Object.values(lock.targets).some((target) => target.items[RUNTIME_ID])) return;
-  const local = join(ctx.cwd, '.forgeflow', 'local');
+  const local = join(ctx.cwd, '.wishforge', 'local');
   rmSync(join(local, 'gate-state.json'), { force: true });
   try {
     const left = readdirSync(local);
     if (left.length === 1 && left[0] === '.gitignore') rmSync(local, { recursive: true });
-    rmdirSync(join(ctx.cwd, '.forgeflow'));
+    rmdirSync(join(ctx.cwd, '.wishforge'));
   } catch {
     // something else lives there
   }

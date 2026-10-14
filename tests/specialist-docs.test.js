@@ -17,7 +17,7 @@ describe('README', () => {
   });
 
   it('shows how to install specialists and what the flows do with them', () => {
-    expect(readme).toContain('forgeflow add --specialists --target');
+    expect(readme).toContain('wishforge add --specialists --target');
     expect(readme).toContain('07-review-');
     expect(readme).toContain('`joins: review`');
     expect(readme).toContain('`{{agents-dir}}`');

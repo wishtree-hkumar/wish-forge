@@ -1,6 +1,6 @@
 # Manual verification per harness
 
-The automated tests prove that forgeflow writes well-formed files. They cannot prove that each harness loads them. Do this check once per harness before the first internal release, and again when a harness changes its agent or skill format.
+The automated tests prove that wishforge writes well-formed files. They cannot prove that each harness loads them. Do this check once per harness before the first internal release, and again when a harness changes its agent or skill format.
 
 Record the harness version and the date beside each result.
 
@@ -8,7 +8,7 @@ Record the harness version and the date beside each result.
 
 In an empty scratch repository that has at least one source file and a working test command:
 
-    forgeflow add --flow full --target <harness>
+    wishforge add --flow full --target <harness>
 
 ## Checks
 
@@ -20,10 +20,10 @@ In an empty scratch repository that has at least one source file and a working t
 | 4 | Asking "use the reviewer agent on the last commit" runs `reviewer` as a subagent | | | | |
 | 5 | `reviewer`, asked to edit a file, does not edit it | | | | |
 | 6 | `builder`, asked to make a small change, edits the file | | | | |
-| 7 | A quick-flow run creates `.forgeflow/runs/<run>/` with `state.md` and the stage files | | | | |
+| 7 | A quick-flow run creates `.wishforge/runs/<run>/` with `state.md` and the stage files | | | | |
 | 8 | A full-flow run stops at HUMAN_APPROVAL and waits | | | | |
 | 9 | Declining at HUMAN_APPROVAL stops the run before DEPLOY | | | | |
-| 10 | `forgeflow remove forge-full --target <harness>` leaves no forgeflow file behind | | | | |
+| 10 | `wishforge remove forge-full --target <harness>` leaves no wishforge file behind | | | | |
 
 How to list agents: `/agents` in Claude Code; `/agent` in Codex; `@` completion in OpenCode; the subagent picker in Cursor.
 
@@ -39,7 +39,7 @@ If a check fails, record what the harness did, and compare the installed file wi
 
 Install the gates in the same scratch repository:
 
-    forgeflow add --hooks --target <harness>
+    wishforge add --hooks --target <harness>
 
 On Codex, run `/hooks` and trust the project hooks first.
 
@@ -55,7 +55,7 @@ On Codex, run `/hooks` and trust the project hooks first.
 | 18 | After that, `git push` is no longer blocked | | | | |
 | 19 | A subagent (for example `builder`) is blocked by the same gates as the main agent | | | | |
 | 20 | Ending a turn after an edit with no test run produces one reminder (not OpenCode) | | | | |
-| 21 | `forgeflow remove` of all gates leaves the hook config as it was before | | | | |
+| 21 | `wishforge remove` of all gates leaves the hook config as it was before | | | | |
 
 Check 14 matters most on Cursor: it shows whether a partial edit reaches the pre-tool hook with its new text. If it is not blocked there, `secret-guard` on Cursor covers whole-file writes only; record that in the README.
 
@@ -75,14 +75,14 @@ If check 24 fails, the prompt hook fires for subagent prompts and the approval c
 
 Install the specialists and a flow in the same scratch repository:
 
-    forgeflow add --specialists --flow quick --target <harness>
+    wishforge add --specialists --flow quick --target <harness>
 
 | # | Check | Claude Code | Codex | OpenCode | Cursor |
 |---|---|---|---|---|---|
 | 25 | All ten specialists appear in the harness's agent list | | | | |
 | 26 | Asking "use the security-reviewer agent on the last commit" runs it, and its reply ends with a `VERDICT:` line | | | | |
 | 27 | A quick-flow run creates `07-review-security-reviewer.md` and the three other specialist reports in the run directory | | | | |
-| 28 | After `forgeflow remove` of all four reviewers, a new run creates no `07-review-*` file other than `07-review.md` and says nothing about specialists | | | | |
+| 28 | After `wishforge remove` of all four reviewers, a new run creates no `07-review-*` file other than `07-review.md` and says nothing about specialists | | | | |
 | 29 | With `security-reviewer` installed only with `--global`, a run in a project still runs it | | | | |
 | 30 | Ask for a change with an obvious injection flaw: `security-reviewer` requests changes and the run returns to BUILD, then reviews again | | | | |
 | 31 | Asking `debugger` to explain a failing test produces a root-cause report. Record whether it could run the test or had to work by reading | | | | |
@@ -97,7 +97,7 @@ Check 29 matters most on OpenCode, whose user-level folder is `~/.config/opencod
 
 Install two packs and the reviewer in the same scratch repository, which should contain a TypeScript file:
 
-    forgeflow add common typescript standards-reviewer --target <harness>
+    wishforge add common typescript standards-reviewer --target <harness>
 
 | # | Check | Claude Code | Codex | OpenCode | Cursor |
 |---|---|---|---|---|---|
@@ -107,7 +107,7 @@ Install two packs and the reviewer in the same scratch repository, which should 
 | 35 | Ask the agent to add a function that uses `any` in a `.ts` file. It avoids `any`, or says the standards forbid it | | | | |
 | 36 | Ask "use the standards-reviewer agent on the last commit" after committing a `.ts` file that uses `var`. Its findings name the pack and quote the rule | | | | |
 | 37 | A quick-flow run with `standards-reviewer` installed creates `07-review-standards-reviewer.md` | | | | |
-| 38 | `forgeflow remove common typescript --target <harness>` leaves `AGENTS.md` and `opencode.json` as they were before, or gone if forgeflow created them | | | | |
+| 38 | `wishforge remove common typescript --target <harness>` leaves `AGENTS.md` and `opencode.json` as they were before, or gone if wishforge created them | | | | |
 
 Check 33 is the one that shows whether the rules reach the model at all. On Codex it also shows whether the model follows the pointer in `AGENTS.md`: record what it did.
 
@@ -115,8 +115,8 @@ Two more checks test assumptions the automated tests cannot confirm:
 
 | # | Check | Harness |
 |---|---|---|
-| 39 | After `forgeflow add common --target opencode --global`, check 33 passes in a project with no rules of its own. This shows OpenCode expands `~` in an `instructions` entry | OpenCode |
-| 40 | The installed `.cursor/rules/forgeflow-typescript.mdc` shows in Cursor's rules settings as applying to specific files, with its patterns listed | Cursor |
+| 39 | After `wishforge add common --target opencode --global`, check 33 passes in a project with no rules of its own. This shows OpenCode expands `~` in an `instructions` entry | OpenCode |
+| 40 | The installed `.cursor/rules/wishforge-typescript.mdc` shows in Cursor's rules settings as applying to specific files, with its patterns listed | Cursor |
 
 If check 39 fails, replace `~` in the global entry with the full path and record it in the README. If check 40 fails, compare the file's frontmatter with a rule created in Cursor itself.
 
@@ -124,18 +124,18 @@ If check 39 fails, replace `~` in the global entry with the full path and record
 
 Install it in the same scratch repository:
 
-    forgeflow add --memory --target <harness>
+    wishforge add --memory --target <harness>
 
 On Codex, run `/hooks` and trust the project hooks again: the hook config changed.
 
 | # | Check | Claude Code | Codex | OpenCode | Cursor |
 |---|---|---|---|---|---|
 | 41 | The harness starts with no warning about the hook config, the plugin or `opencode.json` | | | | |
-| 42 | Ask the agent to edit a file. Afterwards `.forgeflow/local/session.md` lists that file and your prompt | | | | |
-| 43 | `git status` shows nothing under `.forgeflow/local/` | | | | |
+| 42 | Ask the agent to edit a file. Afterwards `.wishforge/local/session.md` lists that file and your prompt | | | | |
+| 43 | `git status` shows nothing under `.wishforge/local/` | | | | |
 | 44 | Start a new session and ask "what was I working on here last time?" The answer names the file and the prompt without the agent reading any file | | | | |
-| 45 | Tell the agent something it got wrong about the project ("we use pnpm here, not npm"). It adds one line to `.forgeflow/memory/lessons.md` and tells you | | | | |
-| 46 | Run `forge-handoff`. `.forgeflow/local/handoff.md` is written, and a new session can say what is next | | | | |
+| 45 | Tell the agent something it got wrong about the project ("we use pnpm here, not npm"). It adds one line to `.wishforge/memory/lessons.md` and tells you | | | | |
+| 46 | Run `forge-handoff`. `.wishforge/local/handoff.md` is written, and a new session can say what is next | | | | |
 | 47 | Compact the conversation, then ask which files this session changed. The answer is right (Cursor: a message tells you which files to point the agent at) | | | | |
 | 48 | Resume an earlier session. No second memory block is added (Claude Code and Codex) | | | | |
 
@@ -145,7 +145,7 @@ Two more checks test assumptions the automated tests cannot confirm:
 
 | # | Check | Harness |
 |---|---|---|
-| 49 | With `.forgeflow/memory/` empty or absent, OpenCode starts with no warning about an `instructions` entry that matches no file | OpenCode |
+| 49 | With `.wishforge/memory/` empty or absent, OpenCode starts with no warning about an `instructions` entry that matches no file | OpenCode |
 | 50 | In check 42, a file written by a subagent appears in the same session's record, not a new one | Claude Code, Codex, Cursor |
 
 If check 50 fails on a harness, subagent work starts a new record there and pushes the main session's record into "previous": record it in the README.
@@ -155,10 +155,10 @@ Three more checks cover harness behavior the design assumes and no test here can
 | # | Check | Harness |
 |---|---|---|
 | 51 | Check 47 passes on Codex: after a compaction the agent still knows which files this session changed. This shows Codex fires its session-start hook after compaction | Codex |
-| 52 | Close a chat and reopen it later. No second "forgeflow memory" block is added | Cursor |
+| 52 | Close a chat and reopen it later. No second "wishforge memory" block is added | Cursor |
 | 53 | In a session with several edits, the cost or speed of later turns does not degrade compared with a project without session memory. `session.md` changes on every write and prompt; if OpenCode re-reads `instructions` on each model call, its prompt cache is lost every turn | OpenCode |
 
-If check 53 fails, remove `.forgeflow/local/*.md` from `instructions` on OpenCode and record it in the README: the lessons still load, and the session record stays readable on request.
+If check 53 fails, remove `.wishforge/local/*.md` from `instructions` on OpenCode and record it in the README: the lessons still load, and the session record stays readable on request.
 
 ## Project map
 
@@ -166,11 +166,11 @@ With `--memory` installed in a scratch repository that has real source code:
 
 | # | Check | Claude Code | Codex | OpenCode | Cursor |
 |---|---|---|---|---|---|
-| 54 | Run `forge-map`. `.forgeflow/memory/map.md` is written with Purpose, Commands and Layout, a `Generated` line with today's date, and is at most 3,200 bytes | | | | |
+| 54 | Run `forge-map`. `.wishforge/memory/map.md` is written with Purpose, Commands and Layout, a `Generated` line with today's date, and is at most 3,200 bytes | | | | |
 | 55 | Pick five statements from the map and check each against the code. All five are true | | | | |
 | 56 | Start a new session and ask where one of the map's concerns is handled. The agent answers from the map, opening at most the file it names | | | | |
 | 57 | Change the date in the `Generated` line to two months ago and start a new session. The agent says the map may be out of date (not OpenCode) | | | | |
-| 58 | Start a quick-flow run. The first stage's subagent reads `.forgeflow/memory/map.md` before exploring | | | | |
+| 58 | Start a quick-flow run. The first stage's subagent reads `.wishforge/memory/map.md` before exploring | | | | |
 
 Check 55 is the one that shows whether the map can be trusted. If more than one statement in five is wrong on a harness, record it in the README.
 
@@ -190,6 +190,6 @@ If check 63 fails, the harness cuts the block: lower the limits in the hook and 
 
 | # | Check | Harness |
 |---|---|---|
-| 64 | With a flow, `common` and `typescript`, and session memory installed, compare `forgeflow tokens` with what `/context` reports for the agents, skills and memory files. Record the difference, and whether `forge-quick` and `forge-full` appear in the skills the model is offered | Claude Code; the same question about offered skills on Cursor and OpenCode |
+| 64 | With a flow, `common` and `typescript`, and session memory installed, compare `wishforge tokens` with what `/context` reports for the agents, skills and memory files. Record the difference, and whether `forge-quick` and `forge-full` appear in the skills the model is offered | Claude Code; the same question about offered skills on Cursor and OpenCode |
 
-`forgeflow tokens` assumes that a skill only a person can start is not offered to the model on Claude Code, Cursor and OpenCode, and is on Codex. If check 64 shows otherwise, correct `offered` in `src/tokens.js`.
+`wishforge tokens` assumes that a skill only a person can start is not offered to the model on Claude Code, Cursor and OpenCode, and is on Codex. If check 64 shows otherwise, correct `offered` in `src/tokens.js`.

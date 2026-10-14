@@ -16,18 +16,18 @@ const DEFAULT_CATALOG = fileURLToPath(new URL('../catalog', import.meta.url));
 const LISTED_TYPES = ['agent', 'skill', 'hook', 'rule'];
 
 const USAGE = `Usage:
-  forgeflow list [--type agent|skill|hook|rule] [--json]
-  forgeflow info <id>
-  forgeflow add <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
-  forgeflow add --flow quick|full --target <t>[,<t>...]
-  forgeflow add --hooks --target <t>[,<t>...]
-  forgeflow add --specialists --target <t>[,<t>...] [--global]
-  forgeflow add --memory --target <t>[,<t>...]
-  forgeflow remove <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
-  forgeflow update [<id...>] [--target <t>[,<t>...]] [--global] [--dry-run] [--force]
-  forgeflow status [--global]
-  forgeflow tokens [--target <t>[,<t>...]] [--global] [--json]
-  forgeflow doctor
+  wishforge list [--type agent|skill|hook|rule] [--json]
+  wishforge info <id>
+  wishforge add <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
+  wishforge add --flow quick|full --target <t>[,<t>...]
+  wishforge add --hooks --target <t>[,<t>...]
+  wishforge add --specialists --target <t>[,<t>...] [--global]
+  wishforge add --memory --target <t>[,<t>...]
+  wishforge remove <id...> --target <t>[,<t>...] [--global] [--dry-run] [--force]
+  wishforge update [<id...>] [--target <t>[,<t>...]] [--global] [--dry-run] [--force]
+  wishforge status [--global]
+  wishforge tokens [--target <t>[,<t>...]] [--global] [--json]
+  wishforge doctor
 
 Targets: ${targetNames.join(', ')}
 An <id> is a name such as "reviewer", or a full id such as "agent:reviewer".
@@ -201,7 +201,7 @@ function printList(stdout, items) {
   }
   const count = `${items.length} item${items.length === 1 ? '' : 's'}`;
   stdout.write(
-    `${blocks.join('\n\n')}\n\n${fit(`${count}. Run "forgeflow info <name>" for the full description.`)}\n`
+    `${blocks.join('\n\n')}\n\n${fit(`${count}. Run "wishforge info <name>" for the full description.`)}\n`
   );
 }
 
@@ -298,7 +298,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
   if (changes && ctx.scope === 'project' && samePlace(cwd, home)) {
     throw new UsageError(
       'this is your home folder, where --global installs live. ' +
-        'Run forgeflow from a project folder, or add --global.'
+        'Run wishforge from a project folder, or add --global.'
     );
   }
 
@@ -432,7 +432,7 @@ function run(argv, { cwd, home, stdout, stderr, catalogDir = DEFAULT_CATALOG }) 
       return 0;
 
     default:
-      throw new UsageError(`unknown command "${command}". Run "forgeflow --help".`);
+      throw new UsageError(`unknown command "${command}". Run "wishforge --help".`);
   }
 }
 
@@ -441,14 +441,14 @@ export function main(argv, io) {
     return run(argv, io);
   } catch (error) {
     if (error instanceof ConflictError) {
-      io.stderr.write(`forgeflow: ${error.message}:\n`);
+      io.stderr.write(`wishforge: ${error.message}:\n`);
       for (const { target, path, reason } of error.conflicts) {
         io.stderr.write(`  [${target}] ${path} (${reason})\n`);
       }
       io.stderr.write('Nothing was written. Re-run with --force to overwrite these files.\n');
       return 1;
     }
-    io.stderr.write(`forgeflow: ${error.message}\n`);
+    io.stderr.write(`wishforge: ${error.message}\n`);
     const usage = error instanceof UsageError || String(error.code).startsWith('ERR_PARSE_ARGS');
     return usage ? 2 : 1;
   }

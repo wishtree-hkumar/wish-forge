@@ -3,17 +3,17 @@ import { filled, hookFiles, isHookItem, markdown, ruleFile, skillFiles } from '.
 
 export const name = 'cursor';
 export const agentDirs = { project: '.cursor/agents', global: '~/.cursor/agents' };
-export const rulesLocation = '`.cursor/rules` in the project (the files named `forgeflow-*.mdc`)';
+export const rulesLocation = '`.cursor/rules` in the project (the files named `wishforge-*.mdc`)';
 export const places = { agentDirs, rulesLocation };
 // Cursor keeps user-level rules in its settings, not in files.
 export const globalRules = false;
 
 // Cursor runs project hooks from the project root.
-const entry = { command: 'node .cursor/forgeflow/run.mjs cursor', timeout: 10 };
+const entry = { command: 'node .cursor/wishforge/run.mjs cursor', timeout: 10 };
 
 export const wiring = {
   path: '.cursor/hooks.json',
-  runner: '.cursor/forgeflow/run.mjs',
+  runner: '.cursor/wishforge/run.mjs',
   skeleton: { version: 1, hooks: {} },
   entries: {
     preToolUse: entry,
@@ -29,13 +29,13 @@ export function root(scope, { cwd, home }) {
 }
 
 export function render(item, { version }) {
-  if (isHookItem(item)) return hookFiles('.cursor/forgeflow', item, version);
+  if (isHookItem(item)) return hookFiles('.cursor/wishforge', item, version);
   if (item.type === 'rule') {
     const lines = [stringify({ description: item.description }, { lineWidth: 0 }).trimEnd()];
     // Cursor reads globs as a bare comma-separated list, so they are not YAML-quoted.
     if (item.paths) lines.push(`globs: ${item.paths.join(', ')}`);
     lines.push(`alwaysApply: ${item.paths ? 'false' : 'true'}`);
-    return ruleFile(`.cursor/rules/forgeflow-${item.name}.mdc`, item, version, {
+    return ruleFile(`.cursor/rules/wishforge-${item.name}.mdc`, item, version, {
       frontmatter: `${lines.join('\n')}\n`,
     });
   }

@@ -59,7 +59,7 @@ describe('list and info', () => {
   });
 
   it('mentions --specialists in the usage text', () => {
-    expect(run('--help').out).toContain('forgeflow add --specialists --target');
+    expect(run('--help').out).toContain('wishforge add --specialists --target');
   });
 });
 

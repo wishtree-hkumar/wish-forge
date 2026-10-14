@@ -30,7 +30,7 @@ describe('general', () => {
   it('prints usage for --help and exits 0', () => {
     const { code, out } = run('--help');
     expect(code).toBe(0);
-    expect(out).toContain('forgeflow add <id...> --target');
+    expect(out).toContain('wishforge add <id...> --target');
   });
 
   it('prints the version', () => {
@@ -114,7 +114,7 @@ describe('add', () => {
     expect(run('add', 'alpha').code).toBe(2);
     expect(run('add', 'alpha', '--target', ',').code).toBe(2);
     expect(run('add', 'alpha', '--target', 'vim').err).toContain('unknown target "vim"');
-    expect(existsSync(join(cwd, '.forgeflow'))).toBe(false);
+    expect(existsSync(join(cwd, '.wishforge'))).toBe(false);
   });
 
   it('exits 2 when no item is named or the flow is unknown', () => {

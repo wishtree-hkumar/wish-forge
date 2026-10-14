@@ -40,7 +40,7 @@ beforeEach(() => {
   });
 });
 
-describe('forgeflow list', () => {
+describe('wishforge list', () => {
   it('groups items under a heading per kind, in a fixed order', () => {
     const headings = run(['list'])
       .out.split('\n')
@@ -52,7 +52,7 @@ describe('forgeflow list', () => {
       'Quality gates',
       'Session memory',
       'Rules packs',
-      '10 items. Run "forgeflow info <name>" for the full description.',
+      '10 items. Run "wishforge info <name>" for the full description.',
     ]);
   });
 
@@ -122,7 +122,7 @@ describe('forgeflow list', () => {
     expect(headings).toEqual([
       'Flow agents',
       'Specialists',
-      '4 items. Run "forgeflow info <name>" for the full description.',
+      '4 items. Run "wishforge info <name>" for the full description.',
     ]);
   });
 

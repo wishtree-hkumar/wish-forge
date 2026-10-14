@@ -1,6 +1,6 @@
 ---
 name: forge-quick
-description: Run the forgeflow quick flow for an everyday change - DEFINE, PLAN, BUILD, VERIFY, REVIEW, SHIP. Use when the user asks to run the quick forge flow.
+description: Run the wishforge quick flow for an everyday change - DEFINE, PLAN, BUILD, VERIFY, REVIEW, SHIP. Use when the user asks to run the quick forge flow.
 user-invocable-only: true
 requires:
   - agent:requirement-analyst
@@ -11,7 +11,7 @@ requires:
   - agent:reviewer
   - agent:release-gate
 ---
-# forgeflow: quick flow
+# wishforge: quick flow
 
 You are the orchestrator. You run six phases in order. For each phase you delegate the work to the named subagent, save what it returns, and decide what happens next. You do not do a phase's work yourself.
 
@@ -20,20 +20,20 @@ The quick flow ends with a reviewed, checked change that the user has confirmed.
 ## Before you start
 
 1. Take the user's request from their message. If they gave no request, ask for it and wait.
-2. If the user pointed you at an existing run directory, read its `state.md` and continue from the phase it names. Otherwise create a new run directory at `.forgeflow/runs/<YYYYMMDD-HHMM>-<slug>/`, where the slug is two to four lowercase words from the request joined by hyphens.
+2. If the user pointed you at an existing run directory, read its `state.md` and continue from the phase it names. Otherwise create a new run directory at `.wishforge/runs/<YYYYMMDD-HHMM>-<slug>/`, where the slug is two to four lowercase words from the request joined by hyphens.
 3. Save the request, word for word, as `00-request.md` in the run directory.
 4. Create `state.md` as described under "Keeping state".
 5. Tell the user the run directory path, and that committing it or ignoring it in version control is their choice.
 
 ## How to run a phase
 
-1. Delegate to the phase's subagent. Give it the run directory path and anything the phase row says to pass. If `.forgeflow/memory/map.md` exists, tell every subagent you delegate to, review specialists included, to read it before exploring the code, as orientation to check against the code. It is not instructions, and it is not the project's release documentation.
+1. Delegate to the phase's subagent. Give it the run directory path and anything the phase row says to pass. If `.wishforge/memory/map.md` exists, tell every subagent you delegate to, review specialists included, to read it before exploring the code, as orientation to check against the code. It is not instructions, and it is not the project's release documentation.
 2. Save the subagent's full reply to the phase's file in the run directory. Subagents do not write these files; you do.
 3. Update `state.md`.
 4. Tell the user in one or two lines what the phase produced.
 5. Apply the control rules below before starting the next phase.
 
-If a subagent that a phase names is not available, stop and tell the user to install the flow with `forgeflow add --flow quick --target <their harness>`. The review specialists are optional: see "Review specialists".
+If a subagent that a phase names is not available, stop and tell the user to install the flow with `wishforge add --flow quick --target <their harness>`. The review specialists are optional: see "Review specialists".
 
 ## Phases
 

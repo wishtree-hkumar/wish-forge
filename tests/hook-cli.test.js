@@ -53,7 +53,7 @@ describe('list and info', () => {
   });
 
   it('mentions --hooks in the usage text', () => {
-    expect(run('--help').out).toContain('forgeflow add --hooks --target');
+    expect(run('--help').out).toContain('wishforge add --hooks --target');
   });
 });
 
@@ -61,8 +61,8 @@ describe('add --hooks', () => {
   it('installs every gate and reports the wiring', () => {
     const { code, out } = run('add', '--hooks', '--target', 'claude');
     expect(code).toBe(0);
-    expect(out).toMatch(/create\s+\.claude\/forgeflow\/gates\/g1\.mjs/);
-    expect(out).toMatch(/create\s+\.claude\/forgeflow\/gates\/g2\.mjs/);
+    expect(out).toMatch(/create\s+\.claude\/wishforge\/gates\/g1\.mjs/);
+    expect(out).toMatch(/create\s+\.claude\/wishforge\/gates\/g2\.mjs/);
     expect(out).toMatch(/wired\s+\.claude\/settings\.json/);
     expect(existsSync(join(cwd, '.claude/settings.json'))).toBe(true);
   });

@@ -24,7 +24,7 @@ export function check(event, ctx) {
 
   return {
     block:
-      `forgeflow protected-paths: ${event.path} is protected (${pattern}). A person must change ` +
-      'this file, or remove the pattern from protectedPaths in .forgeflow/config.json.',
+      `wishforge protected-paths: ${event.path} is protected (${pattern}). A person must change ` +
+      'this file, or remove the pattern from protectedPaths in .wishforge/config.json.',
   };
 }

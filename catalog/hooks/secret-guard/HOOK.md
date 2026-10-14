@@ -7,6 +7,6 @@ Checks the text an agent is about to write. It recognizes AWS access key ids, Gi
 
 It matches known formats only. It does not guess at passwords, so it stays quiet on ordinary code. Google API keys are not matched, because Firebase web keys share their format and are public by design.
 
-To allow a false positive, add `forgeflow-allow-secret` to that line, or add a pattern under `secretAllow` in `.forgeflow/config.json`.
+To allow a false positive, add `wishforge-allow-secret` to that line, or add a pattern under `secretAllow` in `.wishforge/config.json`.
 
 It sees file-writing tools only. A secret written by a shell command is not seen.

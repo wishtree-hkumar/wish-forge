@@ -26,7 +26,7 @@ Check each item and record pass, fail or not applicable, with the evidence:
 5. **Version**: if the project versions its releases, state the right increment for this change (patch, minor or major) and whether the version file reflects it.
 6. **Changelog and documentation**: if the project keeps a changelog or user documentation, check that user-visible changes are recorded.
 7. **Leftovers**: search the diff for debugging output, commented-out code, unresolved markers and anything that looks like a secret.
-8. **Working tree**: confirm every file the change needs is present in the working tree and that nothing unrelated was changed. Uncommitted changes are expected, because the flow does not commit. Ignore the `.forgeflow/` directory.
+8. **Working tree**: confirm every file the change needs is present in the working tree and that nothing unrelated was changed. Uncommitted changes are expected, because the flow does not commit. Ignore the `.wishforge/` directory.
 
 The verdict is GO only if none of items 1, 2, 3, 7 and 8 fails. Items 4, 5 and 6 do not block: record what they found, so the person approving can decide what to do about it.
 

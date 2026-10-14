@@ -2,7 +2,7 @@
 import { homedir } from 'node:os';
 import { main } from '../src/cli.js';
 
-// A reader that stops early, such as `forgeflow list | head`, closes the pipe:
+// A reader that stops early, such as `wishforge list | head`, closes the pipe:
 // that ends the command, it is not an error.
 process.stdout.on('error', (error) => {
   if (error.code !== 'EPIPE') throw error;

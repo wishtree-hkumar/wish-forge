@@ -10,8 +10,8 @@ import { hookTree, runtimeTree } from './hook-helpers.js';
 
 describe('wiring entries', () => {
   it.each([
-    ['claude', claude, 'node "$CLAUDE_PROJECT_DIR/.claude/forgeflow/run.mjs" claude'],
-    ['codex', codex, 'node "$(git rev-parse --show-toplevel)/.codex/forgeflow/run.mjs" codex'],
+    ['claude', claude, 'node "$CLAUDE_PROJECT_DIR/.claude/wishforge/run.mjs" claude'],
+    ['codex', codex, 'node "$(git rev-parse --show-toplevel)/.codex/wishforge/run.mjs" codex'],
   ])(
     '%s starts the runner when a session starts, clears or is compacted',
     (_name, adapter, command) => {
@@ -29,7 +29,7 @@ describe('wiring entries', () => {
   );
 
   it('cursor starts the runner on session start and before compaction', () => {
-    const entry = { command: 'node .cursor/forgeflow/run.mjs cursor', timeout: 10 };
+    const entry = { command: 'node .cursor/wishforge/run.mjs cursor', timeout: 10 };
     expect(cursor.wiring.entries).toEqual({
       preToolUse: entry,
       beforeSubmitPrompt: entry,

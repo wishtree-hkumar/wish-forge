@@ -33,7 +33,7 @@ describe('the memory group', () => {
 
 describe('forge-lesson', () => {
   it.each([
-    '`.forgeflow/memory/lessons.md`',
+    '`.wishforge/memory/lessons.md`',
     '# Project lessons',
     'When the user corrects you about this project',
     '- (YYYY-MM-DD)',
@@ -50,8 +50,8 @@ describe('forge-lesson', () => {
 
 describe('forge-handoff', () => {
   it.each([
-    '`.forgeflow/local/handoff.md`',
-    '`.forgeflow/local/.gitignore`',
+    '`.wishforge/local/handoff.md`',
+    '`.wishforge/local/.gitignore`',
     'the single line `*`',
     'at most 40 lines',
     '## Done',
@@ -77,7 +77,7 @@ describe('installing memory from the real catalog', () => {
     expect(io.stderr.text).toBe('');
     expect(code).toBe(0);
     for (const dir of ['.claude', '.codex', '.cursor', '.opencode']) {
-      expect(has(`${dir}/forgeflow/gates/session-memory.mjs`), dir).toBe(true);
+      expect(has(`${dir}/wishforge/gates/session-memory.mjs`), dir).toBe(true);
     }
     for (const dir of ['.claude/skills', '.agents/skills', '.cursor/skills', '.opencode/skills']) {
       expect(readdirSync(join(io.cwd, dir)).sort(), dir).toEqual([
@@ -93,8 +93,8 @@ describe('installing memory from the real catalog', () => {
     expect(json('.codex/hooks.json').hooks.SessionStart).toHaveLength(1);
     expect(Object.keys(json('.cursor/hooks.json').hooks)).toContain('sessionStart');
     expect(json('opencode.json').instructions).toEqual([
-      '.forgeflow/memory/*.md',
-      '.forgeflow/local/*.md',
+      '.wishforge/memory/*.md',
+      '.wishforge/local/*.md',
     ]);
     expect(has('AGENTS.md')).toBe(false);
   });
@@ -102,7 +102,7 @@ describe('installing memory from the real catalog', () => {
   it('is not part of --hooks', () => {
     const other = { cwd: tmpDir(), home: tmpDir(), stdout: capture(), stderr: capture() };
     expect(main(['add', '--hooks', '--target', 'claude'], other)).toBe(0);
-    expect(readdirSync(join(other.cwd, '.claude/forgeflow/gates')).sort()).toEqual([
+    expect(readdirSync(join(other.cwd, '.claude/wishforge/gates')).sort()).toEqual([
       'approval-gate.mjs',
       'protected-paths.mjs',
       'secret-guard.mjs',
@@ -110,7 +110,7 @@ describe('installing memory from the real catalog', () => {
     ]);
   });
 
-  it('removes cleanly and leaves no forgeflow file behind', () => {
+  it('removes cleanly and leaves no wishforge file behind', () => {
     const removal = { ...io, stdout: capture(), stderr: capture() };
     const ids = ['session-memory', 'forge-handoff', 'forge-lesson', 'forge-map'];
     expect(main(['remove', ...ids, '--target', 'claude,codex,opencode,cursor'], removal)).toBe(0);

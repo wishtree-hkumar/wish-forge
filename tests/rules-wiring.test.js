@@ -19,8 +19,8 @@ const TWO = block('two');
 
 describe('markers', () => {
   it('are HTML comments a Markdown reader does not show', () => {
-    expect(START).toBe('<!-- forgeflow:rules:start -->');
-    expect(END).toBe('<!-- forgeflow:rules:end -->');
+    expect(START).toBe('<!-- wishforge:rules:start -->');
+    expect(END).toBe('<!-- wishforge:rules:end -->');
   });
 });
 
@@ -103,13 +103,13 @@ describe('damaged markers', () => {
       () => hasBlock(text, P),
     ]) {
       expect(attempt).toThrow(ConfigError);
-      expect(attempt).toThrow('AGENTS.md has damaged forgeflow markers');
+      expect(attempt).toThrow('AGENTS.md has damaged wishforge markers');
     }
   });
 });
 
 const J = 'opencode.json';
-const ENTRY = '.opencode/forgeflow/rules/*.md';
+const ENTRY = '.opencode/wishforge/rules/*.md';
 const wiring = {
   entries: [ENTRY],
   known: [ENTRY],
@@ -145,7 +145,7 @@ describe('mergeInstructions', () => {
 });
 
 describe('stripInstructions', () => {
-  it('removes only the forgeflow entry', () => {
+  it('removes only the wishforge entry', () => {
     expect(
       stripInstructions({ instructions: ['a.md', ENTRY, 'b.md'], model: 'x' }, [ENTRY])
     ).toEqual({ instructions: ['a.md', 'b.md'], model: 'x' });
@@ -188,12 +188,12 @@ describe('parseInstructions', () => {
     const attempt = () => parseInstructions(text, J, [ENTRY]);
     expect(attempt).toThrow(ConfigError);
     expect(attempt).toThrow(`opencode.json ${problem}`);
-    expect(attempt).toThrow('add ".opencode/forgeflow/rules/*.md" to its "instructions" list');
+    expect(attempt).toThrow('add ".opencode/wishforge/rules/*.md" to its "instructions" list');
   });
 });
 
 describe('handWired', () => {
-  it('finds the quoted entry in text forgeflow cannot parse', () => {
+  it('finds the quoted entry in text wishforge cannot parse', () => {
     expect(handWired(`{\n  // mine\n  "instructions": ["${ENTRY}"]\n}`, [ENTRY])).toBe(true);
     expect(handWired('{\n  // mine\n  "instructions": []\n}', [ENTRY])).toBe(false);
     expect(handWired(`// ${ENTRY}`, [ENTRY])).toBe(false);

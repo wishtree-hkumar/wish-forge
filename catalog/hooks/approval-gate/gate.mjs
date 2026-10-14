@@ -12,7 +12,7 @@ const RELEASE = [
   /\bterraform\s+apply\b/i,
   /\bhelm\s+(upgrade|install)\b/i,
 ];
-const RECORD = /(^|\/)\.forgeflow\/runs\/[^/]+\/09-approval\.md$/i;
+const RECORD = /(^|\/)\.wishforge\/runs\/[^/]+\/09-approval\.md$/i;
 const APPROVE = /^approved?$|^approve[\s,.!]/i;
 const APPROVAL_STAGE = /human[\s_-]*approval|\bship\b/i;
 const HOW = 'A person approves by typing "approve" when the flow asks.';
@@ -23,14 +23,14 @@ const atApprovalStep = (run) =>
 export function check(event, ctx) {
   if (event.kind === 'write') {
     if (!RECORD.test(event.path)) return undefined;
-    return { block: `forgeflow approval-gate: agents may not write 09-approval.md. ${HOW}` };
+    return { block: `wishforge approval-gate: agents may not write 09-approval.md. ${HOW}` };
   }
 
   if (event.kind === 'shell') {
     if (event.command.toLowerCase().includes('09-approval.md')) {
       return {
         block:
-          'forgeflow approval-gate: shell commands may not touch 09-approval.md. ' +
+          'wishforge approval-gate: shell commands may not touch 09-approval.md. ' +
           'Read it with your file-reading capability instead.',
       };
     }
@@ -43,10 +43,10 @@ export function check(event, ctx) {
     if (!isRelease) return undefined;
     return {
       block:
-        `forgeflow approval-gate: this release command is blocked because flow run ${pending.name} ` +
+        `wishforge approval-gate: this release command is blocked because flow run ${pending.name} ` +
         `has no recorded human approval. Complete the flow's approval step first. ${HOW} ` +
         `If that run was abandoned, a person can set its status to "stopped" in ` +
-        `.forgeflow/runs/${pending.name}/state.md.`,
+        `.wishforge/runs/${pending.name}/state.md.`,
     };
   }
 
@@ -61,7 +61,7 @@ export function check(event, ctx) {
       const [latest] = open;
       return {
         note:
-          `forgeflow approval-gate: "approve" was not recorded. Run ${latest.name} is not waiting ` +
+          `wishforge approval-gate: "approve" was not recorded. Run ${latest.name} is not waiting ` +
           `at its approval step: its state.md has status "${latest.status}" and current stage ` +
           `"${latest.stage}". Before asking for approval, the flow must set status to ` +
           '"waiting for user" and current stage to HUMAN_APPROVAL or SHIP.',
@@ -70,13 +70,13 @@ export function check(event, ctx) {
 
     const record = [
       'decision: approved',
-      `recorded-by: forgeflow approval-gate (${ctx.harness} prompt hook)`,
+      `recorded-by: wishforge approval-gate (${ctx.harness} prompt hook)`,
       `date: ${new Date(ctx.now).toISOString()}`,
       `user-message: ${said.replace(/\s+/g, ' ')}`,
       '',
     ].join('\n');
     writeFileSync(join(run.dir, '09-approval.md'), record);
-    return { note: `forgeflow: human approval recorded for run ${run.name} in 09-approval.md.` };
+    return { note: `wishforge: human approval recorded for run ${run.name} in 09-approval.md.` };
   }
 
   return undefined;

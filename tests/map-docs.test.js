@@ -12,7 +12,7 @@ describe('README', () => {
       '### The project map',
       '`forge-map`',
       '`mapper`',
-      '.forgeflow/memory/map.md',
+      '.wishforge/memory/map.md',
       'more than 30 days old',
       'Where things live',
     ]) {

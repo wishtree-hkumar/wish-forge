@@ -2,7 +2,7 @@ import { stringify } from 'yaml';
 import { fillPlaceholders } from '../placeholders.js';
 
 export function marker(item, version) {
-  return `managed by forgeflow: ${item.id}@${version}`;
+  return `managed by wishforge: ${item.id}@${version}`;
 }
 
 export function markdown(data, item, version) {
@@ -44,7 +44,7 @@ export function stamp(source, item, version) {
   return `// ${marker(item, version)}\n${source}`;
 }
 
-// dir is the target's forgeflow folder, such as ".claude/forgeflow".
+// dir is the target's wishforge folder, such as ".claude/wishforge".
 export function hookFiles(dir, item, version) {
   if (item.type === 'hook') {
     return [{ path: `${dir}/gates/${item.name}.mjs`, content: stamp(item.gate, item, version) }];

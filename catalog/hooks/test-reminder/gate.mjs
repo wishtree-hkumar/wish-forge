@@ -40,10 +40,10 @@ const PREFIX = new RegExp(
 // The body of `sh -c "..."` or `bash -lc '...'` is a command of its own.
 const SHELL_BODY = /\b(?:ba|z)?sh\s+-l?c\s+(["'])(.*?)\1/g;
 const NUDGE =
-  'forgeflow test-reminder: files were changed and no test command has run since. ' +
+  'wishforge test-reminder: files were changed and no test command has run since. ' +
   "Run the project's tests now, or tell the user why you did not.";
 
-const isSource = (path) => !path.startsWith('.forgeflow/') && !path.endsWith('.md');
+const isSource = (path) => !path.startsWith('.wishforge/') && !path.endsWith('.md');
 
 function startsWithTest(part) {
   let rest = part.trim();

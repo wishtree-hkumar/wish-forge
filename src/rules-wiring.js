@@ -2,8 +2,8 @@ import { ConfigError } from './errors.js';
 
 // Row id for the block or entry in install reports.
 export const RULES_ID = 'rules';
-export const START = '<!-- forgeflow:rules:start -->';
-export const END = '<!-- forgeflow:rules:end -->';
+export const START = '<!-- wishforge:rules:start -->';
+export const END = '<!-- wishforge:rules:end -->';
 
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -23,8 +23,8 @@ function locate(text, path) {
   if (starts.length === 0 && ends.length === 0) return null;
   if (starts.length !== 1 || ends.length !== 1 || ends[0] < starts[0]) {
     throw new ConfigError(
-      `${path} has damaged forgeflow markers (expected one "${START}" followed by one "${END}"). ` +
-        'forgeflow will not modify it: repair the markers, or delete them and the text between them, and re-run.'
+      `${path} has damaged wishforge markers (expected one "${START}" followed by one "${END}"). ` +
+        'wishforge will not modify it: repair the markers, or delete them and the text between them, and re-run.'
     );
   }
   return { start: starts[0], end: ends[0] + END.length };
@@ -34,7 +34,7 @@ export function hasBlock(text, path) {
   return locate(text, path) !== null;
 }
 
-// Only the text between the markers is forgeflow's. Everything else is kept.
+// Only the text between the markers is wishforge's. Everything else is kept.
 export function mergeBlock(text, block, path) {
   if (text === undefined || text === '') return `${block}\n`;
   const eol = text.includes('\r\n') ? '\r\n' : '\n';
@@ -85,7 +85,7 @@ const quoted = (entries) => entries.map((entry) => JSON.stringify(entry)).join('
 export function parseInstructions(text, path, entries) {
   const refuse = (problem) =>
     new ConfigError(
-      `${path} ${problem}. forgeflow will not modify it: fix the file, ` +
+      `${path} ${problem}. wishforge will not modify it: fix the file, ` +
         `or add ${quoted(entries)} to its "instructions" list by hand, and re-run.`
     );
   let config;
@@ -102,7 +102,7 @@ export function parseInstructions(text, path, entries) {
   return config;
 }
 
-// Which of the candidates a config forgeflow will not edit (it has comments,
+// Which of the candidates a config wishforge will not edit (it has comments,
 // or is a .jsonc file) really holds in its "instructions" list.
 export function foundEntries(text, candidates) {
   try {
@@ -118,8 +118,8 @@ export function handWired(text, entries) {
   return entries.length > 0 && foundEntries(text, entries).length === entries.length;
 }
 
-// entries are the ones wanted now; known is every entry forgeflow ever adds.
-// Wanted entries stay where they are, missing ones go last, and forgeflow's own
+// entries are the ones wanted now; known is every entry wishforge ever adds.
+// Wanted entries stay where they are, missing ones go last, and wishforge's own
 // entries that are no longer wanted are dropped.
 export function mergeInstructions(config, { entries, known, skeleton }) {
   const base = clone(config ?? skeleton);

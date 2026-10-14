@@ -24,7 +24,7 @@ const scoped = {
   files: [],
 };
 const always = { ...scoped, id: 'rule:common', name: 'common', paths: undefined };
-const MARK = '\n\n<!-- managed by forgeflow: rule:ts@0.1.0 -->\n';
+const MARK = '\n\n<!-- managed by wishforge: rule:ts@0.1.0 -->\n';
 
 describe('appliesTo', () => {
   it('describes patterns, or all work', () => {
@@ -37,7 +37,7 @@ describe('claude', () => {
   it('writes a scoped rule into its own subfolder with a paths list', () => {
     const [file, ...rest] = claude.render(scoped, project);
     expect(rest).toEqual([]);
-    expect(file.path).toBe('.claude/rules/forgeflow/ts.md');
+    expect(file.path).toBe('.claude/rules/wishforge/ts.md');
     const { data, body } = parseFrontmatter(file.content);
     expect(data).toEqual({ paths: ['**/*.ts', '**/*.tsx'] });
     expect(body.startsWith(BODY)).toBe(true);
@@ -46,19 +46,19 @@ describe('claude', () => {
 
   it('writes an always-on rule with no frontmatter at all', () => {
     const [file] = claude.render(always, project);
-    expect(file.path).toBe('.claude/rules/forgeflow/common.md');
-    expect(file.content).toBe(`${BODY}\n\n<!-- managed by forgeflow: rule:common@0.1.0 -->\n`);
+    expect(file.path).toBe('.claude/rules/wishforge/common.md');
+    expect(file.content).toBe(`${BODY}\n\n<!-- managed by wishforge: rule:common@0.1.0 -->\n`);
   });
 
   it('uses the same relative path at global scope', () => {
-    expect(claude.render(scoped, global)[0].path).toBe('.claude/rules/forgeflow/ts.md');
+    expect(claude.render(scoped, global)[0].path).toBe('.claude/rules/wishforge/ts.md');
   });
 });
 
 describe('cursor', () => {
   it('writes a scoped rule as .mdc with bare comma-separated globs', () => {
     const [file] = cursor.render(scoped, project);
-    expect(file.path).toBe('.cursor/rules/forgeflow-ts.mdc');
+    expect(file.path).toBe('.cursor/rules/wishforge-ts.mdc');
     expect(file.content).toBe(
       '---\n' +
         'description: "TypeScript: standards"\n' +
@@ -82,7 +82,7 @@ describe('cursor', () => {
 describe('codex', () => {
   it('writes the rule beside the gates, starting with what it applies to', () => {
     const [file] = codex.render(scoped, project);
-    expect(file.path).toBe('.codex/forgeflow/rules/ts.md');
+    expect(file.path).toBe('.codex/wishforge/rules/ts.md');
     expect(file.content).toBe(
       `Applies to: files matching \`**/*.ts\`, \`**/*.tsx\`.\n\n${BODY}${MARK}`
     );
@@ -98,25 +98,25 @@ describe('codex', () => {
 describe('opencode', () => {
   it('writes the rule under .opencode in a project', () => {
     const [file] = opencode.render(scoped, project);
-    expect(file.path).toBe('.opencode/forgeflow/rules/ts.md');
+    expect(file.path).toBe('.opencode/wishforge/rules/ts.md');
     expect(file.content).toBe(
       `Applies to: files matching \`**/*.ts\`, \`**/*.tsx\`.\n\n${BODY}${MARK}`
     );
   });
 
   it('drops the .opencode prefix under the global config directory', () => {
-    expect(opencode.render(scoped, global)[0].path).toBe('forgeflow/rules/ts.md');
+    expect(opencode.render(scoped, global)[0].path).toBe('wishforge/rules/ts.md');
   });
 });
 
 describe('rulesLocation', () => {
   it.each([
-    [claude, '`.claude/rules/forgeflow` in the project and `~/.claude/rules/forgeflow`'],
-    [cursor, '`.cursor/rules` in the project (the files named `forgeflow-*.mdc`)'],
-    [codex, '`.codex/forgeflow/rules` in the project and `~/.codex/forgeflow/rules`'],
+    [claude, '`.claude/rules/wishforge` in the project and `~/.claude/rules/wishforge`'],
+    [cursor, '`.cursor/rules` in the project (the files named `wishforge-*.mdc`)'],
+    [codex, '`.codex/wishforge/rules` in the project and `~/.codex/wishforge/rules`'],
     [
       opencode,
-      '`.opencode/forgeflow/rules` in the project and `~/.config/opencode/forgeflow/rules`',
+      '`.opencode/wishforge/rules` in the project and `~/.config/opencode/wishforge/rules`',
     ],
   ])('names where each harness keeps its rules', (adapter, phrase) => {
     expect(adapter.rulesLocation).toBe(phrase);

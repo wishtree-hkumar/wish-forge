@@ -90,10 +90,10 @@ describe('installing the real packs', () => {
     expect(code).toBe(0);
     for (const name of NAMES) {
       for (const path of [
-        `.claude/rules/forgeflow/${name}.md`,
-        `.cursor/rules/forgeflow-${name}.mdc`,
-        `.codex/forgeflow/rules/${name}.md`,
-        `.opencode/forgeflow/rules/${name}.md`,
+        `.claude/rules/wishforge/${name}.md`,
+        `.cursor/rules/wishforge-${name}.mdc`,
+        `.codex/wishforge/rules/${name}.md`,
+        `.opencode/wishforge/rules/${name}.md`,
       ]) {
         expect(existsSync(join(io.cwd, path)), path).toBe(true);
       }
@@ -102,18 +102,18 @@ describe('installing the real packs', () => {
 
   it('lists all ten in the Codex block, well inside the 32 KiB cap', () => {
     const text = read('AGENTS.md');
-    expect(text.match(/^- `\.codex\/forgeflow\/rules\//gm)).toHaveLength(10);
-    expect(text).toContain('- `.codex/forgeflow/rules/common.md`: all work');
-    expect(text).toContain('- `.codex/forgeflow/rules/vue.md`: files matching `**/*.vue`');
+    expect(text.match(/^- `\.codex\/wishforge\/rules\//gm)).toHaveLength(10);
+    expect(text).toContain('- `.codex/wishforge/rules/common.md`: all work');
+    expect(text).toContain('- `.codex/wishforge/rules/vue.md`: files matching `**/*.vue`');
     expect(Buffer.byteLength(text)).toBeLessThan(4096);
   });
 
   it('scopes stack packs and leaves common always on', () => {
-    expect(read('.claude/rules/forgeflow/common.md').startsWith('# ')).toBe(true);
-    expect(read('.claude/rules/forgeflow/go.md').startsWith('---\npaths:\n')).toBe(true);
-    expect(read('.cursor/rules/forgeflow-common.mdc')).toContain('alwaysApply: true');
-    expect(read('.cursor/rules/forgeflow-go.mdc')).toContain('globs: **/*.go\nalwaysApply: false');
-    expect(read('.opencode/forgeflow/rules/go.md').startsWith('Applies to: files matching')).toBe(
+    expect(read('.claude/rules/wishforge/common.md').startsWith('# ')).toBe(true);
+    expect(read('.claude/rules/wishforge/go.md').startsWith('---\npaths:\n')).toBe(true);
+    expect(read('.cursor/rules/wishforge-common.mdc')).toContain('alwaysApply: true');
+    expect(read('.cursor/rules/wishforge-go.mdc')).toContain('globs: **/*.go\nalwaysApply: false');
+    expect(read('.opencode/wishforge/rules/go.md').startsWith('Applies to: files matching')).toBe(
       true
     );
   });

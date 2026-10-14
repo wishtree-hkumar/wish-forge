@@ -20,7 +20,7 @@ import { tmpDir, writeTree } from './helpers.js';
 const NOW = Date.UTC(2026, 9, 13, 12);
 
 function runIn(root, name, state, ageHours = 0) {
-  const dir = join(root, '.forgeflow/runs', name);
+  const dir = join(root, '.wishforge/runs', name);
   mkdirSync(dir, { recursive: true });
   const file = join(dir, 'state.md');
   writeFileSync(file, state);
@@ -40,7 +40,7 @@ describe('Cursor read tools are not writes', () => {
   it.each(['Read', 'Grep', 'Glob', 'LS', 'SomeFutureReader'])(
     '%s with only a file_path produces no event',
     (tool) => {
-      expect(pre(tool, { file_path: '.forgeflow/runs/r/09-approval.md' })).toEqual([]);
+      expect(pre(tool, { file_path: '.wishforge/runs/r/09-approval.md' })).toEqual([]);
       expect(pre(tool, { file_path: '.env', offset: 1, limit: 20 })).toEqual([]);
     }
   );
@@ -64,7 +64,7 @@ describe('Cursor read tools are not writes', () => {
 describe('paths reached through symlinks or other letter case', () => {
   it('recognises a project file reached through a symlinked project path', () => {
     const root = writeTree(tmpDir(), {
-      '.claude/forgeflow/run.mjs': '',
+      '.claude/wishforge/run.mjs': '',
       '.claude/settings.json': '{}',
     });
     const link = join(tmpDir(), 'link');
@@ -81,15 +81,15 @@ describe('paths reached through symlinks or other letter case', () => {
         root
       );
     expect(write(join(link, '.claude/settings.json'))[0].path).toBe('.claude/settings.json');
-    expect(write('.claude/forgeflow/gates/approval-gate.mjs')[0].path).toBe(
-      '.claude/forgeflow/gates/approval-gate.mjs'
+    expect(write('.claude/wishforge/gates/approval-gate.mjs')[0].path).toBe(
+      '.claude/wishforge/gates/approval-gate.mjs'
     );
     expect(write(join(link, 'migrations/001.sql'))[0].path).toBe('migrations/001.sql');
   });
 
   it('recognises a file reached through a symlinked folder inside the project', () => {
     const root = writeTree(tmpDir(), {
-      '.claude/forgeflow/run.mjs': '',
+      '.claude/wishforge/run.mjs': '',
       '.claude/settings.json': '{}',
     });
     symlinkSync(join(root, '.claude'), join(root, 'linkc'));
@@ -108,11 +108,11 @@ describe('paths reached through symlinks or other letter case', () => {
   });
 
   it('protects its files whatever the letter case', () => {
-    const root = writeTree(tmpDir(), { '.claude/forgeflow/run.mjs': '' });
+    const root = writeTree(tmpDir(), { '.claude/wishforge/run.mjs': '' });
     for (const path of [
       '.Claude/settings.json',
-      '.CLAUDE/forgeflow/run.mjs',
-      '.forgeflow/CONFIG.json',
+      '.CLAUDE/wishforge/run.mjs',
+      '.wishforge/CONFIG.json',
     ]) {
       expect(selfProtect({ kind: 'write', path, content: '' }, root), path).toContain(
         'is protected'
@@ -120,13 +120,13 @@ describe('paths reached through symlinks or other letter case', () => {
     }
     expect(
       approval(
-        { kind: 'write', path: '.forgeflow/runs/r/09-APPROVAL.md', content: '' },
+        { kind: 'write', path: '.wishforge/runs/r/09-APPROVAL.md', content: '' },
         { runs: [] }
       ).block
     ).toBeDefined();
     expect(
       approval(
-        { kind: 'shell', command: 'echo x > .forgeflow/runs/r/09-Approval.MD' },
+        { kind: 'shell', command: 'echo x > .wishforge/runs/r/09-Approval.MD' },
         { runs: [] }
       ).block
     ).toBeDefined();
@@ -138,26 +138,26 @@ describe('shell self-protection', () => {
   const shell = (command) => selfProtect({ kind: 'shell', command }, root);
 
   it.each([
-    'rm -rf .claude/forgeflow',
-    'mv .claude/forgeflow /tmp/x',
-    'cd x && rm -r .cursor/forgeflow/gates',
-    'echo "" > .codex/forgeflow/run.mjs',
-    'cp /tmp/evil.mjs .opencode/forgeflow/gates/secret-guard.mjs',
-    'sed -i s/2/0/ .claude/forgeflow/runtime.mjs',
-    'node bin/forgeflow.js remove approval-gate --target claude',
-    'npx forgeflow remove secret-guard --target cursor',
+    'rm -rf .claude/wishforge',
+    'mv .claude/wishforge /tmp/x',
+    'cd x && rm -r .cursor/wishforge/gates',
+    'echo "" > .codex/wishforge/run.mjs',
+    'cp /tmp/evil.mjs .opencode/wishforge/gates/secret-guard.mjs',
+    'sed -i s/2/0/ .claude/wishforge/runtime.mjs',
+    'node bin/wishforge.js remove approval-gate --target claude',
+    'npx wishforge remove secret-guard --target cursor',
   ])('blocks "%s"', (command) => {
     expect(shell(command)).toContain('is protected');
   });
 
   it.each([
-    'git add .claude/forgeflow/run.mjs',
-    'git add -A && git commit -m "Install forgeflow gates"',
-    'ls .claude/forgeflow/gates',
-    'cat .claude/forgeflow/gates/secret-guard.mjs',
-    'git commit -m "forgeflow: remove dead code"',
-    'git diff -- .cursor/forgeflow',
-    'forgeflow status',
+    'git add .claude/wishforge/run.mjs',
+    'git add -A && git commit -m "Install wishforge gates"',
+    'ls .claude/wishforge/gates',
+    'cat .claude/wishforge/gates/secret-guard.mjs',
+    'git commit -m "wishforge: remove dead code"',
+    'git diff -- .cursor/wishforge',
+    'wishforge status',
     'rm -rf node_modules',
   ])('allows "%s"', (command) => {
     expect(shell(command)).toBeUndefined();
@@ -233,7 +233,7 @@ describe('finding runs', () => {
 
 describe('approval-gate with imperfect state', () => {
   const run = (overrides = {}) => {
-    const dir = join(tmpDir(), '.forgeflow/runs', overrides.name ?? 'r1');
+    const dir = join(tmpDir(), '.wishforge/runs', overrides.name ?? 'r1');
     mkdirSync(dir, { recursive: true });
     return {
       dir,
@@ -328,10 +328,10 @@ describe('secret-guard false positives', () => {
 });
 
 describe('wiring leaves the user entries alone', () => {
-  const lookalike = { hooks: [{ type: 'command', command: 'node tools/forgeflow/run.mjs lint' }] };
+  const lookalike = { hooks: [{ type: 'command', command: 'node tools/wishforge/run.mjs lint' }] };
   const notify = { type: 'command', command: './notify.sh' };
 
-  it('keeps a user entry in an event forgeflow does not wire, even if it names a similar path', () => {
+  it('keeps a user entry in an event wishforge does not wire, even if it names a similar path', () => {
     const config = { hooks: { PostToolUse: [lookalike], Stop: [lookalike] } };
     const merged = mergeWiring(config, claude.wiring);
     expect(merged.hooks.PostToolUse).toEqual([lookalike]);
@@ -339,7 +339,7 @@ describe('wiring leaves the user entries alone', () => {
     expect(stripWiring(merged, claude.wiring)).toEqual(config);
   });
 
-  it('keeps a handler the user added inside a forgeflow group', () => {
+  it('keeps a handler the user added inside a wishforge group', () => {
     const merged = mergeWiring(undefined, claude.wiring);
     merged.hooks.Stop[0].hooks.push(notify);
     const again = mergeWiring(merged, claude.wiring);
@@ -359,7 +359,7 @@ describe('wiring leaves the user entries alone', () => {
       version: 1,
       hooks: { stop: [mine], afterFileEdit: [mine] },
     });
-    // A hooks object forgeflow emptied is dropped; the file is still bare.
+    // A hooks object wishforge emptied is dropped; the file is still bare.
     expect(stripWiring(mergeWiring(undefined, cursor.wiring), cursor.wiring)).toEqual({
       version: 1,
     });

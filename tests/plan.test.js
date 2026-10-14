@@ -37,10 +37,10 @@ describe('planInstall', () => {
     ]);
   });
 
-  it('reports a conflict for a file forgeflow did not install', () => {
+  it('reports a conflict for a file wishforge did not install', () => {
     const root = writeTree(tmpDir(), { 'dir/a.md': 'theirs' });
     expect(planInstall(root, [file], [])).toEqual([
-      { type: 'conflict', ...file, reason: 'exists and was not installed by forgeflow' },
+      { type: 'conflict', ...file, reason: 'exists and was not installed by wishforge' },
     ]);
   });
 
