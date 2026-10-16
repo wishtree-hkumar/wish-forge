@@ -1,13 +1,13 @@
 import { parse as parseToml } from 'smol-toml';
 import { describe, expect, it } from 'vitest';
-import * as claude from '../src/adapters/claude.js';
-import * as codex from '../src/adapters/codex.js';
-import * as cursor from '../src/adapters/cursor.js';
-import { getAdapter, targetNames } from '../src/adapters/index.js';
-import * as opencode from '../src/adapters/opencode.js';
-import { UsageError } from '../src/errors.js';
-import { parseFrontmatter } from '../src/frontmatter.js';
-import { item, skill } from './helpers.js';
+import * as claude from '../src/adapters/claude';
+import * as codex from '../src/adapters/codex';
+import * as cursor from '../src/adapters/cursor';
+import { getAdapter, targetNames } from '../src/adapters/index';
+import * as opencode from '../src/adapters/opencode';
+import { UsageError } from '../src/errors';
+import { parseFrontmatter } from '../src/frontmatter';
+import { item, skill } from './helpers';
 
 const ctx = { scope: 'project' as const, version: '0.1.0' };
 const dirs = { cwd: '/work/app', home: '/home/dev' };

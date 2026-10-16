@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { check } from '../catalog/hooks/session-memory/gate.mjs';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { capture, tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { capture, tmpDir, writeTree } from './helpers';
 
 const T0 = Date.parse('2026-10-13T09:00:00.000Z');
 const ctx = (root, extra = {}) => ({

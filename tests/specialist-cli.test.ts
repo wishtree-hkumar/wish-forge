@@ -1,8 +1,8 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { main } from '../src/cli.js';
-import { agentMd, capture, skillMd, tmpDir, writeTree } from './helpers.js';
+import { main } from '../src/cli';
+import { agentMd, capture, skillMd, tmpDir, writeTree } from './helpers';
 
 let catalogDir;
 let cwd;

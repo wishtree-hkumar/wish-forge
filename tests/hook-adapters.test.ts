@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { Item } from '../src/types.js';
-import * as claude from '../src/adapters/claude.js';
-import * as codex from '../src/adapters/codex.js';
-import * as cursor from '../src/adapters/cursor.js';
-import * as opencode from '../src/adapters/opencode.js';
-import { isWired, mergeWiring } from '../src/wiring.js';
+import type { Item } from '../src/types';
+import * as claude from '../src/adapters/claude';
+import * as codex from '../src/adapters/codex';
+import * as cursor from '../src/adapters/cursor';
+import * as opencode from '../src/adapters/opencode';
+import { isWired, mergeWiring } from '../src/wiring';
 
 const ctx = { scope: 'project' as const, version: '0.2.0' };
 const hook: Item = {

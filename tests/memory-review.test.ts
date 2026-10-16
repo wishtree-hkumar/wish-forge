@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { check } from '../catalog/hooks/session-memory/gate.mjs';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { agentMd, capture, ruleMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { agentMd, capture, ruleMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 const T0 = Date.parse('2026-10-13T09:00:00.000Z');
 const ctx = (root, extra = {}) => ({

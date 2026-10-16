@@ -1,10 +1,10 @@
 import { readdirSync, rmdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { getAdapter } from './adapters/index.js';
-import { appliesTo } from './adapters/shared.js';
-import { applyActions, checkWritable } from './apply.js';
-import { ConflictError, UsageError } from './errors.js';
-import { readLock, sha256, writeLock } from './lock.js';
+import { getAdapter } from './adapters/index';
+import { appliesTo } from './adapters/shared';
+import { applyActions, checkWritable } from './apply';
+import { ConflictError, UsageError } from './errors';
+import { readLock, sha256, writeLock } from './lock';
 import {
   planInstall,
   planRemove,
@@ -13,9 +13,9 @@ import {
   planWire,
   rulesState,
   wiringState,
-} from './plan.js';
-import { findId, resolve } from './resolve.js';
-import type { FileState } from './plan.js';
+} from './plan';
+import { findId, resolve } from './resolve';
+import type { FileState } from './plan';
 import type {
   Action,
   ActionType,
@@ -29,8 +29,8 @@ import type {
   RulesRecord,
   Scope,
   WiringRecord,
-} from './types.js';
-import { RUNTIME_ID } from './wiring.js';
+} from './types';
+import { RUNTIME_ID } from './wiring';
 
 // One row of a report: an action, named by the item it is for.
 export interface ReportRow {

@@ -2,11 +2,11 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { adapters } from '../src/adapters/index.js';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { CatalogError } from '../src/errors.js';
-import { agentMd, capture, tmpDir, writeTree } from './helpers.js';
+import { adapters } from '../src/adapters/index';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { CatalogError } from '../src/errors';
+import { agentMd, capture, tmpDir, writeTree } from './helpers';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const FLOWS = ['forge-quick', 'forge-full'];

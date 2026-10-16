@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseFrontmatter } from '../src/frontmatter.js';
+import { parseFrontmatter } from '../src/frontmatter';
 
 describe('parseFrontmatter', () => {
   it('splits data and body', () => {

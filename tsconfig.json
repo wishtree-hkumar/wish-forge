@@ -1,13 +1,14 @@
 {
-  // Type-checks the CLI and the catalog's JavaScript. The catalog stays
-  // JavaScript because it is copied into projects and run there with plain
-  // node; its types are JSDoc. tsconfig.build.json compiles the CLI, and
-  // tests/tsconfig.json checks the tests.
+  // Type-checks the CLI and the catalog's JavaScript; esbuild does the build.
+  // Imports name a module without an extension, as a bundler resolves them.
+  // The catalog stays JavaScript because it is copied into projects and run
+  // there with plain node; its types are JSDoc. tests/tsconfig.json checks
+  // the tests.
   "compilerOptions": {
     "target": "es2023",
     "lib": ["es2023"],
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "types": ["node"],
     "strict": true,
     "noEmit": true,

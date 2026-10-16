@@ -1,11 +1,11 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { EVENTS, loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { CatalogError } from '../src/errors.js';
-import { agentMd, capture, ruleMd, skillMd, tmpDir, writeTree } from './helpers.js';
-import { runtimeTree } from './hook-helpers.js';
+import { EVENTS, loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { CatalogError } from '../src/errors';
+import { agentMd, capture, ruleMd, skillMd, tmpDir, writeTree } from './helpers';
+import { runtimeTree } from './hook-helpers';
 
 const hook = (name, extra = '') => ({
   [`hooks/${name}/HOOK.md`]: `---\nname: ${name}\ndescription: Hook ${name}.\nevents: [start, compact, write]\n${extra}---\nAbout ${name}.\n`,

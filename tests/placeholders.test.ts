@@ -1,14 +1,14 @@
 import { parse as parseToml } from 'smol-toml';
 import { describe, expect, it } from 'vitest';
-import type { Adapter } from '../src/types.js';
-import * as claude from '../src/adapters/claude.js';
-import * as codex from '../src/adapters/codex.js';
-import * as cursor from '../src/adapters/cursor.js';
-import * as opencode from '../src/adapters/opencode.js';
-import { loadCatalog } from '../src/catalog.js';
-import { CatalogError } from '../src/errors.js';
-import { PLACEHOLDERS, fillPlaceholders, unknownPlaceholders } from '../src/placeholders.js';
-import { agentMd, item, ruleMd, skill, skillMd, tmpDir, writeTree } from './helpers.js';
+import type { Adapter } from '../src/types';
+import * as claude from '../src/adapters/claude';
+import * as codex from '../src/adapters/codex';
+import * as cursor from '../src/adapters/cursor';
+import * as opencode from '../src/adapters/opencode';
+import { loadCatalog } from '../src/catalog';
+import { CatalogError } from '../src/errors';
+import { PLACEHOLDERS, fillPlaceholders, unknownPlaceholders } from '../src/placeholders';
+import { agentMd, item, ruleMd, skill, skillMd, tmpDir, writeTree } from './helpers';
 
 const load = (tree) => loadCatalog(writeTree(tmpDir(), tree));
 const places = {

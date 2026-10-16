@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
+import { loadCatalog } from '../src/catalog';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const specialists = [...catalog.values()].filter(

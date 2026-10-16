@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { UsageError } from '../src/errors.js';
-import { findId, resolve } from '../src/resolve.js';
-import { item, skill } from './helpers.js';
+import { UsageError } from '../src/errors';
+import { findId, resolve } from '../src/resolve';
+import { item, skill } from './helpers';
 
 const catalog = new Map(
   [

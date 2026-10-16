@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { CatalogError, UsageError } from '../src/errors.js';
-import { findId } from '../src/resolve.js';
-import { agentMd, capture, ruleMd, tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { CatalogError, UsageError } from '../src/errors';
+import { findId } from '../src/resolve';
+import { agentMd, capture, ruleMd, tmpDir, writeTree } from './helpers';
 
 const load = (tree) => loadCatalog(writeTree(tmpDir(), tree));
 const TS = ruleMd('ts', 'paths:\n  - "**/*.ts"\n  - "**/*.tsx"\n');

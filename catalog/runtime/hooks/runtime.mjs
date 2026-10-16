@@ -40,7 +40,7 @@ import { pathToFileURL } from 'node:url';
  *   matchesGlob: typeof matchesGlob,
  * }} GateContext
  * @typedef {{ block?: string, note?: string, context?: string, tell?: string }} GateResult
- * @typedef {{ name: string, check: (event: GateEvent, ctx: GateContext) => GateResult | void }} Gate
+ * @typedef {{ name: string, check: (event: GateEvent, ctx: GateContext) => GateResult | undefined }} Gate
  * @typedef {{
  *   events: GateEvent[],
  *   block?: string,

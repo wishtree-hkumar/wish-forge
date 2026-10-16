@@ -1,8 +1,8 @@
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
-import { ConfigError } from './errors.js';
-import { sha256 } from './lock.js';
-import { isBare, isWired, mergeWiring, parseConfig, serialize, stripWiring } from './wiring.js';
+import { ConfigError } from './errors';
+import { sha256 } from './lock';
+import { isBare, isWired, mergeWiring, parseConfig, serialize, stripWiring } from './wiring';
 import {
   RULES_ID,
   foundEntries,
@@ -13,7 +13,7 @@ import {
   parseInstructions,
   stripBlock,
   stripInstructions,
-} from './rules-wiring.js';
+} from './rules-wiring';
 import type {
   Action,
   ActionType,
@@ -25,7 +25,7 @@ import type {
   RulesRecord,
   RulesWiring,
   WiringRecord,
-} from './types.js';
+} from './types';
 
 export type FileState = 'ok' | 'missing' | 'unreadable';
 

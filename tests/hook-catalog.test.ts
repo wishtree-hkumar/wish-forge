@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { CatalogError } from '../src/errors.js';
-import { findId } from '../src/resolve.js';
-import { agentMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { CatalogError } from '../src/errors';
+import { findId } from '../src/resolve';
+import { agentMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 const load = (tree) => loadCatalog(writeTree(tmpDir(), tree));
 

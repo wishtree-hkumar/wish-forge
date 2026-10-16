@@ -1,5 +1,5 @@
-import { UsageError } from './errors.js';
-import type { Catalog, Item } from './types.js';
+import { UsageError } from './errors';
+import type { Catalog, Item } from './types';
 
 const TYPES = ['agent', 'skill', 'hook', 'rule'];
 const unknown = (ref: string) =>

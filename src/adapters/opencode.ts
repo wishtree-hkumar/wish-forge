@@ -1,14 +1,6 @@
 import { join } from 'node:path';
-import {
-  appliesHeader,
-  filled,
-  hookFiles,
-  markdown,
-  ruleFile,
-  skillFiles,
-  stamp,
-} from './shared.js';
-import type { Dirs, HookWiring, Item, JsonRulesWiring, RenderedFile, Scope } from '../types.js';
+import { appliesHeader, filled, hookFiles, markdown, ruleFile, skillFiles, stamp } from './shared';
+import type { Dirs, HookWiring, Item, JsonRulesWiring, RenderedFile, Scope } from '../types';
 
 export const name = 'opencode';
 // The global folder has no ".opencode/" prefix: see root().

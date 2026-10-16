@@ -1,16 +1,16 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import * as claudeAdapter from '../src/adapters/claude.js';
-import * as cursorAdapter from '../src/adapters/cursor.js';
-import { loadCatalog } from '../src/catalog.js';
-import { ConfigError, LockError, UsageError } from '../src/errors.js';
-import { lockPath, readLock } from '../src/lock.js';
-import { add, remove, status, update } from '../src/ops.js';
-import { isWired } from '../src/wiring.js';
-import type { Context } from '../src/types.js';
-import { agentMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import * as claudeAdapter from '../src/adapters/claude';
+import * as cursorAdapter from '../src/adapters/cursor';
+import { loadCatalog } from '../src/catalog';
+import { ConfigError, LockError, UsageError } from '../src/errors';
+import { lockPath, readLock } from '../src/lock';
+import { add, remove, status, update } from '../src/ops';
+import { isWired } from '../src/wiring';
+import type { Context } from '../src/types';
+import { agentMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 const RUNTIME = 'runtime:hooks';
 const tree = {

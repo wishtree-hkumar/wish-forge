@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PATTERNS } from '../catalog/hooks/secret-guard/gate.mjs';
 import { SECRET_PATTERNS, check } from '../catalog/hooks/session-memory/gate.mjs';
-import { tmpDir, writeTree } from './helpers.js';
+import { tmpDir, writeTree } from './helpers';
 
 const T0 = Date.parse('2026-10-13T09:00:00.000Z');
 const MINUTE = 60 * 1000;

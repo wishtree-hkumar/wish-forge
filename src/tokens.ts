@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { findRun } from '../catalog/runtime/hooks/runtime.mjs';
-import { getAdapter } from './adapters/index.js';
-import { appliesTo } from './adapters/shared.js';
-import { readLock } from './lock.js';
-import type { Context, Item, LockFileEntry } from './types.js';
+import { getAdapter } from './adapters/index';
+import { appliesTo } from './adapters/shared';
+import { readLock } from './lock';
+import type { Context, Item, LockFileEntry } from './types';
 
 export interface TokenRow {
   label: string;

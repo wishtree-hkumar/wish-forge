@@ -1,5 +1,5 @@
-import { ConfigError } from './errors.js';
-import type { HarnessConfig, JsonRulesWiring } from './types.js';
+import { ConfigError } from './errors';
+import type { HarnessConfig, JsonRulesWiring } from './types';
 
 // Row id for the block or entry in install reports.
 export const RULES_ID = 'rules';

@@ -1,15 +1,15 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Item } from '../src/types.js';
-import * as claude from '../src/adapters/claude.js';
-import * as codex from '../src/adapters/codex.js';
-import * as cursor from '../src/adapters/cursor.js';
-import * as opencode from '../src/adapters/opencode.js';
-import { appliesTo } from '../src/adapters/shared.js';
-import { main } from '../src/cli.js';
-import { parseFrontmatter } from '../src/frontmatter.js';
-import { capture, ruleMd, tmpDir, writeTree } from './helpers.js';
+import type { Item } from '../src/types';
+import * as claude from '../src/adapters/claude';
+import * as codex from '../src/adapters/codex';
+import * as cursor from '../src/adapters/cursor';
+import * as opencode from '../src/adapters/opencode';
+import { appliesTo } from '../src/adapters/shared';
+import { main } from '../src/cli';
+import { parseFrontmatter } from '../src/frontmatter';
+import { capture, ruleMd, tmpDir, writeTree } from './helpers';
 
 const project = { scope: 'project' as const, version: '0.1.0' };
 const global = { scope: 'global' as const, version: '0.1.0' };

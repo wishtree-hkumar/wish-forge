@@ -16,7 +16,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.build.json && node -e \"require('fs').chmodSync('dist/bin.js', 0o755)\"",
+    "build": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && esbuild src/bin.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=dist/bin.js && node -e \"require('fs').chmodSync('dist/bin.js', 0o755)\"",
     "typecheck": "tsc -p tsconfig.json && tsc -p tests",
     "prepare": "npm run build",
     "pretest": "npm run build",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.43",
+    "esbuild": "^0.28.2",
     "oxlint": "^1.75.0",
     "prettier": "^3.6.2",
     "smol-toml": "^1.9.1",

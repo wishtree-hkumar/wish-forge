@@ -12,7 +12,7 @@ import {
   selfProtect,
   toRelative,
 } from '../catalog/runtime/hooks/runtime.mjs';
-import { tmpDir, writeTree } from './helpers.js';
+import { tmpDir, writeTree } from './helpers';
 
 const ROOT = '/work/app';
 

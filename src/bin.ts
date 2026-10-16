@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { homedir } from 'node:os';
-import { main } from './cli.js';
+import { main } from './cli';
 
 // A reader that stops early, such as `wishforge list | head`, closes the pipe:
 // that ends the command, it is not an error.

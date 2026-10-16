@@ -4,11 +4,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { check } from '../catalog/hooks/session-memory/gate.mjs';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { add } from '../src/ops.js';
-import { capture, ruleMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { add } from '../src/ops';
+import { capture, ruleMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const T0 = Date.parse('2026-10-13T09:00:00.000Z');

@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { check } from '../catalog/hooks/session-memory/gate.mjs';
-import { loadCatalog } from '../src/catalog.js';
-import { add } from '../src/ops.js';
-import { tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { add } from '../src/ops';
+import { tmpDir, writeTree } from './helpers';
 
 const T0 = Date.parse('2026-10-13T09:00:00.000Z');
 const ctx = (root, extra = {}) => ({

@@ -1,9 +1,9 @@
-import { UsageError } from '../errors.js';
-import type { Adapter } from '../types.js';
-import * as claude from './claude.js';
-import * as codex from './codex.js';
-import * as cursor from './cursor.js';
-import * as opencode from './opencode.js';
+import { UsageError } from '../errors';
+import type { Adapter } from '../types';
+import * as claude from './claude';
+import * as codex from './codex';
+import * as cursor from './cursor';
+import * as opencode from './opencode';
 
 // To support another harness: add its module and one line here.
 export const adapters: Record<string, Adapter> = { claude, codex, opencode, cursor };

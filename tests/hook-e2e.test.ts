@@ -3,9 +3,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { add } from '../src/ops.js';
-import { tmpDir } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { add } from '../src/ops';
+import { tmpDir } from './helpers';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const GATES = ['approval-gate', 'secret-guard', 'protected-paths', 'test-reminder'];

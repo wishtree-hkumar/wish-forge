@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import type { Item, Output } from '../src/types.js';
+import type { Item, Output } from '../src/types';
 
 export function tmpDir() {
   return mkdtempSync(join(tmpdir(), 'wishforge-'));

@@ -1,6 +1,6 @@
-import { loadCatalog } from './catalog.js';
-import { status } from './ops.js';
-import type { TargetStatus } from './ops.js';
+import { loadCatalog } from './catalog';
+import { status } from './ops';
+import type { TargetStatus } from './ops';
 
 export interface Check {
   name: string;

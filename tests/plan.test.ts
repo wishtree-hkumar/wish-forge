@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { sha256 } from '../src/lock.js';
-import { planInstall, planRemove } from '../src/plan.js';
-import { tmpDir, writeTree } from './helpers.js';
+import { sha256 } from '../src/lock';
+import { planInstall, planRemove } from '../src/plan';
+import { tmpDir, writeTree } from './helpers';
 
 const file = { path: 'dir/a.md', content: 'new' };
 const types = (actions) => actions.map((action) => [action.type, action.path]);

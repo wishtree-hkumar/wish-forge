@@ -1,12 +1,12 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { ConflictError, UsageError } from '../src/errors.js';
-import { lockPath, readLock } from '../src/lock.js';
-import { add, remove, status, update } from '../src/ops.js';
-import type { Context } from '../src/types.js';
-import { agentMd, skillMd, tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { ConflictError, UsageError } from '../src/errors';
+import { lockPath, readLock } from '../src/lock';
+import { add, remove, status, update } from '../src/ops';
+import type { Context } from '../src/types';
+import { agentMd, skillMd, tmpDir, writeTree } from './helpers';
 
 const tree = {
   'agents/alpha.md': agentMd('alpha'),

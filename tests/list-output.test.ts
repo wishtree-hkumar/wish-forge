@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { main } from '../src/cli.js';
-import { agentMd, capture, ruleMd, skillMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import { main } from '../src/cli';
+import { agentMd, capture, ruleMd, skillMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 let catalogDir;
 const run = (argv, stdout = capture()) => {

@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseToml } from 'smol-toml';
 import { describe, expect, it } from 'vitest';
-import { adapters } from '../src/adapters/index.js';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { capture, tmpDir } from './helpers.js';
+import { adapters } from '../src/adapters/index';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { capture, tmpDir } from './helpers';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const agent = catalog.get('agent:standards-reviewer');

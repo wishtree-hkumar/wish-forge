@@ -7,9 +7,9 @@ import {
   marker,
   ruleFile,
   skillFiles,
-} from './shared.js';
-import { END, START } from '../rules-wiring.js';
-import type { BlockRulesWiring, Dirs, Item, RenderedFile, Scope } from '../types.js';
+} from './shared';
+import { END, START } from '../rules-wiring';
+import type { BlockRulesWiring, Dirs, Item, RenderedFile, Scope } from '../types';
 
 // oxlint-disable-next-line no-control-regex -- matching control characters is the point
 const CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/g;

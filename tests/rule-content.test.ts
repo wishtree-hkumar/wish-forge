@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { capture, tmpDir } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { capture, tmpDir } from './helpers';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const rules = [...catalog.values()].filter((item) => item.type === 'rule');

@@ -1,16 +1,16 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { getAdapter, targetNames } from './adapters/index.js';
-import { STAGES, loadCatalog } from './catalog.js';
-import { runDoctor } from './doctor.js';
-import { ConflictError, UsageError } from './errors.js';
-import { add, remove, status, update } from './ops.js';
-import type { Result, TargetStatus } from './ops.js';
-import { findId } from './resolve.js';
-import { estimateTokens, tokensOf } from './tokens.js';
-import type { TargetTokens } from './tokens.js';
-import type { ActionType, Catalog, Context, Item, Output } from './types.js';
+import { getAdapter, targetNames } from './adapters/index';
+import { STAGES, loadCatalog } from './catalog';
+import { runDoctor } from './doctor';
+import { ConflictError, UsageError } from './errors';
+import { add, remove, status, update } from './ops';
+import type { Result, TargetStatus } from './ops';
+import { findId } from './resolve';
+import { estimateTokens, tokensOf } from './tokens';
+import type { TargetTokens } from './tokens';
+import type { ActionType, Catalog, Context, Item, Output } from './types';
 
 // Paths are relative to this file, which is src/cli.ts or, built, dist/cli.js.
 const VERSION: string = JSON.parse(

@@ -331,11 +331,11 @@ To support another harness, add `src/adapters/<name>.ts` and register it in `src
 ## Development
 
 ```bash
-npm run build     # compile src/ to dist/ (npm install does this too)
+npm run build     # bundle src/ into dist/bin.js (npm install does this too)
 npm test          # build, then run the tests
 npm run typecheck # tsc over src/, catalog/ and tests/
 npm run lint      # oxlint
 npm run format    # prettier
 ```
 
-The CLI is TypeScript in `src/`, compiled to `dist/`. The catalog's hook scripts stay JavaScript, because they are copied into projects and run there with plain `node`; they are type-checked through JSDoc. A gate may import nothing, so each one describes the events and context it reads in its own `@typedef`s.
+The CLI is TypeScript in `src/`. esbuild bundles it into `dist/bin.js`, and `tsc` only type-checks, so imports name a module without an extension. The catalog's hook scripts stay JavaScript, because they are copied into projects and run there with plain `node`; they are type-checked through JSDoc. A gate may import nothing, so each one describes the events and context it reads in its own `@typedef`s.

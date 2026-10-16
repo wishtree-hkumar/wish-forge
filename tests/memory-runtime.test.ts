@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { evaluate, normalize, respond } from '../catalog/runtime/hooks/runtime.mjs';
-import { loadCatalog } from '../src/catalog.js';
-import { add } from '../src/ops.js';
-import { tmpDir } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { add } from '../src/ops';
+import { tmpDir } from './helpers';
 
 const ROOT = '/work/app';
 const ALLOW = { code: 0, stdout: '', stderr: '' };

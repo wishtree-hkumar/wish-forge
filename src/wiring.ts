@@ -1,5 +1,5 @@
-import { ConfigError } from './errors.js';
-import type { HarnessConfig, HookWiring } from './types.js';
+import { ConfigError } from './errors';
+import type { HarnessConfig, HookWiring } from './types';
 
 export const RUNTIME_ID = 'runtime:hooks';
 

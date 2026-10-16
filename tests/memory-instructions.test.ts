@@ -1,17 +1,12 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import * as opencode from '../src/adapters/opencode.js';
-import { main } from '../src/cli.js';
-import { readLock } from '../src/lock.js';
-import {
-  foundEntries,
-  handWired,
-  mergeInstructions,
-  stripInstructions,
-} from '../src/rules-wiring.js';
-import { capture, ruleMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import * as opencode from '../src/adapters/opencode';
+import { main } from '../src/cli';
+import { readLock } from '../src/lock';
+import { foundEntries, handWired, mergeInstructions, stripInstructions } from '../src/rules-wiring';
+import { capture, ruleMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 const RULES = '.opencode/wishforge/rules/*.md';
 const MEMORY = ['.wishforge/memory/*.md', '.wishforge/local/*.md'];

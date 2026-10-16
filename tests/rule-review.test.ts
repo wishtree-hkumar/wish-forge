@@ -2,11 +2,11 @@ import { chmodSync, existsSync, readFileSync, statSync, writeFileSync } from 'no
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { readLock } from '../src/lock.js';
-import { END, START, handWired } from '../src/rules-wiring.js';
-import { capture, ruleMd, tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { readLock } from '../src/lock';
+import { END, START, handWired } from '../src/rules-wiring';
+import { capture, ruleMd, tmpDir, writeTree } from './helpers';
 
 let catalogDir;
 let cwd;

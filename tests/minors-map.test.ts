@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { add } from '../src/ops.js';
-import { tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { add } from '../src/ops';
+import { tmpDir, writeTree } from './helpers';
 
 const catalog = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 const MAP =

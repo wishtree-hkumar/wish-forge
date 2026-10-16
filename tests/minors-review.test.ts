@@ -4,10 +4,10 @@ import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { check as memory } from '../catalog/hooks/session-memory/gate.mjs';
 import { check as testReminder } from '../catalog/hooks/test-reminder/gate.mjs';
-import { loadCatalog } from '../src/catalog.js';
-import { main } from '../src/cli.js';
-import { CatalogError } from '../src/errors.js';
-import { agentMd, capture, tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { main } from '../src/cli';
+import { CatalogError } from '../src/errors';
+import { agentMd, capture, tmpDir, writeTree } from './helpers';
 
 const real = loadCatalog(fileURLToPath(new URL('../catalog', import.meta.url)));
 let cwd;

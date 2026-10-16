@@ -1,6 +1,6 @@
 import { stringify } from 'yaml';
-import { filled, hookFiles, isHookItem, markdown, ruleFile, skillFiles } from './shared.js';
-import type { Dirs, HookWiring, Item, RenderedFile, Scope } from '../types.js';
+import { filled, hookFiles, isHookItem, markdown, ruleFile, skillFiles } from './shared';
+import type { Dirs, HookWiring, Item, RenderedFile, Scope } from '../types';
 
 export const name = 'cursor';
 export const agentDirs = { project: '.cursor/agents', global: '~/.cursor/agents' };

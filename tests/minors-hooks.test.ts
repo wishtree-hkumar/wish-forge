@@ -4,9 +4,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { check as protectedPaths } from '../catalog/hooks/protected-paths/gate.mjs';
 import { check as testReminder } from '../catalog/hooks/test-reminder/gate.mjs';
 import { evaluate, matchesGlob } from '../catalog/runtime/hooks/runtime.mjs';
-import { main } from '../src/cli.js';
-import { capture, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import { main } from '../src/cli';
+import { capture, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 let catalogDir;
 let cwd;
@@ -155,6 +155,7 @@ describe('gate state', () => {
       name: 'probe',
       check: (_event, ctx) => {
         ctx.state.set({ seen: true });
+        return undefined;
       },
     };
     evaluate({

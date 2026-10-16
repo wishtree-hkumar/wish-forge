@@ -9,8 +9,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { LockError } from './errors.js';
-import type { Lock } from './types.js';
+import { LockError } from './errors';
+import type { Lock } from './types';
 
 export const LOCK_VERSION = 1;
 

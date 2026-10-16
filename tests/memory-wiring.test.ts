@@ -1,12 +1,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import * as claude from '../src/adapters/claude.js';
-import * as codex from '../src/adapters/codex.js';
-import * as cursor from '../src/adapters/cursor.js';
-import { main } from '../src/cli.js';
-import { capture, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import * as claude from '../src/adapters/claude';
+import * as codex from '../src/adapters/codex';
+import * as cursor from '../src/adapters/cursor';
+import { main } from '../src/cli';
+import { capture, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 describe('wiring entries', () => {
   it.each([

@@ -3,9 +3,9 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { main } from '../src/cli.js';
-import { agentMd, capture, skillMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import { main } from '../src/cli';
+import { agentMd, capture, skillMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 const BIN = fileURLToPath(new URL('../dist/bin.js', import.meta.url));
 

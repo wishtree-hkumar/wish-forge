@@ -1,6 +1,6 @@
 import { stringify } from 'yaml';
-import { fillPlaceholders } from '../placeholders.js';
-import type { HookWiring, Item, Places, RenderedFile } from '../types.js';
+import { fillPlaceholders } from '../placeholders';
+import type { HookWiring, Item, Places, RenderedFile } from '../types';
 
 export function marker(item: Pick<Item, 'id'>, version: string): string {
   return `managed by wishforge: ${item.id}@${version}`;

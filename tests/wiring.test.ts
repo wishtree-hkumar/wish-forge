@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { HookEntry } from '../src/types.js';
-import { ConfigError } from '../src/errors.js';
-import {
-  isBare,
-  isWired,
-  mergeWiring,
-  parseConfig,
-  serialize,
-  stripWiring,
-} from '../src/wiring.js';
+import type { HookEntry } from '../src/types';
+import { ConfigError } from '../src/errors';
+import { isBare, isWired, mergeWiring, parseConfig, serialize, stripWiring } from '../src/wiring';
 
 const handler = {
   type: 'command',

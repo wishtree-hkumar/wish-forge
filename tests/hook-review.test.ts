@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, symlinkSync, utimesSync, writeFileSync } from 'n
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { GateEvent } from '../catalog/runtime/hooks/runtime.mjs';
-import type { HookEntry } from '../src/types.js';
+import type { HookEntry } from '../src/types';
 import { check as approval } from '../catalog/hooks/approval-gate/gate.mjs';
 import { check as secretGuard } from '../catalog/hooks/secret-guard/gate.mjs';
 import {
@@ -14,10 +14,10 @@ import {
   normalize,
   selfProtect,
 } from '../catalog/runtime/hooks/runtime.mjs';
-import * as claude from '../src/adapters/claude.js';
-import * as cursor from '../src/adapters/cursor.js';
-import { isWired, mergeWiring, stripWiring } from '../src/wiring.js';
-import { tmpDir, writeTree } from './helpers.js';
+import * as claude from '../src/adapters/claude';
+import * as cursor from '../src/adapters/cursor';
+import { isWired, mergeWiring, stripWiring } from '../src/wiring';
+import { tmpDir, writeTree } from './helpers';
 
 // The events these tests build are all writes.
 type WriteEvent = Extract<GateEvent, { kind: 'write' }>;

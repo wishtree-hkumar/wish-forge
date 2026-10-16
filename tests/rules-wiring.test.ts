@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError } from '../src/errors.js';
+import { ConfigError } from '../src/errors';
 import {
   END,
   START,
@@ -10,7 +10,7 @@ import {
   parseInstructions,
   stripBlock,
   stripInstructions,
-} from '../src/rules-wiring.js';
+} from '../src/rules-wiring';
 
 const P = 'AGENTS.md';
 const block = (line) => `${START}\n## Coding standards\n\n- ${line}\n${END}`;

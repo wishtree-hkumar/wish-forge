@@ -13,7 +13,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join } from 'node:path';
-import type { Action, ActionType } from './types.js';
+import type { Action, ActionType } from './types';
 
 // wire and unwire rewrite a harness config with only wishforge's entries
 // changed, so they are never conflicts and do not depend on force.

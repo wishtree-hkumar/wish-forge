@@ -1,4 +1,4 @@
-import type { Places } from './types.js';
+import type { Places } from './types';
 
 // Tokens an agent or skill body may contain. Each adapter fills them with its
 // own locations, so the text looks only in the harness it is installed for.

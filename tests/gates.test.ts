@@ -6,7 +6,7 @@ import { check as protectedPaths } from '../catalog/hooks/protected-paths/gate.m
 import { check as secretGuard } from '../catalog/hooks/secret-guard/gate.mjs';
 import { check as testReminder } from '../catalog/hooks/test-reminder/gate.mjs';
 import { matchesGlob } from '../catalog/runtime/hooks/runtime.mjs';
-import { tmpDir } from './helpers.js';
+import { tmpDir } from './helpers';
 
 function context(overrides: Record<string, any> = {}) {
   let stored = {};

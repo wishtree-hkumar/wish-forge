@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { loadCatalog } from '../src/catalog.js';
-import { CatalogError } from '../src/errors.js';
-import { agentMd, skillMd, tmpDir, writeTree } from './helpers.js';
+import { loadCatalog } from '../src/catalog';
+import { CatalogError } from '../src/errors';
+import { agentMd, skillMd, tmpDir, writeTree } from './helpers';
 
 const load = (tree) => loadCatalog(writeTree(tmpDir(), tree));
 

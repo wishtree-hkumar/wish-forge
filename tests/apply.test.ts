@@ -9,9 +9,9 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { Action } from '../src/types.js';
-import { applyActions, checkWritable } from '../src/apply.js';
-import { tmpDir, writeTree } from './helpers.js';
+import type { Action } from '../src/types';
+import { applyActions, checkWritable } from '../src/apply';
+import { tmpDir, writeTree } from './helpers';
 
 const read = (root, path) => readFileSync(join(root, path), 'utf8');
 

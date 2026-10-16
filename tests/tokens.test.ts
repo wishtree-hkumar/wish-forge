@@ -2,11 +2,11 @@ import { readFileSync, rmSync, utimesSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
-import * as codex from '../src/adapters/codex.js';
-import { main } from '../src/cli.js';
-import { MEMORY_LIMITS } from '../src/tokens.js';
-import { agentMd, capture, ruleMd, skillMd, tmpDir, writeTree } from './helpers.js';
-import { hookTree, runtimeTree } from './hook-helpers.js';
+import * as codex from '../src/adapters/codex';
+import { main } from '../src/cli';
+import { MEMORY_LIMITS } from '../src/tokens';
+import { agentMd, capture, ruleMd, skillMd, tmpDir, writeTree } from './helpers';
+import { hookTree, runtimeTree } from './hook-helpers';
 
 let catalogDir;
 let cwd;

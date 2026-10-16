@@ -7,8 +7,8 @@ import {
   markdown,
   ruleFile,
   skillFiles,
-} from './shared.js';
-import type { Dirs, Item, RenderedFile, Scope } from '../types.js';
+} from './shared';
+import type { Dirs, Item, RenderedFile, Scope } from '../types';
 
 const MODELS: Record<string, string> = { fast: 'haiku', balanced: 'sonnet', strong: 'opus' };
 

@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { LockError } from '../src/errors.js';
-import { lockPath, readLock, sha256, writeLock } from '../src/lock.js';
-import { tmpDir, writeTree } from './helpers.js';
+import { LockError } from '../src/errors';
+import { lockPath, readLock, sha256, writeLock } from '../src/lock';
+import { tmpDir, writeTree } from './helpers';
 
 const entry = { explicit: true, files: [{ path: 'a.md', sha256: 'abc' }] };
 

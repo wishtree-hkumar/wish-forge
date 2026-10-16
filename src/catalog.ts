@@ -1,10 +1,10 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { CatalogError } from './errors.js';
-import { parseFrontmatter } from './frontmatter.js';
-import { PLACEHOLDERS, unknownPlaceholders } from './placeholders.js';
-import { RUNTIME_ID } from './wiring.js';
-import type { Catalog, Item, ItemType } from './types.js';
+import { CatalogError } from './errors';
+import { parseFrontmatter } from './frontmatter';
+import { PLACEHOLDERS, unknownPlaceholders } from './placeholders';
+import { RUNTIME_ID } from './wiring';
+import type { Catalog, Item, ItemType } from './types';
 
 export const STAGES = [
   'requirement',
