@@ -17,6 +17,8 @@ git clone git@github.com:wishtree-hkumar/wish-forge.git
 cd wish-forge && npm install && npm link   # puts `wishforge` on your PATH
 ```
 
+`npm install` builds the command into `dist/`. After `git pull`, run `npm install` again to rebuild it; the link stays. To remove the command, run `npm rm -g wish-forge`.
+
 wish-forge was called forgeflow until October 2026. The design documents in `docs/superpowers/` keep that name. A project that has forgeflow installed should run `forgeflow remove` with the old build before installing with `wishforge`.
 
 ## Use
@@ -324,7 +326,7 @@ wishforge records what it installed in `.wishforge/lock.json`. It never overwrit
 - A hook or skill with `group: memory` belongs to the `--memory` bundle; `--hooks` installs only hooks without a group. Hook events are `shell`, `write`, `prompt`, `stop`, `start` and `compact`.
 - Agent and skill bodies may use `{{agents-dir}}`, `{{global-agents-dir}}` and `{{rules-location}}`. Each harness's installer replaces them with that harness's own folders. Any other `{{…}}` token, or one with a brace too few or too many, is a catalog error.
 
-The frontmatter fields are described in the specs in `docs/superpowers/specs/`: the core spec, section 4, for agents and skills, and the later specs for hooks (`events`, `group`), specialists (`joins`) and rules (`paths`). Run `wishforge doctor` to validate the catalog, and `npm test` before committing.
+The frontmatter fields are described in the specs in `docs/superpowers/specs/`: the core spec, section 4, for agents and skills, and the later specs for hooks (`events`, `group`), specialists (`joins`) and rules (`paths`). Run `wishforge doctor` to validate the catalog, and `npm test` and `npm run typecheck` before committing.
 
 To support another harness, add `src/adapters/<name>.ts` and register it in `src/adapters/index.ts`. An adapter implements the `Adapter` type in `src/types.ts`: it exports `name`, `root(scope, dirs)`, `render(item, ctx)`, `agentDirs`, `rulesLocation`, `places`, and `wiring` (its hook config, or `null`). It may also export `rulesWiring(scope, ids)` when the harness needs a file such as `AGENTS.md` edited to load rules, and `globalRules = false` when it has no user-level rule files.
 
