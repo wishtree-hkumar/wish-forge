@@ -43,8 +43,26 @@ const NUDGE =
   'wishforge test-reminder: files were changed and no test command has run since. ' +
   "Run the project's tests now, or tell the user why you did not.";
 
-const isSource = (path) => !path.startsWith('.wishforge/') && !path.endsWith('.md');
+// The events the runtime sends, and the parts of its context this gate reads.
+// A gate imports nothing, so they are described here.
+/**
+ * @typedef {{ kind: 'shell', command: string }
+ *   | { kind: 'write', path: string, content: string }
+ *   | { kind: 'prompt', text: string }
+ *   | { kind: 'start', source: string }
+ *   | { kind: 'stop' }
+ *   | { kind: 'compact' }} Event
+ * @typedef {{
+ *   session: string,
+ *   config: { testCommands: RegExp[] },
+ *   state: { get(): Record<string, any>, set(value: Record<string, unknown>): void },
+ * }} Context
+ */
 
+const isSource = (/** @type {string} */ path) =>
+  !path.startsWith('.wishforge/') && !path.endsWith('.md');
+
+/** @param {string} part */
 function startsWithTest(part) {
   let rest = part.trim();
   for (let step = 0; step < 8; step += 1) {
@@ -56,6 +74,10 @@ function startsWithTest(part) {
   return false;
 }
 
+/**
+ * @param {string} command
+ * @param {RegExp[]} extra
+ */
 function ranTests(command, extra) {
   if (extra.some((pattern) => pattern.test(command))) return true;
   const bodies = [...command.matchAll(SHELL_BODY)].map((match) => match[2]);
@@ -66,6 +88,10 @@ function ranTests(command, extra) {
     .some(startsWithTest);
 }
 
+/**
+ * @param {Event} event
+ * @param {Context} ctx
+ */
 export function check(event, ctx) {
   let state = ctx.state.get();
   // A new session starts with nothing to remind about.

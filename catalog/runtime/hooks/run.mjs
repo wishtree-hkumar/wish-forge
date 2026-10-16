@@ -17,6 +17,7 @@ try {
   if (out.stderr) process.stderr.write(`${out.stderr}\n`);
   process.exitCode = out.code;
 } catch (error) {
-  process.stderr.write(`wishforge hook failed and was skipped: ${error.message}\n`);
+  const { message } = /** @type {Error} */ (error);
+  process.stderr.write(`wishforge hook failed and was skipped: ${message}\n`);
   process.exitCode = 1;
 }

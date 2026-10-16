@@ -326,12 +326,16 @@ wishforge records what it installed in `.wishforge/lock.json`. It never overwrit
 
 The frontmatter fields are described in the specs in `docs/superpowers/specs/`: the core spec, section 4, for agents and skills, and the later specs for hooks (`events`, `group`), specialists (`joins`) and rules (`paths`). Run `wishforge doctor` to validate the catalog, and `npm test` before committing.
 
-To support another harness, add `src/adapters/<name>.js` and register it in `src/adapters/index.js`. An adapter exports `name`, `root(scope, dirs)`, `render(item, ctx)`, `agentDirs`, `rulesLocation`, `places`, and `wiring` (its hook config, or `null`). It may also export `rulesWiring(scope, ids)` when the harness needs a file such as `AGENTS.md` edited to load rules, and `globalRules = false` when it has no user-level rule files.
+To support another harness, add `src/adapters/<name>.ts` and register it in `src/adapters/index.ts`. An adapter implements the `Adapter` type in `src/types.ts`: it exports `name`, `root(scope, dirs)`, `render(item, ctx)`, `agentDirs`, `rulesLocation`, `places`, and `wiring` (its hook config, or `null`). It may also export `rulesWiring(scope, ids)` when the harness needs a file such as `AGENTS.md` edited to load rules, and `globalRules = false` when it has no user-level rule files.
 
 ## Development
 
 ```bash
-npm test          # run the tests
+npm run build     # compile src/ to dist/ (npm install does this too)
+npm test          # build, then run the tests
+npm run typecheck # tsc over src/, catalog/ and tests/
 npm run lint      # oxlint
 npm run format    # prettier
 ```
+
+The CLI is TypeScript in `src/`, compiled to `dist/`. The catalog's hook scripts stay JavaScript, because they are copied into projects and run there with plain `node`; they are type-checked through JSDoc. A gate may import nothing, so each one describes the events and context it reads in its own `@typedef`s.

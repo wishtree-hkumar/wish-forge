@@ -1,0 +1,13 @@
+{
+  // Compiles src/ to dist/. dist/ sits next to catalog/ and package.json, so
+  // the paths the CLI finds them by are the same in src/ and dist/.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "noEmit": false,
+    "allowJs": false,
+    "checkJs": false
+  },
+  "include": ["src"]
+}

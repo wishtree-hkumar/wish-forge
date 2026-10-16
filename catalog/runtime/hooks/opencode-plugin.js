@@ -7,8 +7,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const dir = resolve(here, '..', 'wishforge');
 const root = resolve(here, '..', '..');
 
+// OpenCode's payloads are read defensively, so they are not typed here.
 export const WishforgeGates = async () => {
+  /** @type {any} */
   let runtime;
+  /** @type {unknown} */
   let gates;
   try {
     runtime = await import(pathToFileURL(resolve(dir, 'runtime.mjs')).href);
@@ -17,23 +20,24 @@ export const WishforgeGates = async () => {
     return {}; // a broken install must not stop OpenCode from starting
   }
 
-  const evaluate = (payload) => {
+  const evaluate = (/** @type {object} */ payload) => {
     try {
       return runtime.evaluate({ harness: 'opencode', payload, root, gates });
     } catch {
       return {}; // fail open
     }
   };
-  const check = (payload) => {
+  const check = (/** @type {object} */ payload) => {
     const result = evaluate(payload);
     if (result.block) throw new Error(result.block);
   };
 
   return {
-    'tool.execute.before': async (input, output) => {
+    'tool.execute.before': async (/** @type {any} */ input, /** @type {any} */ output) => {
       check({ hook: 'tool', tool: input?.tool, args: output?.args, session: input?.sessionID });
     },
-    'chat.message': async (input, output) => {
+    'chat.message': async (/** @type {any} */ input, /** @type {any} */ output) => {
+      /** @type {any[]} */
       const parts = Array.isArray(output?.parts) ? output.parts : [];
       const text = parts
         .filter((part) => part?.type === 'text' && typeof part.text === 'string')
@@ -42,7 +46,10 @@ export const WishforgeGates = async () => {
       check({ hook: 'prompt', text, session: input?.sessionID });
     },
     // The only place OpenCode lets a plugin add to what survives compaction.
-    'experimental.session.compacting': async (input, output) => {
+    'experimental.session.compacting': async (
+      /** @type {any} */ input,
+      /** @type {any} */ output
+    ) => {
       const result = evaluate({ hook: 'compact', session: input?.sessionID });
       if (Array.isArray(output?.context)) output.context.push(...(result.contexts ?? []));
     },

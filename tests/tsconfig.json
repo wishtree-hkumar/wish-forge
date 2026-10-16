@@ -1,0 +1,12 @@
+{
+  // Tests build many partial fixtures and read results they have just
+  // asserted, so parameters may go unannotated and values are not checked
+  // for null here: a missing value fails the test itself. Everything else is
+  // checked as in src/.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "strictNullChecks": false
+  },
+  "include": ["."]
+}

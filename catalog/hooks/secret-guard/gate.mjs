@@ -1,4 +1,5 @@
 // Exported so session-memory's copy can be checked against it.
+/** @type {[string, RegExp][]} */
 export const PATTERNS = [
   ['AWS access key', /\b(AKIA|ASIA)[0-9A-Z]{16}\b/],
   ['GitHub token', /\b(gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{22,})/],
@@ -17,6 +18,22 @@ const ALLOW_MARK = 'wishforge-allow-secret';
 // Vendors publish these as documentation samples.
 const DOCUMENTED_EXAMPLE = /EXAMPLE$/;
 
+// The events the runtime sends, and the parts of its context this gate reads.
+// A gate imports nothing, so they are described here.
+/**
+ * @typedef {{ kind: 'shell', command: string }
+ *   | { kind: 'write', path: string, content: string }
+ *   | { kind: 'prompt', text: string }
+ *   | { kind: 'start', source: string }
+ *   | { kind: 'stop' }
+ *   | { kind: 'compact' }} Event
+ * @typedef {{ config: { secretAllow: RegExp[] } }} Context
+ */
+
+/**
+ * @param {Event} event
+ * @param {Context} ctx
+ */
 export function check(event, ctx) {
   if (event.kind !== 'write') return undefined;
 

@@ -12,6 +12,46 @@ import {
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
+/**
+ * An event in the same shape whichever harness sent it.
+ * @typedef {{ kind: 'shell', command: string }
+ *   | { kind: 'write', path: string, content: string }
+ *   | { kind: 'prompt', text: string }
+ *   | { kind: 'start', source: string }
+ *   | { kind: 'stop' }
+ *   | { kind: 'compact' }} GateEvent
+ * @typedef {{ dir: string, name: string, status: string, stage: string, approved: boolean }} Run
+ * @typedef {{
+ *   releaseCommands: RegExp[],
+ *   protectedPaths: string[],
+ *   secretAllow: RegExp[],
+ *   testCommands: RegExp[],
+ * }} Config
+ * @typedef {{ get(): Record<string, any>, set(value: Record<string, unknown>): void }} StateStore
+ * @typedef {{
+ *   root: string,
+ *   harness: string,
+ *   config: Config,
+ *   run: Run | null,
+ *   runs: Run[],
+ *   state: StateStore,
+ *   session: string,
+ *   now: number,
+ *   matchesGlob: typeof matchesGlob,
+ * }} GateContext
+ * @typedef {{ block?: string, note?: string, context?: string, tell?: string }} GateResult
+ * @typedef {{ name: string, check: (event: GateEvent, ctx: GateContext) => GateResult | void }} Gate
+ * @typedef {{
+ *   events: GateEvent[],
+ *   block?: string,
+ *   notes: string[],
+ *   contexts?: string[],
+ *   tells?: string[],
+ *   warnings: string[],
+ * }} Outcome
+ * @typedef {{ code: number, stdout: string, stderr: string }} Response
+ */
+
 const DAY = 24 * 60 * 60 * 1000;
 const CONFIG_KEYS = ['releaseCommands', 'protectedPaths', 'secretAllow', 'testCommands'];
 // Harness folder → the file that wires wishforge's hooks into that harness.
@@ -22,10 +62,10 @@ const WIRING_FILES = {
   '.opencode': '.opencode/plugins/wishforge.js',
 };
 
-const text = (value) => (typeof value === 'string' ? value : '');
-const posix = (path) => path.split('\\').join('/');
+const text = (/** @type {unknown} */ value) => (typeof value === 'string' ? value : '');
+const posix = (/** @type {string} */ path) => path.split('\\').join('/');
 // The new text of a list of edits, or undefined when there is no list.
-const joined = (edits, key) =>
+const joined = (/** @type {unknown} */ edits, /** @type {string} */ key) =>
   Array.isArray(edits) ? edits.map((edit) => text(edit?.[key])).join('\n') : undefined;
 
 const CURSOR_WRITE_TOOLS = new Set([
@@ -45,7 +85,9 @@ const SHELL_CHANGE =
 
 // Resolves symlinks in the part of a path that exists, so a file reached
 // through a link is recognised as the file it is.
+/** @param {string} path */
 function real(path) {
+  /** @type {string[]} */
   const rest = [];
   let existing = path;
   while (!existsSync(existing)) {
@@ -61,6 +103,11 @@ function real(path) {
   }
 }
 
+/**
+ * @param {string} root
+ * @param {string} path
+ * @param {string} [cwd]
+ */
 export function toRelative(root, path, cwd) {
   const absolute = real(isAbsolute(path) ? path : resolve(cwd || root, path));
   const rel = relative(real(root), absolute);
@@ -68,20 +115,26 @@ export function toRelative(root, path, cwd) {
   return posix(outside ? absolute : rel);
 }
 
+/** @param {unknown} patch */
 export function parsePatch(patch) {
+  /** @type {{ path: string, lines: string[] }[]} */
   const files = [];
   for (const line of text(patch).split(/\r?\n/)) {
     const header =
       /^\*\*\* (?:Add|Update|Delete) File: (.+)$/.exec(line) ?? /^\*\*\* Move to: (.+)$/.exec(line);
     if (header) files.push({ path: header[1].trim(), lines: [] });
-    else if (files.length > 0 && line.startsWith('+')) files.at(-1).lines.push(line.slice(1));
+    else if (files.length > 0 && line.startsWith('+')) files.at(-1)?.lines.push(line.slice(1));
   }
   return files.map(({ path, lines }) => ({ path, content: lines.join('\n') }));
 }
 
 // Supports *, ** and ?. A glob with no slash is matched against the file name.
+/**
+ * @param {string} path
+ * @param {string} glob
+ */
 export function matchesGlob(path, glob) {
-  const subject = glob.includes('/') ? path : path.split('/').pop();
+  const subject = glob.includes('/') ? path : /** @type {string} */ (path.split('/').pop());
   let source = '';
   for (let index = 0; index < glob.length; index += 1) {
     const char = glob[index];
@@ -100,10 +153,18 @@ export function matchesGlob(path, glob) {
   return new RegExp(`^${source}$`).test(subject);
 }
 
+/**
+ * @param {string} root
+ * @returns {{ config: Config, warnings: string[] }}
+ */
 export function loadConfig(root) {
-  const config = Object.fromEntries(CONFIG_KEYS.map((key) => [key, []]));
+  const config = /** @type {Config & Record<string, any[]>} */ (
+    Object.fromEntries(CONFIG_KEYS.map((key) => [key, /** @type {any[]} */ ([])]))
+  );
+  /** @type {string[]} */
   const warnings = [];
-  const warn = (problem) => warnings.push(`wishforge: .wishforge/config.json ${problem}`);
+  const warn = (/** @type {string} */ problem) =>
+    warnings.push(`wishforge: .wishforge/config.json ${problem}`);
   const path = join(root, '.wishforge', 'config.json');
   if (!existsSync(path)) return { config, warnings };
 
@@ -111,7 +172,7 @@ export function loadConfig(root) {
   try {
     raw = JSON.parse(readFileSync(path, 'utf8'));
   } catch (error) {
-    warn(`is not valid JSON and was ignored (${error.message}).`);
+    warn(`is not valid JSON and was ignored (${/** @type {Error} */ (error).message}).`);
     return { config, warnings };
   }
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
@@ -125,7 +186,7 @@ export function loadConfig(root) {
       warn(`has a "${key}" value that is not a list; it was ignored.`);
       continue;
     }
-    raw[key].forEach((entry, index) => {
+    raw[key].forEach((/** @type {unknown} */ entry, /** @type {number} */ index) => {
       if (typeof entry !== 'string' || entry === '') {
         warn(`has a "${key}[${index}]" entry that is not a string; it was ignored.`);
       } else if (key === 'protectedPaths') {
@@ -146,6 +207,10 @@ export function loadConfig(root) {
 
 // Reads "name: value" from state.md. Models format this file loosely, so list
 // markers, numbering, headings, quotes, backticks, bold and table cells are tolerated.
+/**
+ * @param {string} body
+ * @param {string} name
+ */
 function field(body, name) {
   // Spaces and tabs only, never \s: a newline here would let an empty value swallow the next line.
   const pattern = new RegExp(
@@ -156,6 +221,7 @@ function field(body, name) {
   return match ? match[1].trim() : '';
 }
 
+/** @param {string} dir */
 function isApproved(dir) {
   try {
     return /^decision:\s*approved\s*$/im.test(readFileSync(join(dir, '09-approval.md'), 'utf8'));
@@ -165,6 +231,10 @@ function isApproved(dir) {
 }
 
 // Every active run, most recently updated first.
+/**
+ * @param {string} root
+ * @returns {Run[]}
+ */
 export function findRuns(root, now = Date.now()) {
   const runs = join(root, '.wishforge', 'runs');
   if (!existsSync(runs)) return [];
@@ -200,12 +270,17 @@ export function findRuns(root, now = Date.now()) {
     }));
 }
 
+/** @param {string} root */
 export function findRun(root, now = Date.now()) {
   return findRuns(root, now)[0] ?? null;
 }
 
 // Small per-project state for gates, kept in the project's own folder that
 // ignores itself, not under a predictable name in the shared temp directory.
+/**
+ * @param {string} root
+ * @returns {StateStore}
+ */
 function stateStore(root) {
   const dir = join(root, '.wishforge', 'local');
   const file = join(dir, 'gate-state.json');
@@ -234,8 +309,12 @@ function stateStore(root) {
   };
 }
 
+/**
+ * @param {GateEvent} event
+ * @param {string} root
+ */
 export function selfProtect(event, root) {
-  const refuse = (what) =>
+  const refuse = (/** @type {string} */ what) =>
     `wishforge: ${what} is protected while quality gates are installed. A person must make this change.`;
 
   if (event.kind === 'write') {
@@ -259,17 +338,26 @@ export function selfProtect(event, root) {
   return undefined;
 }
 
+/**
+ * @param {string} harness
+ * @param {any} payload what the harness sent, as it sent it
+ * @param {string} root
+ * @returns {GateEvent[]}
+ */
 export function normalize(harness, payload, root) {
   const data = payload ?? {};
   const input = data.tool_input ?? {};
   const event = data.hook_event_name;
+  /** @type {(command: unknown) => GateEvent[]} */
   const shell = (command) => (typeof command === 'string' ? [{ kind: 'shell', command }] : []);
+  /** @type {(path: string, content: unknown) => GateEvent} */
   const write = (path, content) => ({
     kind: 'write',
     path: toRelative(root, path, data.cwd),
     content: text(content),
   });
-  const patch = (body) => parsePatch(body).map((file) => write(file.path, file.content));
+  const patch = (/** @type {unknown} */ body) =>
+    parsePatch(body).map((file) => write(file.path, file.content));
 
   if (harness === 'claude' || harness === 'codex') {
     if (event === 'SessionStart') {
@@ -332,9 +420,14 @@ export function normalize(harness, payload, root) {
   return [];
 }
 
+/**
+ * @param {{ harness: string, payload: any, root: string, gates: Gate[], now?: number }} options
+ * @returns {Outcome}
+ */
 export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
   const events = normalize(harness, payload, root);
   const { config, warnings } = loadConfig(root);
+  /** @type {{ notes: string[], contexts: string[], tells: string[] }} */
   const said = { notes: [], contexts: [], tells: [] };
   const runs = findRuns(root, now);
   const ctx = {
@@ -358,7 +451,8 @@ export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
       try {
         result = gate.check(event, ctx);
       } catch (error) {
-        warnings.push(`wishforge: gate ${gate.name} failed (${error.message}) and was skipped.`);
+        const { message } = /** @type {Error} */ (error);
+        warnings.push(`wishforge: gate ${gate.name} failed (${message}) and was skipped.`);
         continue;
       }
       if (result?.block) return { events, block: result.block, ...said, warnings };
@@ -371,13 +465,20 @@ export function evaluate({ harness, payload, root, gates, now = Date.now() }) {
   return { events, ...said, warnings };
 }
 
+/**
+ * @param {string} harness
+ * @param {any} payload
+ * @param {Outcome} outcome
+ * @returns {Response}
+ */
 export function respond(
   harness,
   payload,
   { events, block, notes, contexts = [], tells = [], warnings }
 ) {
   const allow = { code: 0, stdout: '', stderr: '' };
-  const has = (kind) => events.some((event) => event.kind === kind);
+  const has = (/** @type {GateEvent['kind']} */ kind) =>
+    events.some((event) => event.kind === kind);
   const isStop = has('stop');
   // Warnings ride along with a prompt only: on tool calls they would repeat
   // constantly, and on stop they would keep the turn from ending.
@@ -413,6 +514,10 @@ export function respond(
   return { ...allow, stdout: JSON.stringify({ hookSpecificOutput: context }) };
 }
 
+/**
+ * @param {string} dir
+ * @returns {Promise<Gate[]>}
+ */
 export async function loadGates(dir) {
   if (!existsSync(dir)) return [];
   const files = readdirSync(dir)
@@ -430,9 +535,14 @@ export async function loadGates(dir) {
       }
     })
   );
-  return loaded.filter(Boolean);
+  return loaded.filter((gate) => gate !== null);
 }
 
+/**
+ * @param {string} harness
+ * @param {any} payload
+ * @param {{ root: string, gatesDir: string }} dirs
+ */
 export async function handle(harness, payload, { root, gatesDir }) {
   const gates = await loadGates(gatesDir);
   return respond(harness, payload, evaluate({ harness, payload, root, gates }));

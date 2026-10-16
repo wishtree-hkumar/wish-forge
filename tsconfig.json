@@ -1,0 +1,21 @@
+{
+  // Type-checks the CLI and the catalog's JavaScript. The catalog stays
+  // JavaScript because it is copied into projects and run there with plain
+  // node; its types are JSDoc. tsconfig.build.json compiles the CLI, and
+  // tests/tsconfig.json checks the tests.
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src", "catalog", "vitest.config.ts"]
+}

@@ -17,9 +17,26 @@ const APPROVE = /^approved?$|^approve[\s,.!]/i;
 const APPROVAL_STAGE = /human[\s_-]*approval|\bship\b/i;
 const HOW = 'A person approves by typing "approve" when the flow asks.';
 
-const atApprovalStep = (run) =>
+// The events the runtime sends, and the parts of its context this gate reads.
+// A gate imports nothing, so they are described here.
+/**
+ * @typedef {{ kind: 'shell', command: string }
+ *   | { kind: 'write', path: string, content: string }
+ *   | { kind: 'prompt', text: string }
+ *   | { kind: 'start', source: string }
+ *   | { kind: 'stop' }
+ *   | { kind: 'compact' }} Event
+ * @typedef {{ dir: string, name: string, status: string, stage: string, approved: boolean }} Run
+ * @typedef {{ harness: string, now: number, runs: Run[], config: { releaseCommands: RegExp[] } }} Context
+ */
+
+const atApprovalStep = (/** @type {Run} */ run) =>
   run.status.startsWith('waiting for user') && APPROVAL_STAGE.test(run.stage);
 
+/**
+ * @param {Event} event
+ * @param {Context} ctx
+ */
 export function check(event, ctx) {
   if (event.kind === 'write') {
     if (!RECORD.test(event.path)) return undefined;
